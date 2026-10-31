@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PayMojosari — Sistem Kas & Uang Makan Komplek Tuban (PP. Mojosari)</title>
+  <link rel="icon" type="image/png" href="logo-mojosari.png?v=2" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              primary: '#064e3b',   // deep dark emerald matching FinPilot's dark green #064E3B / #065F46
+              accent: '#047857',
+              pill: '#064e3b',
+              light: '#f1f5f9',
+              card: '#ffffff',
+              canvas: '#eef2f6',
+              border: '#f1f5f9'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at 50% 0%, #e2e8f0 0%, #cbd5e1 100%);
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    @media print {
+      body {
+        background: white !important;
+        padding: 0 !important;
+      }
+      #mainAppContainer {
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #printArea, #printArea * {
+        visibility: visible !important;
+      }
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-emerald-900 selection:text-white">
+
+  <!-- Outer Dashboard Window Container (100% Match with FinPilot Frame) -->
+  <div id="mainAppContainer" class="w-full max-w-[1360px] bg-[#f8fafc] rounded-[38px] shadow-[0_25px_70px_rgba(15,23,42,0.18)] border border-white/60 flex overflow-hidden min-h-[820px] transition-all">
+
+    <!-- ================= SIDEBAR (FINPILOT STYLE) ================= -->
+    <aside class="w-[230px] shrink-0 bg-white border-r border-[#f1f5f9] p-6 flex flex-col justify-between select-none no-print">
+      <div class="space-y-7">
+        <!-- Logo Header -->
+        <div class="flex items-center gap-3 px-2">
+          <img src="logo-mojosari.png?v=2" alt="PayMojosari Logo" class="w-10 h-10 object-contain shrink-0" />
+          <div class="flex flex-col">
+            <span class="font-display font-extrabold text-lg text-slate-900 tracking-tight leading-none">PayMojosari</span>
+            <span class="text-[9px] font-semibold text-slate-400 tracking-wider uppercase mt-0.5">Komplek Tuban</span>
+          </div>
+        </div>
+
+        <!-- Navigation Menu Items -->
+        <nav class="space-y-1.5 text-[13px] font-medium text-slate-500">
+          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            <span>Dashboard</span>
+          </button>
+
+          <button onclick="switchTab('pembayaran')" id="nav-pembayaran" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all bg-[#064e3b] text-white font-semibold shadow-xs cursor-pointer">
+            <i data-lucide="wallet" class="w-4 h-4"></i>
+            <span>Payments</span>
+          </button>
+
+          <button onclick="switchTab('tunggakan')" id="nav-tunggakan" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+            <span>Tunggakan & WA</span>
+          </button>
+
+          <button onclick="openRekapGrupModal()" id="nav-grupwa" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-emerald-800 hover:bg-emerald-50 cursor-pointer font-semibold">
+            <i data-lucide="messages-square" class="w-4 h-4 text-emerald-800"></i>
+            <span>Siaran Grup WA</span>
+          </button>
+
+          <button onclick="switchTab('masak')" id="nav-masak" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="utensils" class="w-4 h-4"></i>
+            <span>Kas Masak</span>
+          </button>
+
+          <button onclick="switchTab('utang')" id="nav-utang" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="hand-coins" class="w-4 h-4"></i>
+            <span>Utang Kas</span>
+          </button>
+
+          <button onclick="switchTab('santri')" id="nav-santri" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>Data Santri</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Bottom Sidebar Links -->
+      <div class="space-y-1.5 text-[13px] font-medium text-slate-500 pt-6 border-t border-slate-100">
+        <button onclick="ubahLinkGrupWa()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-emerald-50 text-emerald-800 transition text-left cursor-pointer font-semibold">
+          <i data-lucide="link" class="w-4 h-4 text-emerald-800"></i>
+          <span class="truncate">Tautkan Link Grup WA</span>
+        </button>
+        <button onclick="openBendaharaWifiModal()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
+          <i data-lucide="wifi" class="w-4 h-4 text-emerald-800"></i>
+          <span class="truncate">Setor WiFi Induk</span>
+        </button>
+        <button onclick="ubahTarifWifiManual()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+          <span>Atur Tarif Manual</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN CONTENT WRAPPER ================= -->
+    <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc] overflow-y-auto custom-scroll">
+
+      <!-- TOP NAVBAR (MATCHING FINPILOT: TITLE, SEARCH, NOTIF, USER PROFILE) -->
+      <header class="px-8 pt-7 pb-4 flex items-center justify-between gap-4 no-print select-none">
+        <div>
+          <h1 id="pageHeadingTitle" class="text-2xl font-bold font-display text-slate-900 tracking-tight">Payments</h1>
+          <p id="pageHeadingSubtitle" class="text-xs text-slate-400 font-medium mt-0.5">PP. Mojosari Loceret Nganjuk • Komplek Tuban (Rumah Wakaf)</p>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <!-- Periode Dropdown styled cleanly -->
+          <div class="flex items-center gap-1.5 bg-white border border-slate-200/80 rounded-full px-3.5 py-1.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+            <span class="text-[11px] font-semibold text-slate-400">Periode:</span>
+            <select id="globalMonthSelect" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+            </select>
+          </div>
+
+          <!-- Search Input Pill (FinPilot style) -->
+          <div class="relative w-48 hidden md:block">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input id="quickSearchInput" oninput="handleGlobalSearch(event)" type="text" placeholder="Search" class="w-full pl-9 pr-6 py-2 rounded-full bg-white border border-slate-200/80 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-800 shadow-[0_2px_4px_rgba(0,0,0,0.02)]" />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-300 font-mono">/</span>
+          </div>
+
+          <!-- Notification Bell -->
+          <button onclick="switchTab('tunggakan')" title="Cek Tunggakan Santri" class="w-9 h-9 rounded-full bg-white border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-slate-900 shadow-[0_2px_4px_rgba(0,0,0,0.02)] cursor-pointer relative">
+            <i data-lucide="bell" class="w-4 h-4"></i>
+            <span id="navNotifDot" class="w-2 h-2 rounded-full bg-rose-500 absolute top-2 right-2"></span>
+          </button>
+
+          <!-- User Profile Pill -->
+          <div class="flex items-center gap-2.5 bg-white border border-slate-200/80 rounded-full pl-3.5 pr-2 py-1 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+            <div class="text-right">
+              <span class="text-xs font-semibold text-slate-800 block leading-tight">PayMojosari • Tuban</span>
+              <span class="text-[10px] text-slate-400 font-mono">081231256129</span>
+            </div>
+            <img src="logo-mojosari.png?v=2" alt="PayMojosari" class="w-8 h-8 object-contain shrink-0" />
+          </div>
+        </div>
+      </header>
+
+      <!-- ================= CONTENT VIEW: PAYMENTS (DEFAULT FINPILOT LAYOUT) ================= -->
+      <main class="px-8 pb-8 flex-1 space-y-6">
+
+        <!-- ================= TAB: PAYMENTS (FINPILOT EXACT VIEW) ================= -->
+        <div id="view-pembayaran" class="view-panel space-y-6">
+
+          <!-- TOP 4 METRICS CARDS (EXACT MATCH FINPILOT) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Metric 1: Total Terkumpul Bulan Ini -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400">Total Terkumpul Bulan Ini</span>
+                <span id="mMonthBadge" class="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">Okt 2026</span>
+              </div>
+              <div class="mt-2.5 flex items-baseline justify-between">
+                <span id="mTotalSent" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="mTotalSentPct" class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                  <i data-lucide="arrow-up" class="w-3 h-3"></i> 0%
+                </span>
+              </div>
+            </div>
+
+            <!-- Metric 2: Tunggakan / Pending -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <span class="text-xs font-semibold text-slate-400">Tunggakan (Pending)</span>
+              <div class="mt-2.5 flex items-baseline justify-between">
+                <span id="mPending" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="mPendingPct" class="text-[11px] font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                  <i data-lucide="arrow-down" class="w-3 h-3"></i> 0%
+                </span>
+              </div>
+            </div>
+
+            <!-- Metric 3: Saldo Kas Komplek -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <span class="text-xs font-semibold text-slate-400">Saldo Uang Kas Komplek</span>
+              <div class="mt-2.5 flex items-baseline justify-between">
+                <span id="mScheduled" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                  Kas Aktif
+                </span>
+              </div>
+            </div>
+
+            <!-- Metric 4: Utang Santri (Ambil Kas) -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400">Utang Kas Santri</span>
+                <div class="flex items-center gap-1">
+                  <button onclick="openRekapGrupModal()" title="Kirim Rekap Bulan Ini ke WA" class="text-[10px] font-bold text-emerald-800 hover:bg-emerald-50 px-1.5 py-0.5 rounded-md cursor-pointer transition">WA</button>
+                  <button onclick="resetBulanIni()" title="Kosongkan / Reset Data Bulan Ini ke Rp 0" class="text-[10px] font-bold text-rose-600 hover:bg-rose-50 px-1.5 py-0.5 rounded-md cursor-pointer transition">Reset 0</button>
+                </div>
+              </div>
+              <div class="mt-2.5 flex items-baseline justify-between">
+                <span id="mFailed" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="mFailedSub" class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                  0 Santri Utang
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TWO COLUMN MAIN WORKSPACE (LEFT 65%, RIGHT 35%) -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- LEFT COLUMN: QUICK TRANSFER & SCHEDULED PAYMENTS -->
+            <div class="lg:col-span-8 space-y-6">
+
+              <!-- CARD 1: QUICK TRANSFER (FINPILOT EXACT MATCH) -->
+              <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-5">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-bold text-slate-900 font-display">Quick Payment / Catat Bayar Santri</h3>
+                  <span class="text-[11px] text-slate-400 font-medium">Klik avatar santri untuk pilih</span>
+                </div>
+
+                <!-- Avatar Santri Horizontal List + Add New -->
+                <div id="quickTransferAvatarList" class="flex items-center gap-4 overflow-x-auto pb-2 custom-scroll">
+                </div>
+
+                <!-- 3 Segmented Filter Tabs (Makan, WiFi Manual, Kas All) -->
+                <div class="bg-[#f1f5f9] p-1 rounded-xl grid grid-cols-3 gap-1 text-xs font-semibold text-slate-600 text-center select-none">
+                  <button type="button" onclick="setQuickMode('full')" id="qtab-full" class="py-2 rounded-lg bg-white text-slate-900 shadow-xs cursor-pointer transition">
+                    Lunas Semua (100k)
+                  </button>
+                  <button type="button" onclick="setQuickMode('makan')" id="qtab-makan" class="py-2 rounded-lg hover:text-slate-900 cursor-pointer transition">
+                    Uang Makan (50k)
+                  </button>
+                  <button type="button" onclick="setQuickMode('wifi')" id="qtab-wifi" class="py-2 rounded-lg hover:text-slate-900 cursor-pointer transition">
+                    Kas WiFi Manual
+                  </button>
+                </div>
+
+                <!-- Amount & Note Inputs -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                  <div class="sm:col-span-5 space-y-1.5">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Amount</label>
+                    <div class="relative">
+                      <input type="text" id="quickAmountInput" readonly value="Rp 100.000" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:outline-none" />
+                    </div>
+                  </div>
+                  <div class="sm:col-span-7 space-y-1.5">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Note (Optional)</label>
+                    <input type="text" id="quickNoteInput" placeholder="Cth: Iuran syahriyah lunas titip teman" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-800" />
+                  </div>
+                </div>
+
+                <!-- Big Primary Button: Send Money (FinPilot Style #064E3B) -->
+                <button type="button" onclick="handleQuickSubmitPayment()" class="w-full py-3.5 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+                  <span>Send Money & Update Status Lunas</span>
+                </button>
+              </div>
+
+          <!-- Card 2: SCHEDULED PAYMENTS / RINCIAN TAGIHAN SANTRI (FINPILOT EXACT MATCH) -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-slate-900 font-display">Scheduled Payments / Tagihan Bulanan</h3>
+              <div class="flex items-center gap-3">
+                <button onclick="openRekapGrupModal()" class="text-xs font-bold text-[#064e3b] bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer transition">
+                  <i data-lucide="messages-square" class="w-3.5 h-3.5"></i>
+                  <span>Kirim Rekap ke Grup WA</span>
+                </button>
+                <button onclick="switchTab('tunggakan')" class="text-xs font-semibold text-slate-500 hover:text-slate-900 cursor-pointer">
+                  View All
+                </button>
+              </div>
+            </div>
+
+            <!-- List items matching FinPilot (Calendar icon box, Title, Subtitle, Amount, Status Pill) -->
+            <div id="scheduledPaymentsList" class="space-y-3">
+            </div>
+          </div>
+            </div>
+
+            <!-- RIGHT COLUMN: KARTU SANTRI, RECENT PAYMENTS & PAYMENT LIMITS -->
+            <div class="lg:col-span-4 space-y-6">
+
+              <!-- CARD 2B: KARTU SANTRI DIGITAL (ACTIVE SELECTED SANTRI) -->
+              <div id="activeKartuSantriWidget" class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-3">
+              </div>
+
+              <!-- CARD 3: RECENT PAYMENTS (FINPILOT EXACT MATCH) -->
+              <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-slate-900 font-display">Recent Payments</h3>
+                    <span class="text-[11px] text-slate-400 font-medium">Realtime</span>
+                  </div>
+
+                  <!-- Recent Transaction List -->
+                  <div id="recentPaymentsList" class="space-y-4">
+                  </div>
+                </div>
+
+                <!-- Download History Dropdown Button (FinPilot Style) -->
+                <div class="pt-5 mt-4 border-t border-slate-100">
+                  <button onclick="window.print()" class="w-full py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer">
+                    <span>Download History</span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- CARD 4: PAYMENT LIMITS / SALDO & KAS TERPAKAI (FINPILOT EXACT MATCH) -->
+              <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
+                <h3 class="text-sm font-bold text-slate-900 font-display">Payment Limits & Kas Progress</h3>
+
+                <!-- Bar 1: Iuran Terkumpul vs Target -->
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-400 font-medium">Iuran Terkumpul</span>
+                    <span id="limitDailyRatio" class="font-bold text-slate-900 font-mono">Rp 0 / Rp 0</span>
+                  </div>
+                  <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="limitDailyBar" class="h-full bg-[#064e3b] rounded-full transition-all" style="width: 0%"></div>
+                  </div>
+                </div>
+
+                <!-- Bar 2: Kas WiFi Terkumpul vs Bayar WiFi Manual -->
+                <div class="space-y-1.5 pt-1">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-400 font-medium">WiFi Terkumpul vs Tagihan</span>
+                    <span id="limitMonthlyRatio" class="font-bold text-slate-900 font-mono">Rp 0 / Rp 0</span>
+                  </div>
+                  <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="limitMonthlyBar" class="h-full bg-[#047857] rounded-full transition-all" style="width: 0%"></div>
+                  </div>
+                </div>
+
+                <!-- Status & Laporan Pembayaran WiFi Induk -->
+                <div class="pt-3 border-t border-slate-100 space-y-2.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-500 font-semibold">Setoran WiFi Induk:</span>
+                    <span id="widgetWifiIndukBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600">Belum Disetor</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button onclick="openBendaharaWifiModal()" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer">
+                      <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                      <span>Setor WiFi</span>
+                    </button>
+                    <button onclick="openNotaWifiIndukModal()" class="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[11px] font-bold text-emerald-800 flex items-center justify-center gap-1.5 transition cursor-pointer">
+                      <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                      <span>Laporan WiFi</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ================= TAB: DASHBOARD (OVERVIEW) ================= -->
+        <div id="view-dashboard" class="view-panel hidden space-y-6">
+          <!-- 4 Ringkasan Metrik Per Bulan di Dashboard + Aksi Kirim WA & Reset -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400">Total Terkumpul Bulan Ini</span>
+                <span id="dashMonthBadge" class="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">Okt 2026</span>
+              </div>
+              <div class="mt-2.5 flex items-baseline justify-between">
+                <span id="dashTotalSent" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="dashTotalSentPct" class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">0%</span>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <span class="text-xs font-semibold text-slate-400">Tunggakan (Pending)</span>
+              <div class="mt-2.5 flex items-baseline justify-between">
+                <span id="dashPending" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="dashPendingPct" class="text-[11px] font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">0%</span>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <span class="text-xs font-semibold text-slate-400">Saldo Uang Kas Komplek</span>
+              <div class="mt-2.5 flex items-baseline justify-between">
+                <span id="dashScheduled" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Kas Aktif</span>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <span class="text-xs font-semibold text-slate-400">Utang Kas Santri</span>
+              <div class="mt-2.5 flex items-baseline justify-between">
+                <span id="dashFailed" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="dashFailedSub" class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">0 Santri Utang</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kartu Laporan Pembayaran WiFi Induk (Bendahara ke Pemilik WiFi) -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 font-display flex items-center gap-2">
+                  <i data-lucide="wifi" class="w-4 h-4 text-emerald-800"></i>
+                  <span>Laporan Pembayaran WiFi Induk (<span id="dashWifiMonthTitle" class="text-emerald-800">Oktober 2026</span>)</span>
+                </h3>
+                <p class="text-xs text-slate-500">Laporan setoran bulanan WiFi Komplek Tuban oleh Bendahara ke pemilik WiFi induk beserta bukti chat/transfer.</p>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="openBendaharaWifiModal()" class="text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                  <span>Input / Upload Bukti WiFi</span>
+                </button>
+                <button onclick="openNotaWifiIndukModal()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-[#064e3b] text-white hover:bg-[#065f46] transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                  <span>Nota & Kirim Laporan WiFi ke WA</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="dashWifiIndukSummaryBox">
+            </div>
+          </div>
+
+          <!-- Tabel Rekapitulasi Per Bulan (Bisa Dilihat Per Bulan & Kirim ke WA) -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 font-display">Rekapitulasi Keuangan Per Bulan (Oktober 2026 – Desember 2027)</h3>
+                <p class="text-xs text-slate-500">Klik baris bulan untuk beralih periode, lihat rincian terkumpul, tunggakan, kas, laporan WiFi induk, atau kirim ke WhatsApp.</p>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="openRekapGrupModal()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-[#064e3b] text-white hover:bg-[#065f46] transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="messages-square" class="w-3.5 h-3.5"></i>
+                  <span>Kirim Rekap Bulan Ini ke WA</span>
+                </button>
+                <button onclick="resetBulanIni()" class="text-xs font-semibold px-3 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 transition cursor-pointer">
+                  Reset Bulan Ini (Rp 0)
+                </button>
+                <button onclick="resetSemuaKeNol()" class="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer">
+                  Reset Semua Bulan (Rp 0)
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                    <th class="py-2.5 px-3">Periode Bulan</th>
+                    <th class="py-2.5 px-3 text-right">Target Iuran</th>
+                    <th class="py-2.5 px-3 text-right">Total Terkumpul</th>
+                    <th class="py-2.5 px-3 text-right">Tunggakan (Pending)</th>
+                    <th class="py-2.5 px-3 text-right">Kas Komplek Masuk</th>
+                    <th class="py-2.5 px-3 text-center">Setoran WiFi Induk</th>
+                    <th class="py-2.5 px-3 text-center">Status Santri</th>
+                    <th class="py-2.5 px-3 text-right">Aksi Cepat</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardMonthlyRecapBody" class="divide-y divide-slate-100">
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 font-display">Matriks Pembayaran Syahriyah Santri (<span id="dashActiveMonthTitle" class="text-emerald-800">Oktober 2026</span>)</h3>
+                <p class="text-xs text-slate-500">Klik tombol status pada komponen (Makan, WiFi, Listrik, Air) untuk mengubah status Lunas / Belum secara langsung.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="openRekapGrupModal()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition cursor-pointer">
+                  Kirim Tabel ke Grup WA
+                </button>
+                <button onclick="switchTab('tunggakan')" class="text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 transition cursor-pointer">
+                  Kirim Tagihan Japri WA
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+                    <th class="pb-3 px-3">Santri & Prodi</th>
+                    <th class="pb-3 px-3 text-center">Uang Makan (50k)</th>
+                    <th class="pb-3 px-3 text-center">Kas WiFi</th>
+                    <th class="pb-3 px-3 text-center">Kas Listrik (20k)</th>
+                    <th class="pb-3 px-3 text-center">Kas Air (10k)</th>
+                    <th class="pb-3 px-3 text-right">Terbayar / Sisa</th>
+                    <th class="pb-3 px-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardMatrixBody" class="divide-y divide-slate-100">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TAB: TUNGGAKAN LINTAS BULAN & WA ================= -->
+        <div id="view-tunggakan" class="view-panel hidden space-y-6">
+          <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 font-display">Rekap Tunggakan Bulan per Bulan & Kirim WA</h3>
+                <p class="text-xs text-slate-500">Lihat santri yang masih memiliki tunggakan dan kirimkan nota resmi langsung ke nomor WhatsApp santri.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <select id="filterTunggakanMode" onchange="renderTunggakanTab()" class="text-xs border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 font-medium cursor-pointer">
+                  <option value="nunggak">Santri Nunggak Saja</option>
+                  <option value="all">Semua Santri</option>
+                  <option value="lunas">Santri Lunas Saja</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- List of Arrears per Santri -->
+            <div id="tunggakanSantriList" class="space-y-4">
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TAB: JURNAL MASAK HARIAN ================= -->
+        <div id="view-masak" class="view-panel hidden space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <!-- Form Input Masak -->
+            <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+              <h3 class="text-sm font-bold text-slate-900 font-display">Catat Pemasukan / Belanja Masak</h3>
+              <form id="formMasak" onsubmit="handleSaveMasak(event)" class="space-y-3.5">
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Tanggal</label>
+                  <input type="date" id="masakTanggal" required class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Tipe</label>
+                  <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+                    <label class="cursor-pointer">
+                      <input type="radio" name="masakTipe" value="pengeluaran" checked class="peer sr-only" />
+                      <div class="py-2 text-center rounded-xl border border-slate-200 peer-checked:bg-rose-50 peer-checked:border-rose-400 peer-checked:text-rose-700 transition">
+                        Pengeluaran Belanja
+                      </div>
+                    </label>
+                    <label class="cursor-pointer">
+                      <input type="radio" name="masakTipe" value="pemasukan" class="peer sr-only" />
+                      <div class="py-2 text-center rounded-xl border border-slate-200 peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 transition">
+                        Pemasukan Donasi
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Rincian Menu / Belanja</label>
+                  <input type="text" id="masakKeterangan" required placeholder="Cth: Beli sayur, ayam 2kg, bumbu, telur" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Nominal (Rp)</label>
+                    <input type="number" id="masakNominal" required min="500" placeholder="50000" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-mono" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Petugas Piket</label>
+                    <input type="text" id="masakPetugas" required placeholder="Piket A" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                  </div>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer">
+                  Simpan Catatan Masak
+                </button>
+              </form>
+            </div>
+
+            <!-- Tabel Riwayat Masak -->
+            <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-900 font-display">Riwayat Belanja Masak Harian</h3>
+                <span id="rekapMasakSaldoBadge" class="text-xs font-bold font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">Saldo Dapur: Rp 0</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead>
+                    <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] font-bold">
+                      <th class="pb-2.5 px-3">Tanggal</th>
+                      <th class="pb-2.5 px-3">Keterangan</th>
+                      <th class="pb-2.5 px-3">Piket</th>
+                      <th class="pb-2.5 px-3 text-right">Nominal</th>
+                      <th class="pb-2.5 px-3 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="masakTableBody" class="divide-y divide-slate-100">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TAB: UTANG SANTRI DARI KAS ================= -->
+        <div id="view-utang" class="view-panel hidden space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+              <h3 class="text-sm font-bold text-slate-900 font-display">Catat Utang Santri (Diambil dari Uang Kas)</h3>
+              <p class="text-xs text-slate-500">Nominal otomatis memotong saldo Kas Komplek Tuban.</p>
+              <form id="formUtangKas" onsubmit="handleSaveUtangKas(event)" class="space-y-3.5">
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Pilih Santri</label>
+                  <select id="utangSantriId" required class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 cursor-pointer">
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Tanggal</label>
+                  <input type="date" id="utangTanggal" required class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Nominal Pinjaman (Rp)</label>
+                  <input type="number" id="utangNominal" required min="1000" placeholder="50000" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-mono" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Keperluan</label>
+                  <input type="text" id="utangKeterangan" required placeholder="Cth: Talangan darurat beli modul praktikum" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer">
+                  Cairkan Pinjaman dari Kas
+                </button>
+              </form>
+            </div>
+
+            <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-900 font-display">Daftar Utang Santri</h3>
+                <span id="rekapUtangAktifBadge" class="text-xs font-bold font-mono text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full">Total Utang: Rp 0</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead>
+                    <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] font-bold">
+                      <th class="pb-2.5 px-3">Tanggal</th>
+                      <th class="pb-2.5 px-3">Santri</th>
+                      <th class="pb-2.5 px-3">Keperluan</th>
+                      <th class="pb-2.5 px-3 text-right">Nominal</th>
+                      <th class="pb-2.5 px-3 text-center">Status</th>
+                      <th class="pb-2.5 px-3 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="utangTableBody" class="divide-y divide-slate-100">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TAB: DATA SANTRI ================= -->
+        <div id="view-santri" class="view-panel hidden space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+              <h3 id="formSantriTitle" class="text-sm font-bold text-slate-900 font-display">Daftarkan Santri Baru</h3>
+              <form id="formSantri" onsubmit="handleSaveSantri(event)" class="space-y-3.5">
+                <input type="hidden" id="editSantriId" value="" />
+                
+                <!-- Foto Profil Santri Input & Preview -->
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1.5">Foto Santri</label>
+                  <div class="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                    <div class="relative w-[54px] h-[72px] rounded-xl overflow-hidden border-2 border-emerald-600/30 bg-white shrink-0 shadow-2xs">
+                      <img id="santriPhotoPreview" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80" alt="Preview Foto Santri" class="w-full h-full object-cover object-center" style="aspect-ratio: 3/4;" />
+                    </div>
+                    <div class="flex-1 space-y-1.5 min-w-0">
+                      <input type="file" id="santriPhotoFile" accept="image/*" onchange="handleSantriPhotoUpload(event)" class="block w-full text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-emerald-50 file:text-emerald-800 hover:file:bg-emerald-100 cursor-pointer" />
+                      <div class="flex items-center gap-2">
+                        <button type="button" onclick="handlePilihAvatarAcak()" class="text-[10px] font-bold text-emerald-800 hover:underline cursor-pointer">
+                          Acak Avatar
+                        </button>
+                        <span class="text-slate-300">•</span>
+                        <button type="button" id="btnHapusFotoSantri" onclick="handleResetFotoSantri()" class="text-[10px] font-bold text-slate-400 hover:text-rose-600 cursor-pointer">
+                          Reset Foto
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Nama Lengkap Santri *</label>
+                  <input type="text" id="santriNama" required placeholder="Cth: Ahmad Ridwan" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Alamat Asal *</label>
+                  <input type="text" id="santriAlamat" required placeholder="Cth: Kec. Semanding, Kab. Tuban" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Program Studi (Prodi) *</label>
+                  <select id="santriProdi" required class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 cursor-pointer">
+                    <option value="Sistem Informasi">Sistem Informasi</option>
+                    <option value="Pendidikan Teknologi Informasi">Pendidikan Teknologi Informasi</option>
+                    <option value="Teknik Industri">Teknik Industri</option>
+                    <option value="Akuntansi Bisnis Digital">Akuntansi Bisnis Digital</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Nomor WhatsApp Aktif *</label>
+                  <input type="text" id="santriWa" required placeholder="Cth: 081231256129" value="081231256129" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-mono" />
+                </div>
+                <div class="pt-1">
+                  <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                    <input type="checkbox" id="santriTanpaMakan" class="w-4 h-4 rounded accent-[#064e3b] cursor-pointer" />
+                    <span class="text-xs font-semibold text-slate-700">Tanpa Uang Makan <span class="text-[10px] font-normal text-slate-500">(Hanya bayar Kas WiFi, Listrik & Air)</span></span>
+                  </label>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                  <button type="submit" class="flex-1 py-3 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer">
+                    <span id="btnSaveSantriText">Simpan Santri</span>
+                  </button>
+                  <button type="button" id="btnCancelEditSantri" onclick="resetSantriForm()" class="hidden py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 cursor-pointer">
+                    Batal
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-bold text-slate-900 font-display">Daftar Santri Komplek Tuban</h3>
+                  <span id="totalSantriBadge" class="text-xs font-bold font-mono text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full">0 Santri</span>
+                </div>
+                <button onclick="openSemuaKartuSantriModal()" class="px-3 py-1.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold flex items-center gap-1.5 cursor-pointer transition shadow-xs">
+                  <i data-lucide="id-card" class="w-3.5 h-3.5"></i>
+                  <span>Cetak Semua Kartu Santri</span>
+                </button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead>
+                    <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] font-bold">
+                      <th class="pb-2.5 px-3">Santri</th>
+                      <th class="pb-2.5 px-3">Alamat</th>
+                      <th class="pb-2.5 px-3">Prodi</th>
+                      <th class="pb-2.5 px-3">WhatsApp</th>
+                      <th class="pb-2.5 px-3 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="santriTableBody" class="divide-y divide-slate-100">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- GALERI KARTU SANTRI DIGITAL KOMPLEK TUBAN -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 font-display">Galeri Kartu Identitas Santri (Komplek Tuban)</h3>
+                <p class="text-xs text-slate-500">Kartu resmi identitas santri mukim Komplek Tuban (Rumah Wakaf) PP. Mojosari Loceret Nganjuk.</p>
+              </div>
+              <button onclick="openSemuaKartuSantriModal()" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <span>Cetak Kolektif (Semua Kartu)</span>
+              </button>
+            </div>
+            <div id="santriCardsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+  </div>
+
+  <!-- ================= MODAL: SETORAN WIFI BULANAN (BENDAHARA) ================= -->
+  <div id="modalWifiProof" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-3xl max-w-lg w-full border border-slate-100 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="wifi" class="w-5 h-5 text-emerald-300"></i>
+          <div>
+            <h3 class="text-sm font-bold font-display">Setoran WiFi Bulanan ke Pemilik WiFi</h3>
+            <p id="modalWifiSubtitle" class="text-[11px] text-emerald-200"></p>
+          </div>
+        </div>
+        <button onclick="closeWifiModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scroll text-xs">
+        <div class="p-3.5 rounded-xl bg-sky-50 border border-sky-100 text-sky-900 space-y-1">
+          <p class="font-bold flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-4 h-4 text-sky-700"></i>
+            Tugas Bendahara (Upload Bukti Chat ke Pemilik WiFi):
+          </p>
+          <p>Bendahara memasukkan harga/nominal bayar manual sesuai riil tagihan pemilik WiFi, lalu unggah foto bukti chat/struk transfer.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Tanggal Bayar</label>
+            <input type="date" id="wifiProofDateInput" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs font-medium" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Nominal Manual (Rp) *</label>
+            <input type="number" id="wifiProofNominalInput" step="1000" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs font-mono font-bold" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Upload Foto Bukti Chat / Transfer</label>
+          <input type="file" id="wifiProofFileInput" accept="image/*" onchange="handleWifiFilePreview(event)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-900 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded-xl p-1.5" />
+          <div class="mt-2 flex justify-end">
+            <button type="button" onclick="useSampleWifiChatProof()" class="text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer">
+              + Pakai Contoh Screenshot Chat WA Pemilik WiFi
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Catatan Bendahara</label>
+          <input type="text" id="wifiProofNoteInput" placeholder="Cth: Sudah TF ke Pak H. Mahmud pemilik WiFi" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs" />
+        </div>
+
+        <!-- Preview Box -->
+        <div class="border border-dashed border-slate-200 rounded-2xl p-3 bg-slate-50 text-center">
+          <img id="wifiProofPreviewImg" src="" alt="Preview Bukti WiFi" class="max-h-52 mx-auto rounded-xl shadow-xs hidden object-contain border border-slate-200 bg-white" />
+          <div id="wifiProofEmptyState" class="py-6 text-xs text-slate-400">
+            Belum ada foto bukti chat/transfer diunggah
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 flex-wrap">
+          <button type="button" onclick="closeWifiModal(); openNotaWifiIndukModal(currentWifiModalCtx.monthKey);" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+            <span>Lihat Laporan / Nota WiFi</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="saveWifiProofOnly()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold cursor-pointer">
+              Simpan Foto Dulu
+            </button>
+            <button type="button" onclick="confirmWifiPaidWithProof()" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold shadow-sm cursor-pointer">
+              ✓ Konfirmasi Lunas WiFi
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: NOTA PEMBAYARAN / TUNGGAKAN & WA ================= -->
+  <div id="modalNota" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full border border-slate-100 shadow-2xl overflow-hidden">
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print">
+        <div class="flex items-center gap-2">
+          <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i>
+          <h3 id="modalNotaHeaderTitle" class="text-sm font-bold font-display">Nota Resmi Komplek Tuban</h3>
+        </div>
+        <button onclick="closeNotaModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[82vh] overflow-y-auto custom-scroll text-xs">
+        <!-- Printable Area -->
+        <div id="printArea" class="border border-slate-300 rounded-2xl p-5 bg-white space-y-4">
+          <div class="border-b border-dashed border-slate-300 pb-3 flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <img src="logo-mojosari.png?v=2" alt="PayMojosari" class="w-11 h-11 object-contain shrink-0" />
+              <div>
+                <span class="text-[9px] font-bold uppercase tracking-widest text-emerald-800 block">PAYMOJOSARI • PP. MOJOSARI LOCERET NGANJUK</span>
+                <h4 class="text-base font-extrabold text-slate-900 font-display">KOMPLEK TUBAN (RUMAH WAKAF)</h4>
+                <p class="text-[11px] text-slate-500">Bukti Resmi Syahriyah Uang Makan & Kas Komplek</p>
+              </div>
+            </div>
+            <div id="notaBadgeStatus" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border">
+              LUNAS
+            </div>
+          </div>
+
+          <div id="notaContentHtml" class="space-y-3">
+          </div>
+
+          <div class="border-t border-dashed border-slate-300 pt-3 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+            <span>Bendahara Komplek Tuban (Rumah Wakaf)</span>
+            <span id="notaTimestamp" class="font-mono"></span>
+          </div>
+        </div>
+
+        <!-- WhatsApp Text Preview (Editable if needed) -->
+        <div class="no-print space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-slate-700">Format Pesan WhatsApp:</span>
+            <button onclick="copyWaText()" class="text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer">
+              Salin Teks
+            </button>
+          </div>
+          <textarea id="notaWaTextPreview" rows="5" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 focus:outline-none"></textarea>
+        </div>
+
+        <div class="no-print flex items-center justify-end gap-2 pt-2 border-t border-slate-100 flex-wrap">
+          <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold cursor-pointer">
+            Cetak / PDF
+          </button>
+          <a id="btnSendWaGroup" href="https://wa.me/?text=" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer" title="Kirim ke Chat Grup WhatsApp Komplek Tuban">
+            <i data-lucide="messages-square" class="w-3.5 h-3.5"></i>
+            <span>Share ke Grup WA</span>
+          </a>
+          <a id="btnSendWaDirect" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer" title="Kirim langsung ke kontak pribadi santri">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>Kirim Japri Santri</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SIARAN REKAP LENGKAP KE GRUP WA ================= -->
+  <div id="modalRekapGrup" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-3xl max-w-xl w-full border border-slate-100 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="messages-square" class="w-5 h-5 text-emerald-300"></i>
+          <div>
+            <h3 class="text-sm font-bold font-display">Siaran Rekap Kas & Tunggakan ke Grup WhatsApp</h3>
+            <p id="modalRekapGrupSubtitle" class="text-[11px] text-emerald-200">Grup Santri Komplek Tuban (Rumah Wakaf)</p>
+          </div>
+        </div>
+        <button onclick="closeRekapGrupModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scroll text-xs">
+        <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-950 space-y-1">
+          <p class="font-bold flex items-center gap-1.5">
+            <i data-lucide="info" class="w-4 h-4 text-emerald-800"></i>
+            Format Transparansi Grup WhatsApp:
+          </p>
+          <p>Pesan ini merangkum status seluruh santri (yang sudah lunas dan yang masih ada tunggakan), saldo kas komplek, dan jurnal dapur masak untuk transparansi di grup santri.</p>
+        </div>
+
+        <!-- Input Link Tautan Grup WA -->
+        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-slate-800 flex items-center gap-1.5">
+              <i data-lucide="link" class="w-3.5 h-3.5 text-emerald-800"></i>
+              <span>Link Tautan Grup WhatsApp Komplek:</span>
+            </label>
+            <button type="button" onclick="ubahLinkGrupWa()" class="text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer">
+              Ganti Link
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="text" id="inputLinkGrupWa" readonly value="https://chat.whatsapp.com/LgVFDhgRgHmDTuC3tCly7c" placeholder="https://chat.whatsapp.com/..." class="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-700 font-mono focus:outline-none" />
+            <a id="btnBukaLinkGrupLangsung" href="https://chat.whatsapp.com/LgVFDhgRgHmDTuC3tCly7c" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs shrink-0 flex items-center gap-1">
+              <span>Buka Grup</span>
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+          <p class="text-[10px] text-slate-400">💡 Cara dapat link grup: Di WhatsApp, buka <strong>Info Grup &gt; Undang via tautan / Invite via link &gt; Salin tautan</strong>.</p>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="font-bold text-slate-700">Teks Siaran Grup WhatsApp (Siap Dikirim):</label>
+            <button onclick="copyGroupWaText()" class="text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer">
+              Salin Teks Grup
+            </button>
+          </div>
+          <textarea id="rekapGrupWaText" rows="12" class="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-800"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button onclick="closeRekapGrupModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold cursor-pointer">
+            Tutup
+          </button>
+          <a id="btnSendGroupBroadcast" href="https://wa.me/?text=" target="_blank" rel="noopener noreferrer" class="px-5 py-2.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold flex items-center gap-2 shadow-sm cursor-pointer">
+            <i data-lucide="messages-square" class="w-4 h-4"></i>
+            <span>Buka WhatsApp & Kirim ke Grup</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-2 no-print"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
