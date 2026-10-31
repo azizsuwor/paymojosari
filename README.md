@@ -1,4 +1,4 @@
-# PayMojosari 🕌
+# PayMojosari 
 **Sistem Pembayaran Uang Makan & Kas Santri**  
 *Pondok Pesantren Mojosari Loceret Nganjuk — Komplek Tuban (Rumah Wakaf)*
 
@@ -40,7 +40,7 @@ Aplikasi manajemen keuangan berbasis web yang dirancang untuk mempermudah pencat
 
 ---
 
-## 🛠️ Teknologi yang Digunakan
+##  Teknologi yang Digunakan
 
 - **Frontend:** HTML5, Tailwind CSS, Lucide Icons, Vanilla JavaScript.
 - **Backend:** PHP (PDO MySQL).
@@ -49,7 +49,7 @@ Aplikasi manajemen keuangan berbasis web yang dirancang untuk mempermudah pencat
 
 ---
 
-## 🚀 Cara Menjalankan Lokal (Laragon)
+##  Cara Menjalankan Lokal (Laragon)
 
 1. Clone repository ini ke direktori web Laragon Anda:
    ```bash
@@ -74,6 +74,6 @@ Aplikasi manajemen keuangan berbasis web yang dirancang untuk mempermudah pencat
 
 ---
 
-## 👥 Pengembang & Hak Cipta
+##  Pengembang & Hak Cipta
 Dikembangkan untuk kebutuhan operasional **Komplek Tuban (Rumah Wakaf)**  
 Pondok Pesantren Mojosari Loceret Nganjuk.
