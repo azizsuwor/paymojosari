@@ -205,6 +205,52 @@ if ($action === 'reset_santri_password') {
     }
 }
 
+// 0d. Simpan / Ganti Foto Profil Santri Mandiri (POST ?action=update_santri_photo)
+if ($action === 'update_santri_photo') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $santriId = isset($input['santri_id']) ? trim($input['santri_id']) : '';
+    $avatar = isset($input['avatar']) ? $input['avatar'] : '';
+    $nama = isset($input['nama']) ? trim($input['nama']) : '';
+    $alamat = isset($input['alamat']) ? trim($input['alamat']) : '';
+    $prodi = isset($input['prodi']) ? trim($input['prodi']) : '';
+    $wa = isset($input['wa']) ? trim($input['wa']) : '';
+
+    if (!$santriId || !$avatar) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Data foto santri tidak lengkap.']);
+        exit;
+    }
+
+    try {
+        if ($nama && $alamat && $prodi && $wa) {
+            $shortName = explode(' ', $nama)[0];
+            $stmtUpd = $pdo->prepare("UPDATE santri SET avatar = :avatar, nama = :nama, short_name = :short_name, alamat = :alamat, prodi = :prodi, wa = :wa WHERE id = :id");
+            $stmtUpd->execute([
+                ':avatar' => $avatar,
+                ':nama' => $nama,
+                ':short_name' => $shortName,
+                ':alamat' => $alamat,
+                ':prodi' => $prodi,
+                ':wa' => $wa,
+                ':id' => $santriId
+            ]);
+        } else {
+            $stmtUpd = $pdo->prepare("UPDATE santri SET avatar = :avatar WHERE id = :id");
+            $stmtUpd->execute([':avatar' => $avatar, ':id' => $santriId]);
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Foto profil santri berhasil disimpan ke database!'
+        ]);
+        exit;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
 // -------------------------------------------------------------------------
 // 1. Ambil Semua Data State Lengkap dari Database (GET ?action=get_all)
 // -------------------------------------------------------------------------

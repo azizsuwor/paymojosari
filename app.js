@@ -1043,7 +1043,7 @@ function updateRoleUI() {
   }
 
   // 5. Sembunyikan / nonaktifkan form input & tombol mutasi khusus Admin jika bukan Bendahara
-  const adminForms = ['formMasak', 'formUtangKas', 'formSantri'];
+  const adminForms = ['formMasak', 'formUtangKas'];
   adminForms.forEach(fId => {
     const formEl = document.getElementById(fId);
     if (!formEl) return;
@@ -1059,6 +1059,34 @@ function updateRoleUI() {
       inp.disabled = !state.isAdmin;
     });
   });
+
+  // Form Santri: Aktif untuk Admin (Tambah/Edit Semua) & Santri Login (Edit Foto & Profil Sendiri)
+  const formSantriEl = document.getElementById('formSantri');
+  if (formSantriEl) {
+    const canEditOwnSantri = state.isAdmin || (state.userRole === 'santri' && Boolean(loggedSantri));
+    const cardSantriEl = formSantriEl.closest('div.bg-white');
+    if (cardSantriEl) {
+      if (canEditOwnSantri) {
+        cardSantriEl.classList.remove('opacity-60');
+      } else {
+        cardSantriEl.classList.add('opacity-60');
+      }
+    }
+    formSantriEl.querySelectorAll('input, select, textarea, button').forEach(inp => {
+      if (inp.id === 'santriTanpaMakan') {
+        inp.disabled = !state.isAdmin;
+      } else {
+        inp.disabled = !canEditOwnSantri;
+      }
+    });
+
+    if (state.userRole === 'santri' && loggedSantri) {
+      const editIdInp = document.getElementById('editSantriId');
+      if (editIdInp && editIdInp.value !== loggedSantri.id) {
+        populateSantriFormForSelf(loggedSantri);
+      }
+    }
+  }
 
   // Sembunyikan tombol Reset, Upload Bukti, dan Siaran Grup WA bagi selain Admin (Bendahara)
   document.querySelectorAll('[onclick*="resetBulanIni"], [onclick*="resetSemuaKeNol"], [onclick*="openBendaharaWifiModal"], [onclick*="ubahTarifWifiManual"], [onclick*="deleteMasakLog"], [onclick*="openRekapGrupModal"], [onclick*="openRekapGrupForMonth"]').forEach(el => {
@@ -1979,6 +2007,9 @@ function renderActiveKartuSantriWidget() {
         <p class="text-[11px] text-slate-400">${state.userRole === 'santri' ? 'KTA resmi milik akun Anda' : 'Identitas santri mukim Komplek Tuban'}</p>
       </div>
       <div class="flex items-center gap-1.5">
+        <button type="button" onclick="openGantiFotoSantriMandiri('${s.id}')" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer transition">
+          Ganti Foto
+        </button>
         <button type="button" onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold cursor-pointer transition">
           Cetak Kartu
         </button>
@@ -2852,13 +2883,19 @@ function handleResetFotoSantri() {
   showToast('Foto dikembalikan ke default');
 }
 
-function handleSaveSantri(event) {
+async function handleSaveSantri(event) {
   event.preventDefault();
-  if (!state.isAdmin) {
+  let editId = document.getElementById('editSantriId').value;
+  if (state.userRole === 'santri' && state.loggedSantriId) {
+    editId = state.loggedSantriId;
+  }
+
+  const isOwnSantri = (state.userRole === 'santri' && editId && editId === state.loggedSantriId);
+  if (!state.isAdmin && !isOwnSantri) {
     openAdminLoginModal();
     return;
   }
-  const editId = document.getElementById('editSantriId').value;
+
   const nama = document.getElementById('santriNama').value.trim();
   const alamat = document.getElementById('santriAlamat').value.trim();
   const prodi = document.getElementById('santriProdi').value;
@@ -2867,26 +2904,29 @@ function handleSaveSantri(event) {
 
   if (!nama || !alamat || !prodi || !wa) return;
 
+  let savedSantriObj = null;
+
   if (editId) {
     const idx = state.santri.findIndex(s => s.id === editId);
     if (idx !== -1) {
       const existing = state.santri[idx];
       const avatar = currentSantriPhotoUrl || existing.avatar || AVATAR_IMAGES[idx % AVATAR_IMAGES.length];
-      state.santri[idx] = { 
+      savedSantriObj = { 
         ...existing, 
         nama, 
         alamat, 
         prodi, 
         wa, 
-        tanpaMakan, 
+        tanpaMakan: state.isAdmin ? tanpaMakan : isSantriTanpaMakan(existing), 
         avatar, 
         shortName: nama.split(' ')[0] 
       };
+      state.santri[idx] = savedSantriObj;
     }
-  } else {
+  } else if (state.isAdmin) {
     const newId = 's' + (state.santri.length + 1);
     const avatar = currentSantriPhotoUrl || AVATAR_IMAGES[state.santri.length % AVATAR_IMAGES.length];
-    state.santri.push({ 
+    savedSantriObj = { 
       id: newId, 
       nama, 
       alamat, 
@@ -2895,20 +2935,85 @@ function handleSaveSantri(event) {
       tanpaMakan, 
       avatar, 
       shortName: nama.split(' ')[0] 
-    });
+    };
+    state.santri.push(savedSantriObj);
     if (!state.selectedSantriId) {
       state.selectedSantriId = newId;
     }
   }
 
+  // Jika santri mengganti fotonya sendiri, simpan langsung ke MySQL via endpoint khusus
+  if (!state.isAdmin && isOwnSantri && savedSantriObj && window.location.protocol !== 'file:') {
+    try {
+      await fetch('api.php?action=update_santri_photo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          santri_id: savedSantriObj.id,
+          avatar: savedSantriObj.avatar,
+          nama: savedSantriObj.nama,
+          alamat: savedSantriObj.alamat,
+          prodi: savedSantriObj.prodi,
+          wa: savedSantriObj.wa
+        })
+      });
+    } catch (err) {
+      console.warn('Gagal sinkronisasi foto santri ke server:', err);
+    }
+  }
+
   saveState();
-  resetSantriForm();
+  if (state.isAdmin) {
+    resetSantriForm();
+  } else if (savedSantriObj) {
+    populateSantriFormForSelf(savedSantriObj);
+  }
+  updateRoleUI();
   renderAll();
-  showToast('Data & foto santri berhasil disimpan');
+  showToast('✓ Foto & data profil santri berhasil disimpan permanen!', 'emerald');
+}
+
+function populateSantriFormForSelf(s) {
+  if (!s) return;
+  const idx = state.santri.findIndex(x => x.id === s.id);
+  const idEl = document.getElementById('editSantriId');
+  const namaEl = document.getElementById('santriNama');
+  const alamatEl = document.getElementById('santriAlamat');
+  const prodiEl = document.getElementById('santriProdi');
+  const waEl = document.getElementById('santriWa');
+  const chkTanpaMakan = document.getElementById('santriTanpaMakan');
+
+  if (idEl) idEl.value = s.id;
+  if (namaEl) namaEl.value = s.nama;
+  if (alamatEl) alamatEl.value = s.alamat;
+  if (prodiEl) prodiEl.value = s.prodi;
+  if (waEl) waEl.value = s.wa;
+  if (chkTanpaMakan) chkTanpaMakan.checked = isSantriTanpaMakan(s);
+
+  currentSantriPhotoUrl = s.avatar || AVATAR_IMAGES[idx >= 0 ? idx % AVATAR_IMAGES.length : 0];
+  const preview = document.getElementById('santriPhotoPreview');
+  if (preview) preview.src = currentSantriPhotoUrl;
+  const fileInput = document.getElementById('santriPhotoFile');
+  if (fileInput) fileInput.value = '';
+
+  const titleEl = document.getElementById('formSantriTitle');
+  const btnTextEl = document.getElementById('btnSaveSantriText');
+  const cancelBtn = document.getElementById('btnCancelEditSantri');
+  if (titleEl) titleEl.textContent = 'Ganti Foto & Edit Profil Saya';
+  if (btnTextEl) btnTextEl.textContent = 'Simpan Foto & Profil Saya';
+  if (cancelBtn) cancelBtn.classList.add('hidden');
+}
+
+function openGantiFotoSantriMandiri(id) {
+  switchTab('santri');
+  setTimeout(() => {
+    editSantri(id);
+  }, 80);
 }
 
 function editSantri(id) {
-  if (!state.isAdmin) {
+  const isOwnSantri = (state.userRole === 'santri' && id === state.loggedSantriId);
+  if (!state.isAdmin && !isOwnSantri) {
     openAdminLoginModal();
     return;
   }
@@ -2930,9 +3035,13 @@ function editSantri(id) {
   const fileInput = document.getElementById('santriPhotoFile');
   if (fileInput) fileInput.value = '';
 
-  document.getElementById('formSantriTitle').textContent = 'Edit Data Santri';
-  document.getElementById('btnSaveSantriText').textContent = 'Simpan Perubahan';
-  document.getElementById('btnCancelEditSantri').classList.remove('hidden');
+  document.getElementById('formSantriTitle').textContent = state.isAdmin ? 'Edit Data Santri' : 'Ganti Foto & Edit Profil Saya';
+  document.getElementById('btnSaveSantriText').textContent = state.isAdmin ? 'Simpan Perubahan' : 'Simpan Foto & Profil Saya';
+  const cancelBtn = document.getElementById('btnCancelEditSantri');
+  if (cancelBtn) {
+    if (state.isAdmin) cancelBtn.classList.remove('hidden');
+    else cancelBtn.classList.add('hidden');
+  }
 
   const formEl = document.getElementById('formSantri');
   if (formEl) {
@@ -3005,6 +3114,7 @@ function renderSantriTab() {
       `;
     } else if (isMe) {
       actionHtml = `
+        <button onclick="editSantri('${s.id}')" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold mr-1 cursor-pointer">Ganti Foto</button>
         <button onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer shadow-2xs">Kartu Saya</button>
       `;
     } else if (state.userRole === 'santri') {
