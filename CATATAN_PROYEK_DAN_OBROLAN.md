@@ -168,7 +168,8 @@ Ketika Anda kembali nanti, propagasi DNS dipastikan sudah selesai (telah lewat >
    - Dapat melihat **informasi umum (khalayak umum)**: 4 metrik ringkasan kas komplek, laporan setoran WiFi induk, riwayat belanja masak harian, serta direktori daftar 17 santri (nama, asal, program studi).
    - **Harus Login Terlebih Dahulu** jika ingin menjelajah ke dalam fitur-fitur pribadi (tab *Tunggakan*, tab *Utang Kas*, rincian tagihan syahriyah bulanan per santri, atau mencetak *Kartu Identitas Santri / KTA*).
 2. **Mode Akun Santri Pribadi (`santri`):**
-   - Setiap santri dapat login memilih profil/avatar dirinya dan memasukkan **4 digit terakhir nomor WhatsApp** miliknya (atau nomor WA lengkap / kode `1234`).
+   - Setiap santri dapat login memilih profil/avatar dirinya dan memasukkan **4 digit terakhir nomor WhatsApp** miliknya (atau sandi kustom / nomor WA lengkap).
+   - **Ganti Foto Profil Mandiri (Tersimpan Permanen di MySQL):** Setiap santri yang login ke akunnya dapat mengganti foto profil / pas foto KTA 3:4 miliknya sendiri melalui tombol **Ganti Foto** (`?action=update_santri_photo` di `api.php`), dan foto otomatis tersimpan permanen di database server tanpa bisa mengubah data santri lain.
    - **Privasi Data Pribadi:** Satu santri **hanya bisa melihat datanya sendiri** untuk hal-hal sensitif/pribadi: rincian pembayaran syahriyah miliknya sendiri, tunggakan miliknya sendiri, catatan utang kas miliknya sendiri, serta Kartu Identitas Santri (KTA) 3:4 miliknya sendiri.
    - Tetap bisa melihat daftar umum 17 santri mukim Komplek Tuban (dengan nomor WA santri lain disamarkan sebagian demi privasi).
 3. **Mode Bendahara / Admin (`admin`):**
