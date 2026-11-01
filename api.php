@@ -107,20 +107,27 @@ if ($action === 'reset_admin_password') {
         exit;
     }
 
-    $targetWa = normalize_wa_number($bendahara_wa_resmi);
-    // Cek juga WA santri s1 (Aziz / Bendahara) di database jika ada
+    $validAdminWas = [
+        normalize_wa_number($bendahara_wa_resmi),
+        normalize_wa_number('081231256129'), // Muhammad Abdul Aziz (Bendahara Pusat)
+        normalize_wa_number('085335219903')  // Manshur Siroj (Bendahara)
+    ];
+    // Cek juga WA santri s1 (Aziz) & s14 (Manshur Siroj) di database jika ada
     try {
-        $stmtS1 = $pdo->query("SELECT wa FROM santri WHERE id = 's1' LIMIT 1")->fetch();
-        if ($stmtS1 && !empty($stmtS1['wa'])) {
-            $s1Wa = normalize_wa_number($stmtS1['wa']);
-        } else {
-            $s1Wa = $targetWa;
+        $stmtBend = $pdo->query("SELECT wa FROM santri WHERE id IN ('s1', 's14')");
+        if ($stmtBend) {
+            while ($bRow = $stmtBend->fetch()) {
+                if (!empty($bRow['wa'])) {
+                    $validAdminWas[] = normalize_wa_number($bRow['wa']);
+                }
+            }
         }
     } catch (Exception $e) {
-        $s1Wa = $targetWa;
+        // Gunakan daftar default
     }
+    $validAdminWas = array_values(array_unique($validAdminWas));
 
-    $isWaValid = ($waInput !== '' && ($waInput === $targetWa || $waInput === $s1Wa));
+    $isWaValid = ($waInput !== '' && in_array($waInput, $validAdminWas));
     $isOldPassValid = ($oldPass !== '' && in_array($oldPass, $admin_passwords));
 
     if (!$isWaValid && !$isOldPassValid) {

@@ -172,8 +172,14 @@ Ketika Anda kembali nanti, propagasi DNS dipastikan sudah selesai (telah lewat >
    - **Privasi Data Pribadi:** Satu santri **hanya bisa melihat datanya sendiri** untuk hal-hal sensitif/pribadi: rincian pembayaran syahriyah miliknya sendiri, tunggakan miliknya sendiri, catatan utang kas miliknya sendiri, serta Kartu Identitas Santri (KTA) 3:4 miliknya sendiri.
    - Tetap bisa melihat daftar umum 17 santri mukim Komplek Tuban (dengan nomor WA santri lain disamarkan sebagian demi privasi).
 3. **Mode Bendahara / Admin (`admin`):**
+   - **2 Pengurus Bendahara Resmi:**
+     1. **Muhammad Abdul Aziz** (`s1`, `NIS-TBN-2026-001`, Lampung, Sistem Informasi, WA: `081231256129`) — **Bendahara Pusat**.
+     2. **Manshur Siroj** (`s14`, `NIS-TBN-2026-014`, Rejoso, Pendidikan Teknologi Informasi, WA: `085335219903`) — **Bendahara**.
    - Akses penuh untuk melihat data seluruh 17 santri dan melakukan pencatatan pembayaran, ubah status lunas/belum, kelola jurnal masak, utang kas, data santri, dan bukti WiFi induk.
-   - **Sandi / PIN Bendahara:** **`@Deja1590`** (dapat diganti kapan saja melalui fitur **Ganti / Lupa Sandi** dengan verifikasi nomor WhatsApp Bendahara `081231256129`).
+   - **Sandi / PIN Bendahara:** **`@Deja1590`** (dapat diganti kapan saja melalui fitur **Ganti / Lupa Sandi** dengan verifikasi nomor WhatsApp Bendahara `081231256129` atau `085335219903`).
+   - **Daftar Santri Bersih & Sejajar Scroll:**
+     - Pada tabel **Daftar Santri Komplek Tuban**, label status di samping nama dihilangkan agar tampilan daftar santri bersih dan seragam.
+     - Kotak **Daftar Santri Komplek Tuban**, **Riwayat Belanja Masak**, dan **Daftar Utang Santri** dibuat memiliki tinggi atas-bawah yang **sama persis** dengan kotak form di sampingnya (*Daftarkan Santri Baru*), dengan tabel yang dapat di-*scroll* ke bawah di bagian dalamnya.
    - **Fitur Ganti / Lupa Sandi (Verifikasi Nomor WhatsApp):**
      - Tersedia untuk **Bendahara (Admin)** maupun **Akun Santri**.
      - Memverifikasi nomor WhatsApp lengkap yang terdaftar di database (`081231256129` untuk Bendahara, atau nomor WA masing-masing santri), dilengkapi fitur kirim Kode OTP via WhatsApp dan opsi simpan pengingat sandi baru ke WhatsApp.

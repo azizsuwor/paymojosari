@@ -181,7 +181,75 @@ function purgeOldMonthsFromState() {
 // =========================================================================
 
 let loginModalTempSantriId = 's1';
+let loginModalTempAdminId = localStorage.getItem('paymojosari_logged_admin_id') || 's1';
 let generatedAdminOtp = null;
+
+// Daftar Pengurus Bendahara Resmi Komplek Tuban
+const BENDAHARA_LIST = [
+  { id: 's1', nama: 'Muhammad Abdul Aziz', jabatan: 'Bendahara Pusat', wa: '081231256129', inisial: 'AA' },
+  { id: 's14', nama: 'Manshur Siroj', jabatan: 'Bendahara', wa: '085335219903', inisial: 'MS' }
+];
+
+function getValidAdminWas() {
+  const list = ['081231256129', '085335219903', normalizeWaLocal(BENDAHARA_WA)];
+  ['s1', 's14'].forEach(id => {
+    const s = state.santri.find(x => x.id === id);
+    if (s && s.wa) list.push(normalizeWaLocal(s.wa));
+  });
+  return Array.from(new Set(list.filter(Boolean)));
+}
+
+function getActiveAdminProfile() {
+  const savedId = localStorage.getItem('paymojosari_logged_admin_id') || loginModalTempAdminId || 's1';
+  const cfg = BENDAHARA_LIST.find(b => b.id === savedId) || BENDAHARA_LIST[0];
+  const santriData = state.santri.find(s => s.id === cfg.id);
+  const idx = state.santri.findIndex(s => s.id === cfg.id);
+  return {
+    ...cfg,
+    nama: santriData ? santriData.nama : cfg.nama,
+    wa: normalizeWaLocal(santriData && santriData.wa ? santriData.wa : cfg.wa),
+    avatar: (santriData && santriData.avatar) ? santriData.avatar : AVATAR_IMAGES[idx >= 0 ? idx % AVATAR_IMAGES.length : 0]
+  };
+}
+
+function renderAdminProfilePicker() {
+  const container = document.getElementById('adminProfilePickerList');
+  if (!container) return;
+
+  container.innerHTML = BENDAHARA_LIST.map(b => {
+    const s = state.santri.find(x => x.id === b.id);
+    const idx = state.santri.findIndex(x => x.id === b.id);
+    const avatarUrl = (s && s.avatar) ? s.avatar : AVATAR_IMAGES[idx >= 0 ? idx % AVATAR_IMAGES.length : 0];
+    const isSel = b.id === loginModalTempAdminId;
+    const nis = s ? getNomorIndukSantri(s, idx >= 0 ? idx : 0) : (b.id === 's1' ? 'NIS-TBN-2026-001' : 'NIS-TBN-2026-014');
+
+    return `
+      <div onclick="selectLoginAdminProfile('${b.id}')" class="p-2.5 rounded-2xl border ${isSel ? 'bg-emerald-50/70 border-[#064e3b] ring-1 ring-[#064e3b]/20' : 'bg-[#f8fafc] border-slate-200/80 hover:bg-slate-50'} flex items-center gap-2.5 cursor-pointer transition">
+        <div class="relative shrink-0">
+          <img src="${avatarUrl}" alt="${b.nama}" class="w-9 h-9 rounded-full object-cover border ${isSel ? 'border-[#064e3b]' : 'border-slate-200'} bg-white" onerror="this.src='${AVATAR_IMAGES[0]}'" />
+          ${isSel ? `<span class="w-3.5 h-3.5 rounded-full bg-[#064e3b] text-white flex items-center justify-center absolute -bottom-0.5 -right-0.5 text-[8px] font-bold">✓</span>` : ''}
+        </div>
+        <div class="min-w-0 flex-1">
+          <span class="text-[11px] font-extrabold text-slate-900 block truncate leading-tight">${s ? s.nama : b.nama}</span>
+          <span class="text-[10px] font-bold text-emerald-800 block leading-tight mt-0.5">${b.jabatan}</span>
+          <span class="text-[9px] font-mono text-slate-400 block truncate">${nis}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectLoginAdminProfile(adminId) {
+  loginModalTempAdminId = adminId;
+  renderAdminProfilePicker();
+  const maskedEl = document.getElementById('resetAdminWaMasked');
+  if (maskedEl) {
+    const b = BENDAHARA_LIST.find(x => x.id === adminId) || BENDAHARA_LIST[0];
+    const s = state.santri.find(x => x.id === b.id);
+    const wa = normalizeWaLocal(s && s.wa ? s.wa : b.wa);
+    maskedEl.textContent = maskPhoneNumber(wa);
+  }
+}
 
 function getExpectedAdminPassword() {
   return localStorage.getItem('paymojosari_custom_admin_pass') || '@Deja1590';
@@ -227,6 +295,7 @@ function openAdminLoginModal(defaultTab = 'santri') {
   }
 
   renderLoginModalSantriPicker();
+  renderAdminProfilePicker();
   switchLoginModalTab(defaultTab);
 
   const errAdmin = document.getElementById('adminLoginError');
@@ -288,10 +357,9 @@ function openResetAdminPasswordForm() {
   if (formAdmin) formAdmin.classList.add('hidden');
   if (formResetAdmin) formResetAdmin.classList.remove('hidden');
 
-  const bendaharaSantri = state.santri.find(s => s.id === 's1');
-  const targetWa = normalizeWaLocal((bendaharaSantri && bendaharaSantri.wa) ? bendaharaSantri.wa : BENDAHARA_WA);
+  const activeAdmin = getActiveAdminProfile();
   const maskedEl = document.getElementById('resetAdminWaMasked');
-  if (maskedEl) maskedEl.textContent = maskPhoneNumber(targetWa);
+  if (maskedEl) maskedEl.textContent = maskPhoneNumber(activeAdmin.wa);
 
   const waInp = document.getElementById('resetAdminWaInput');
   const newInp = document.getElementById('resetAdminNewPassInput');
@@ -327,13 +395,12 @@ function sendAdminOtpViaWa() {
   const otpCont = document.getElementById('resetAdminOtpContainer');
   const otpInp = document.getElementById('resetAdminOtpInput');
 
-  const bendaharaSantri = state.santri.find(s => s.id === 's1');
-  const officialWa = normalizeWaLocal((bendaharaSantri && bendaharaSantri.wa) ? bendaharaSantri.wa : BENDAHARA_WA);
+  const validWas = getValidAdminWas();
   const enteredWa = normalizeWaLocal(waInp ? waInp.value : '');
 
-  if (!enteredWa || (enteredWa !== officialWa && enteredWa !== normalizeWaLocal(BENDAHARA_WA))) {
+  if (!enteredWa || !validWas.includes(enteredWa)) {
     if (errEl) {
-      errEl.textContent = 'Masukkan Nomor WhatsApp resmi Bendahara terlebih dahulu dengan benar!';
+      errEl.textContent = 'Masukkan Nomor WhatsApp resmi Bendahara (Muhammad Abdul Aziz / Manshur Siroj) terlebih dahulu!';
       errEl.classList.remove('hidden');
     }
     showToast('Nomor WA tidak sesuai dengan nomor Bendahara!', 'rose');
@@ -345,7 +412,7 @@ function sendAdminOtpViaWa() {
   if (otpCont) otpCont.classList.remove('hidden');
   if (otpInp) setTimeout(() => otpInp.focus(), 100);
 
-  const intlWa = '62' + officialWa.replace(/^0+/, '');
+  const intlWa = '62' + enteredWa.replace(/^0+/, '');
   const msg = `*VERIFIKASI SANDI PAYMOJOSARI*\nKomplek Tuban (Rumah Wakaf)\n\nKode OTP Ganti Sandi Bendahara Anda adalah: *${generatedAdminOtp}*\n\nSilakan masukkan kode ini pada form ganti sandi.`;
   window.open(`https://wa.me/${intlWa}?text=${encodeURIComponent(msg)}`, '_blank');
   showToast('Kode OTP dikirim ke WhatsApp Bendahara!', 'emerald');
@@ -363,9 +430,7 @@ async function handleResetAdminPasswordSubmit(e) {
   const enteredWa = normalizeWaLocal(waInp ? waInp.value : '');
   const newPass = newInp ? newInp.value.trim() : '';
   const confPass = confInp ? confInp.value.trim() : '';
-
-  const bendaharaSantri = state.santri.find(s => s.id === 's1');
-  const officialWa = normalizeWaLocal((bendaharaSantri && bendaharaSantri.wa) ? bendaharaSantri.wa : BENDAHARA_WA);
+  const validWas = getValidAdminWas();
 
   const showErr = (txt) => {
     if (errEl) {
@@ -375,8 +440,8 @@ async function handleResetAdminPasswordSubmit(e) {
     showToast(txt, 'rose');
   };
 
-  if (!enteredWa || (enteredWa !== officialWa && enteredWa !== normalizeWaLocal(BENDAHARA_WA))) {
-    showErr('Verifikasi gagal: Nomor WhatsApp tidak sesuai dengan nomor resmi Bendahara!');
+  if (!enteredWa || !validWas.includes(enteredWa)) {
+    showErr('Verifikasi gagal: Nomor WhatsApp tidak sesuai dengan nomor resmi Bendahara (Aziz / Manshur Siroj)!');
     return;
   }
 
@@ -413,6 +478,11 @@ async function handleResetAdminPasswordSubmit(e) {
     }
   }
 
+  const matchedBend = BENDAHARA_LIST.find(b => normalizeWaLocal(b.wa) === enteredWa);
+  if (matchedBend) {
+    loginModalTempAdminId = matchedBend.id;
+  }
+  localStorage.setItem('paymojosari_logged_admin_id', loginModalTempAdminId);
   localStorage.setItem('paymojosari_custom_admin_pass', newPass);
   localStorage.setItem('paymojosari_admin_pass', newPass);
   localStorage.setItem('paymojosari_role', 'admin');
@@ -423,7 +493,7 @@ async function handleResetAdminPasswordSubmit(e) {
   state.loggedSantriId = null;
 
   if (sendWaCheck && sendWaCheck.checked) {
-    const intlWa = '62' + officialWa.replace(/^0+/, '');
+    const intlWa = '62' + enteredWa.replace(/^0+/, '');
     const msg = `*SANDI BENDAHARA PAYMOJOSARI DIPERBARUI*\nKomplek Tuban (Rumah Wakaf)\n\nSandi Baru Anda: *${newPass}*\nWaktu: ${new Date().toLocaleString('id-ID')}\n\nSimpan pesan ini sebagai pengingat.`;
     window.open(`https://wa.me/${intlWa}?text=${encodeURIComponent(msg)}`, '_blank');
   }
@@ -679,6 +749,7 @@ async function handleAdminLoginSubmit(e) {
   if (isValid) {
     localStorage.setItem('paymojosari_role', 'admin');
     localStorage.setItem('paymojosari_admin_pass', enteredPass);
+    localStorage.setItem('paymojosari_logged_admin_id', loginModalTempAdminId || 's1');
     localStorage.removeItem('paymojosari_logged_santri_id');
     state.userRole = 'admin';
     state.isAdmin = true;
@@ -686,7 +757,8 @@ async function handleAdminLoginSubmit(e) {
     closeAdminLoginModal();
     updateRoleUI();
     renderAll();
-    showToast('✓ Berhasil masuk sebagai Bendahara (Akses Penuh)!', 'emerald');
+    const activeAdm = getActiveAdminProfile();
+    showToast(`✓ Berhasil masuk sebagai ${activeAdm.nama} (${activeAdm.jabatan})!`, 'emerald');
   } else {
     if (errEl) errEl.classList.remove('hidden');
     showToast('Sandi / PIN Bendahara salah. Gunakan Lupa Sandi jika perlu!', 'rose');
@@ -728,9 +800,10 @@ function updateRoleUI() {
   const topAvatar = document.getElementById('topProfileAvatar');
   if (topName && topSub && topAvatar) {
     if (state.userRole === 'admin') {
-      topName.textContent = 'Muhammad Abdul Aziz';
-      topSub.textContent = 'Bendahara • Akses Penuh';
-      topAvatar.src = state.santri[0]?.avatar || 'logo-mojosari.png?v=2';
+      const activeAdm = getActiveAdminProfile();
+      topName.textContent = activeAdm.nama;
+      topSub.textContent = `${activeAdm.jabatan} • Akses Penuh`;
+      topAvatar.src = activeAdm.avatar || 'logo-mojosari.png?v=2';
     } else if (state.userRole === 'santri' && loggedSantri) {
       topName.textContent = loggedSantri.nama;
       topSub.textContent = `Santri • ${loggedSantri.prodi}`;
@@ -808,16 +881,17 @@ function updateRoleUI() {
   const drawer = document.getElementById('adminRoleIndicatorDrawer');
   if (drawer) {
     if (state.userRole === 'admin') {
+      const activeAdm = getActiveAdminProfile();
       drawer.innerHTML = `
         <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-[#064e3b] animate-pulse"></span>
-            <div>
-              <span class="text-xs font-bold block leading-tight">Bendahara (Admin)</span>
-              <span class="text-[10px] text-emerald-700">Akses Penuh Pembayaran</span>
+          <div class="flex items-center gap-2 min-w-0">
+            <img src="${activeAdm.avatar}" class="w-8 h-8 rounded-full object-cover border border-[#064e3b] shrink-0" />
+            <div class="min-w-0">
+              <span class="text-xs font-bold block truncate leading-tight">${activeAdm.nama}</span>
+              <span class="text-[10px] text-emerald-700 font-semibold block">${activeAdm.jabatan} (Admin)</span>
             </div>
           </div>
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-1.5 shrink-0">
             <button onclick="toggleMobileDrawer(false); openResetAdminPasswordForm();" class="px-2.5 py-1 rounded-lg bg-white text-emerald-900 text-[10px] font-bold border border-emerald-200 cursor-pointer">Sandi</button>
             <button onclick="logoutAdmin()" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 text-[10px] font-bold hover:bg-rose-100 border border-rose-200 cursor-pointer">Keluar</button>
           </div>
@@ -2949,8 +3023,6 @@ function renderSantriTab() {
             <div>
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span>${s.nama}</span>
-                ${isMe ? `<span class="px-1.5 py-0.5 rounded bg-[#064e3b] text-white text-[9px] font-bold">Akun Saya</span>` : ''}
-                ${isSantriTanpaMakan(s) ? `<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Uang Makan</span>` : ''}
               </div>
               <div class="text-[10px] font-mono text-slate-400 font-normal">${getNomorIndukSantri(s, idx)}</div>
             </div>

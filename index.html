@@ -469,7 +469,7 @@
             </div>
 
             <!-- List items matching FinPilot (Calendar icon box, Title, Subtitle, Amount, Status Pill) -->
-            <div id="scheduledPaymentsList" class="space-y-3">
+            <div id="scheduledPaymentsList" class="space-y-3 max-h-[420px] overflow-y-auto custom-scroll pr-1">
             </div>
           </div>
             </div>
@@ -721,7 +721,7 @@
 
         <!-- ================= TAB: JURNAL MASAK HARIAN ================= -->
         <div id="view-masak" class="view-panel hidden space-y-6">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
             <!-- Form Input Masak -->
             <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
               <h3 class="text-sm font-bold text-slate-900 font-display">Catat Pemasukan / Belanja Masak</h3>
@@ -767,15 +767,15 @@
               </form>
             </div>
 
-            <!-- Tabel Riwayat Masak -->
-            <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-              <div class="flex items-center justify-between">
+            <!-- Tabel Riwayat Masak (Tinggi Sama dengan Form di Samping & Scroll ke Bawah) -->
+            <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col lg:h-0 lg:min-h-full max-h-[480px] lg:max-h-none overflow-hidden">
+              <div class="flex items-center justify-between shrink-0 pb-3">
                 <h3 class="text-sm font-bold text-slate-900 font-display">Riwayat Belanja Masak Harian</h3>
                 <span id="rekapMasakSaldoBadge" class="text-xs font-bold font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">Saldo Dapur: Rp 0</span>
               </div>
-              <div class="overflow-x-auto">
+              <div class="flex-1 min-h-0 overflow-y-auto overflow-x-auto custom-scroll pr-1">
                 <table class="w-full text-left text-xs">
-                  <thead>
+                  <thead class="sticky top-0 bg-white z-10">
                     <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] font-bold">
                       <th class="pb-2.5 px-3">Tanggal</th>
                       <th class="pb-2.5 px-3">Keterangan</th>
@@ -794,7 +794,7 @@
 
         <!-- ================= TAB: UTANG SANTRI DARI KAS ================= -->
         <div id="view-utang" class="view-panel hidden space-y-6">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
             <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
               <h3 class="text-sm font-bold text-slate-900 font-display">Catat Utang Santri (Diambil dari Uang Kas)</h3>
               <p class="text-xs text-slate-500">Nominal otomatis memotong saldo Kas Komplek Tuban.</p>
@@ -822,14 +822,14 @@
               </form>
             </div>
 
-            <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-              <div class="flex items-center justify-between">
+            <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col lg:h-0 lg:min-h-full max-h-[480px] lg:max-h-none overflow-hidden">
+              <div class="flex items-center justify-between shrink-0 pb-3">
                 <h3 class="text-sm font-bold text-slate-900 font-display">Daftar Utang Santri</h3>
                 <span id="rekapUtangAktifBadge" class="text-xs font-bold font-mono text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full">Total Utang: Rp 0</span>
               </div>
-              <div class="overflow-x-auto">
+              <div class="flex-1 min-h-0 overflow-y-auto overflow-x-auto custom-scroll pr-1">
                 <table class="w-full text-left text-xs">
-                  <thead>
+                  <thead class="sticky top-0 bg-white z-10">
                     <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] font-bold">
                       <th class="pb-2.5 px-3">Tanggal</th>
                       <th class="pb-2.5 px-3">Santri</th>
@@ -849,7 +849,7 @@
 
         <!-- ================= TAB: DATA SANTRI ================= -->
         <div id="view-santri" class="view-panel hidden space-y-6">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
             <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
               <h3 id="formSantriTitle" class="text-sm font-bold text-slate-900 font-display">Daftarkan Santri Baru</h3>
               <form id="formSantri" onsubmit="handleSaveSantri(event)" class="space-y-3.5">
@@ -915,8 +915,9 @@
               </form>
             </div>
 
-            <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-              <div class="flex items-center justify-between flex-wrap gap-2">
+            <!-- Daftar Santri Komplek Tuban (Tinggi Atas-Bawah Sama dengan Form di Sampingnya & Scroll ke Bawah) -->
+            <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col lg:h-0 lg:min-h-full max-h-[540px] lg:max-h-none overflow-hidden">
+              <div class="flex items-center justify-between flex-wrap gap-2 shrink-0 pb-3">
                 <div class="flex items-center gap-2">
                   <h3 class="text-sm font-bold text-slate-900 font-display">Daftar Santri Komplek Tuban</h3>
                   <span id="totalSantriBadge" class="text-xs font-bold font-mono text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full">0 Santri</span>
@@ -926,9 +927,9 @@
                   <span>Cetak Semua Kartu Santri</span>
                 </button>
               </div>
-              <div class="overflow-x-auto">
+              <div class="flex-1 min-h-0 overflow-y-auto overflow-x-auto custom-scroll pr-1">
                 <table class="w-full text-left text-xs">
-                  <thead>
+                  <thead class="sticky top-0 bg-white z-10">
                     <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] font-bold">
                       <th class="pb-2.5 px-3">Santri</th>
                       <th class="pb-2.5 px-3">Alamat</th>
@@ -1337,18 +1338,11 @@
 
       <!-- FORM 2: LOGIN BENDAHARA / ADMIN (FULL ACCESS) -->
       <form id="formLoginAdmin" onsubmit="handleAdminLoginSubmit(event)" class="hidden space-y-4">
-        <!-- FinPilot Style Profile Preview Card -->
-        <div class="p-3.5 rounded-2xl bg-[#f8fafc] border border-slate-200/70 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-[#064e3b] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
-              AA
-            </div>
-            <div>
-              <span class="text-xs font-bold text-slate-900 block leading-tight">Bendahara Komplek Tuban</span>
-              <span class="text-[11px] text-slate-400">Akses Penuh Pembayaran & Kas</span>
-            </div>
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Pilih Pengurus Bendahara</label>
+          <div id="adminProfilePickerList" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <!-- Diisi otomatis via app.js: Muhammad Abdul Aziz (Bendahara Pusat) & Manshur Siroj (Bendahara) -->
           </div>
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/80">Admin</span>
         </div>
 
         <div class="space-y-1.5">
@@ -1451,6 +1445,6 @@
   <!-- Toast Notification -->
   <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-2 no-print"></div>
 
-  <script src="app.js?v=20261101i"></script>
+  <script src="app.js?v=20261101j"></script>
 </body>
 </html>
