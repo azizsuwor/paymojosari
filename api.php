@@ -15,12 +15,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
 
 require_once __DIR__ . '/config.php';
 
-// Pastikan skema tabel santri mutakhir (tanpa_makan dan avatar LONGTEXT)
+// Pastikan skema tabel santri mutakhir (tanpa_makan, pin_sandi, dan avatar LONGTEXT)
 try {
     $colCheck = $pdo->query("SHOW COLUMNS FROM santri LIKE 'tanpa_makan'")->fetch();
     if (!$colCheck) {
         $pdo->exec("ALTER TABLE santri ADD COLUMN tanpa_makan TINYINT(1) NOT NULL DEFAULT 0 AFTER wa");
         $pdo->exec("UPDATE santri SET tanpa_makan = 1 WHERE id IN ('s1', 's11')");
+    }
+    $colPinCheck = $pdo->query("SHOW COLUMNS FROM santri LIKE 'pin_sandi'")->fetch();
+    if (!$colPinCheck) {
+        $pdo->exec("ALTER TABLE santri ADD COLUMN pin_sandi VARCHAR(100) DEFAULT NULL AFTER wa");
     }
     // Pastikan avatar bertipe LONGTEXT agar dapat menyimpan foto profil santri
     $pdo->exec("ALTER TABLE santri MODIFY COLUMN avatar LONGTEXT DEFAULT NULL");
@@ -29,6 +33,170 @@ try {
 }
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
+
+function normalize_wa_number($wa) {
+    $clean = preg_replace('/[^0-9]/', '', (string)$wa);
+    if (strpos($clean, '62') === 0) {
+        $clean = '0' . substr($clean, 2);
+    } elseif (strpos($clean, '8') === 0) {
+        $clean = '0' . $clean;
+    }
+    return $clean;
+}
+
+// Ambil sandi resmi Admin / Bendahara dari database pengaturan_sistem (default: @Deja1590)
+$admin_passwords = ['@Deja1590'];
+$bendahara_wa_resmi = '081231256129';
+try {
+    $stmtPass = $pdo->query("SELECT kunci, nilai FROM pengaturan_sistem WHERE kunci IN ('sandi_bendahara', 'kontak_bendahara')");
+    if ($stmtPass) {
+        while ($r = $stmtPass->fetch()) {
+            if ($r['kunci'] === 'sandi_bendahara' && !empty(trim($r['nilai']))) {
+                $admin_passwords[] = trim($r['nilai']);
+                $admin_passwords = array_values(array_unique($admin_passwords));
+            }
+            if ($r['kunci'] === 'kontak_bendahara' && !empty(trim($r['nilai']))) {
+                $bendahara_wa_resmi = trim($r['nilai']);
+            }
+        }
+    }
+} catch (Exception $e) {
+    // Gunakan default jika tabel belum siap
+}
+
+function check_admin_auth() {
+    global $admin_passwords;
+    $key = $_SERVER['HTTP_X_ADMIN_KEY'] ?? '';
+    if (!$key && function_exists('getallheaders')) {
+        $headers = getallheaders();
+        $key = $headers['X-Admin-Key'] ?? ($headers['x-admin-key'] ?? '');
+    }
+    if (!in_array($key, $admin_passwords)) {
+        http_response_code(403);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Akses ditolak: Hanya Bendahara / Admin yang berhak mengubah data pembayaran atau kas.'
+        ]);
+        exit;
+    }
+}
+
+// 0. Verifikasi Password Admin (POST ?action=verify_admin)
+if ($action === 'verify_admin') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $pass = isset($input['password']) ? trim($input['password']) : '';
+    if (in_array($pass, $admin_passwords)) {
+        echo json_encode(['status' => 'success', 'message' => 'Login Admin Berhasil']);
+    } else {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Sandi / PIN Bendahara salah. Silakan coba lagi.']);
+    }
+    exit;
+}
+
+// 0b. Ganti / Lupa Sandi Bendahara dengan Verifikasi Nomor WA (POST ?action=reset_admin_password)
+if ($action === 'reset_admin_password') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $waInput = isset($input['wa']) ? normalize_wa_number($input['wa']) : '';
+    $oldPass = isset($input['old_password']) ? trim($input['old_password']) : '';
+    $newPass = isset($input['new_password']) ? trim($input['new_password']) : '';
+
+    if (strlen($newPass) < 4) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Sandi baru minimal harus 4 karakter.']);
+        exit;
+    }
+
+    $targetWa = normalize_wa_number($bendahara_wa_resmi);
+    // Cek juga WA santri s1 (Aziz / Bendahara) di database jika ada
+    try {
+        $stmtS1 = $pdo->query("SELECT wa FROM santri WHERE id = 's1' LIMIT 1")->fetch();
+        if ($stmtS1 && !empty($stmtS1['wa'])) {
+            $s1Wa = normalize_wa_number($stmtS1['wa']);
+        } else {
+            $s1Wa = $targetWa;
+        }
+    } catch (Exception $e) {
+        $s1Wa = $targetWa;
+    }
+
+    $isWaValid = ($waInput !== '' && ($waInput === $targetWa || $waInput === $s1Wa));
+    $isOldPassValid = ($oldPass !== '' && in_array($oldPass, $admin_passwords));
+
+    if (!$isWaValid && !$isOldPassValid) {
+        http_response_code(401);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Verifikasi gagal: Nomor WhatsApp tidak sesuai dengan nomor resmi Bendahara!'
+        ]);
+        exit;
+    }
+
+    try {
+        $stmtUpd = $pdo->prepare("INSERT INTO pengaturan_sistem (kunci, nilai, keterangan)
+            VALUES ('sandi_bendahara', :nilai, 'Sandi resmi login Bendahara Komplek Tuban')
+            ON DUPLICATE KEY UPDATE nilai = VALUES(nilai)");
+        $stmtUpd->execute([':nilai' => $newPass]);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Sandi Bendahara berhasil diperbarui!'
+        ]);
+        exit;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// 0c. Ganti / Lupa Sandi Akun Santri dengan Verifikasi Nomor WA (POST ?action=reset_santri_password)
+if ($action === 'reset_santri_password') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $santriId = isset($input['santri_id']) ? trim($input['santri_id']) : '';
+    $waInput = isset($input['wa']) ? normalize_wa_number($input['wa']) : '';
+    $newPin = isset($input['new_pin']) ? trim($input['new_pin']) : '';
+
+    if (!$santriId || strlen($newPin) < 4) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Sandi / PIN baru minimal 4 karakter.']);
+        exit;
+    }
+
+    try {
+        $stmtS = $pdo->prepare("SELECT id, nama, wa FROM santri WHERE id = :id LIMIT 1");
+        $stmtS->execute([':id' => $santriId]);
+        $row = $stmtS->fetch();
+        if (!$row) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'Data santri tidak ditemukan.']);
+            exit;
+        }
+
+        $registeredWa = normalize_wa_number($row['wa']);
+        if ($waInput === '' || $waInput !== $registeredWa) {
+            http_response_code(401);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Verifikasi gagal: Nomor WhatsApp lengkap tidak cocok dengan data santri tersebut!'
+            ]);
+            exit;
+        }
+
+        $stmtUpd = $pdo->prepare("UPDATE santri SET pin_sandi = :pin WHERE id = :id");
+        $stmtUpd->execute([':pin' => $newPin, ':id' => $santriId]);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Sandi / Kode Akses untuk ' . $row['nama'] . ' berhasil diperbarui!'
+        ]);
+        exit;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
 
 // -------------------------------------------------------------------------
 // 1. Ambil Semua Data State Lengkap dari Database (GET ?action=get_all)
@@ -47,6 +215,7 @@ if ($action === 'get_all') {
                 'alamat' => $row['alamat'],
                 'prodi' => $row['prodi'],
                 'wa' => $row['wa'],
+                'pinSandi' => isset($row['pin_sandi']) ? $row['pin_sandi'] : null,
                 'tanpaMakan' => !empty($row['tanpa_makan']),
                 'avatar' => $row['avatar']
             ];
@@ -146,6 +315,7 @@ if ($action === 'get_all') {
 // 2. Simpan Pembayaran Santri (POST ?action=save_payment)
 // -------------------------------------------------------------------------
 if ($action === 'save_payment') {
+    check_admin_auth();
     $input = json_decode(file_get_contents('php://input'), true);
     if (!$input) {
         http_response_code(400);
@@ -197,6 +367,7 @@ if ($action === 'save_payment') {
 // 3. Simpan Catatan Jurnal Masak (POST ?action=save_masak)
 // -------------------------------------------------------------------------
 if ($action === 'save_masak') {
+    check_admin_auth();
     $input = json_decode(file_get_contents('php://input'), true);
     try {
         $stmt = $pdo->prepare("INSERT INTO jurnal_masak (id, tanggal, tipe, keterangan, nominal, petugas) 
@@ -222,6 +393,7 @@ if ($action === 'save_masak') {
 // 4. Update Setoran WiFi Bendahara (POST ?action=save_wifi_bendahara)
 // -------------------------------------------------------------------------
 if ($action === 'save_wifi_bendahara') {
+    check_admin_auth();
     $input = json_decode(file_get_contents('php://input'), true);
     try {
         $sql = "INSERT INTO setoran_wifi_bendahara (periode, nominal_bayar, tgl_bayar, bukti_foto_chat, catatan, status)
@@ -254,6 +426,7 @@ if ($action === 'save_wifi_bendahara') {
 // 5. Sinkronisasi Penuh Seluruh State ke Database MySQL (POST ?action=sync_all)
 // -------------------------------------------------------------------------
 if ($action === 'sync_all') {
+    check_admin_auth();
     $input = json_decode(file_get_contents('php://input'), true);
     if (!$input) {
         http_response_code(400);
@@ -282,14 +455,15 @@ if ($action === 'sync_all') {
         // Sinkronisasi Data Santri
         if (isset($input['santri']) && is_array($input['santri'])) {
             $ids = [];
-            $stmtSantri = $pdo->prepare("INSERT INTO santri (id, nama, short_name, alamat, prodi, wa, tanpa_makan, avatar)
-                VALUES (:id, :nama, :short_name, :alamat, :prodi, :wa, :tanpa_makan, :avatar)
+            $stmtSantri = $pdo->prepare("INSERT INTO santri (id, nama, short_name, alamat, prodi, wa, pin_sandi, tanpa_makan, avatar)
+                VALUES (:id, :nama, :short_name, :alamat, :prodi, :wa, :pin_sandi, :tanpa_makan, :avatar)
                 ON DUPLICATE KEY UPDATE
                 nama = VALUES(nama),
                 short_name = VALUES(short_name),
                 alamat = VALUES(alamat),
                 prodi = VALUES(prodi),
                 wa = VALUES(wa),
+                pin_sandi = COALESCE(VALUES(pin_sandi), pin_sandi),
                 tanpa_makan = VALUES(tanpa_makan),
                 avatar = VALUES(avatar)");
             foreach ($input['santri'] as $s) {
@@ -306,6 +480,7 @@ if ($action === 'sync_all') {
                     ':alamat' => $s['alamat'],
                     ':prodi' => $prodi,
                     ':wa' => $s['wa'],
+                    ':pin_sandi' => !empty($s['pinSandi']) ? $s['pinSandi'] : null,
                     ':tanpa_makan' => $tanpaMakan,
                     ':avatar' => isset($s['avatar']) ? $s['avatar'] : null
                 ]);

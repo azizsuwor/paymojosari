@@ -1,13 +1,25 @@
 <?php
 // =========================================================================
-// KONEKSI DATABASE LARAGON (MySQL)
-// SIM-KAS PP. MOJOSARI KOMPLEK TUBAN (RUMAH WAKAF)
+// KONEKSI DATABASE HYBRID: LARAGON (LOKAL) & INFINITYFREE (ONLINE)
+// PAYMOJOSARI — PP. MOJOSARI KOMPLEK TUBAN (RUMAH WAKAF)
 // =========================================================================
 
-$db_host = 'localhost';
-$db_user = 'root';
-$db_pass = ''; // Default password root Laragon adalah kosong
-$db_name = 'db_kas_mojosari';
+$host = $_SERVER['HTTP_HOST'] ?? '';
+$is_local = in_array($host, ['localhost', '127.0.0.1']) || strpos($host, 'localhost:') === 0 || strpos($host, '127.0.0.1:') === 0;
+
+if ($is_local) {
+    // Konfigurasi Database Lokal (Laragon)
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'db_kas_mojosari';
+} else {
+    // Konfigurasi Database Online (InfinityFree)
+    $db_host = 'sql101.infinityfree.com';
+    $db_user = 'if0_43321488';
+    $db_pass = 'Mojosari2026';
+    $db_name = 'if0_43321488_kas';
+}
 
 try {
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass, [
@@ -20,7 +32,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
-        'message' => 'Koneksi ke MySQL Laragon Gagal: ' . $e->getMessage()
+        'message' => 'Koneksi ke Database Gagal: ' . $e->getMessage()
     ]);
     exit;
 }

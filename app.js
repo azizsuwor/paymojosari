@@ -15,6 +15,9 @@ const TARIF_DEFAULT = {
   air: 10000
 };
 
+// Tagihan WiFi Induk bulanan yang dibayarkan oleh Bendahara (Rp 200.000/bulan; sisa iuran WiFi disimpan di Kas Komplek)
+const TAGIHAN_WIFI_INDUK_DEFAULT = 200000;
+
 function getTarif(monthKey) {
   const mKey = monthKey || state.activeMonth;
   const customWifi = state.tarifWifiPerBulan && state.tarifWifiPerBulan[mKey] !== undefined
@@ -173,6 +176,828 @@ function purgeOldMonthsFromState() {
 // INITIALIZATION & PERSISTENCE
 // =========================================================================
 
+// =========================================================================
+// ROLE & AUTHENTICATION (GUEST / SANTRI PRIBADI / ADMIN BENDAHARA)
+// =========================================================================
+
+let loginModalTempSantriId = 's1';
+let generatedAdminOtp = null;
+
+function getExpectedAdminPassword() {
+  return localStorage.getItem('paymojosari_custom_admin_pass') || '@Deja1590';
+}
+
+function getAdminKey() {
+  return localStorage.getItem('paymojosari_admin_pass') || getExpectedAdminPassword();
+}
+
+function normalizeWaLocal(wa) {
+  let clean = String(wa || '').replace(/[^0-9]/g, '');
+  if (clean.startsWith('62')) {
+    clean = '0' + clean.slice(2);
+  } else if (clean.startsWith('8')) {
+    clean = '0' + clean;
+  }
+  return clean;
+}
+
+function maskPhoneNumber(wa) {
+  const clean = String(wa || '').trim();
+  if (clean.length <= 6) return clean;
+  return clean.slice(0, 4) + '••••' + clean.slice(-3);
+}
+
+function handleTopProfileClick() {
+  if (state.userRole === 'admin' || state.userRole === 'santri') {
+    openAdminLoginModal(state.userRole === 'admin' ? 'admin' : 'santri');
+  } else {
+    openAdminLoginModal('santri');
+  }
+}
+
+function openAdminLoginModal(defaultTab = 'santri') {
+  const modal = document.getElementById('modalAdminLogin');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  if (!loginModalTempSantriId && state.santri.length > 0) {
+    loginModalTempSantriId = state.loggedSantriId || state.selectedSantriId || state.santri[0].id;
+  } else if (state.loggedSantriId) {
+    loginModalTempSantriId = state.loggedSantriId;
+  }
+
+  renderLoginModalSantriPicker();
+  switchLoginModalTab(defaultTab);
+
+  const errAdmin = document.getElementById('adminLoginError');
+  if (errAdmin) errAdmin.classList.add('hidden');
+  const errSantri = document.getElementById('santriLoginError');
+  if (errSantri) errSantri.classList.add('hidden');
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function closeAdminLoginModal() {
+  const modal = document.getElementById('modalAdminLogin');
+  if (modal) modal.classList.add('hidden');
+}
+
+function switchLoginModalTab(tab) {
+  const formSantri = document.getElementById('formLoginSantri');
+  const formResetSantri = document.getElementById('formResetSantriPassword');
+  const formAdmin = document.getElementById('formLoginAdmin');
+  const formResetAdmin = document.getElementById('formResetAdminPassword');
+  const btnSantri = document.getElementById('tabBtnLoginSantri');
+  const btnAdmin = document.getElementById('tabBtnLoginAdmin');
+
+  if (formResetSantri) formResetSantri.classList.add('hidden');
+  if (formResetAdmin) formResetAdmin.classList.add('hidden');
+
+  if (tab === 'admin') {
+    if (formSantri) formSantri.classList.add('hidden');
+    if (formAdmin) formAdmin.classList.remove('hidden');
+    if (btnAdmin) btnAdmin.className = 'py-2.5 rounded-lg bg-white text-slate-900 font-bold shadow-xs cursor-pointer transition flex items-center justify-center gap-1.5';
+    if (btnSantri) btnSantri.className = 'py-2.5 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5';
+    const passInput = document.getElementById('adminPasswordInput');
+    if (passInput) {
+      passInput.value = '';
+      setTimeout(() => passInput.focus(), 100);
+    }
+  } else {
+    if (formAdmin) formAdmin.classList.add('hidden');
+    if (formSantri) formSantri.classList.remove('hidden');
+    if (btnSantri) btnSantri.className = 'py-2.5 rounded-lg bg-white text-slate-900 font-bold shadow-xs cursor-pointer transition flex items-center justify-center gap-1.5';
+    if (btnAdmin) btnAdmin.className = 'py-2.5 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5';
+    const pinInput = document.getElementById('loginSantriPinInput');
+    if (pinInput) {
+      pinInput.value = '';
+      setTimeout(() => pinInput.focus(), 100);
+    }
+  }
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function openResetAdminPasswordForm() {
+  const modal = document.getElementById('modalAdminLogin');
+  if (modal && modal.classList.contains('hidden')) {
+    modal.classList.remove('hidden');
+  }
+  switchLoginModalTab('admin');
+  const formAdmin = document.getElementById('formLoginAdmin');
+  const formResetAdmin = document.getElementById('formResetAdminPassword');
+  if (formAdmin) formAdmin.classList.add('hidden');
+  if (formResetAdmin) formResetAdmin.classList.remove('hidden');
+
+  const bendaharaSantri = state.santri.find(s => s.id === 's1');
+  const targetWa = normalizeWaLocal((bendaharaSantri && bendaharaSantri.wa) ? bendaharaSantri.wa : BENDAHARA_WA);
+  const maskedEl = document.getElementById('resetAdminWaMasked');
+  if (maskedEl) maskedEl.textContent = maskPhoneNumber(targetWa);
+
+  const waInp = document.getElementById('resetAdminWaInput');
+  const newInp = document.getElementById('resetAdminNewPassInput');
+  const confInp = document.getElementById('resetAdminConfirmPassInput');
+  const otpCont = document.getElementById('resetAdminOtpContainer');
+  const otpInp = document.getElementById('resetAdminOtpInput');
+  const errEl = document.getElementById('resetAdminError');
+
+  generatedAdminOtp = null;
+  if (waInp) waInp.value = '';
+  if (newInp) newInp.value = '';
+  if (confInp) confInp.value = '';
+  if (otpInp) otpInp.value = '';
+  if (otpCont) otpCont.classList.add('hidden');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (waInp) setTimeout(() => waInp.focus(), 100);
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function toggleResetAdminPassVisibility() {
+  const newInp = document.getElementById('resetAdminNewPassInput');
+  const confInp = document.getElementById('resetAdminConfirmPassInput');
+  if (!newInp) return;
+  const nextType = newInp.type === 'password' ? 'text' : 'password';
+  newInp.type = nextType;
+  if (confInp) confInp.type = nextType;
+}
+
+function sendAdminOtpViaWa() {
+  const waInp = document.getElementById('resetAdminWaInput');
+  const errEl = document.getElementById('resetAdminError');
+  const otpCont = document.getElementById('resetAdminOtpContainer');
+  const otpInp = document.getElementById('resetAdminOtpInput');
+
+  const bendaharaSantri = state.santri.find(s => s.id === 's1');
+  const officialWa = normalizeWaLocal((bendaharaSantri && bendaharaSantri.wa) ? bendaharaSantri.wa : BENDAHARA_WA);
+  const enteredWa = normalizeWaLocal(waInp ? waInp.value : '');
+
+  if (!enteredWa || (enteredWa !== officialWa && enteredWa !== normalizeWaLocal(BENDAHARA_WA))) {
+    if (errEl) {
+      errEl.textContent = 'Masukkan Nomor WhatsApp resmi Bendahara terlebih dahulu dengan benar!';
+      errEl.classList.remove('hidden');
+    }
+    showToast('Nomor WA tidak sesuai dengan nomor Bendahara!', 'rose');
+    return;
+  }
+
+  if (errEl) errEl.classList.add('hidden');
+  generatedAdminOtp = String(Math.floor(1000 + Math.random() * 9000));
+  if (otpCont) otpCont.classList.remove('hidden');
+  if (otpInp) setTimeout(() => otpInp.focus(), 100);
+
+  const intlWa = '62' + officialWa.replace(/^0+/, '');
+  const msg = `*VERIFIKASI SANDI PAYMOJOSARI*\nKomplek Tuban (Rumah Wakaf)\n\nKode OTP Ganti Sandi Bendahara Anda adalah: *${generatedAdminOtp}*\n\nSilakan masukkan kode ini pada form ganti sandi.`;
+  window.open(`https://wa.me/${intlWa}?text=${encodeURIComponent(msg)}`, '_blank');
+  showToast('Kode OTP dikirim ke WhatsApp Bendahara!', 'emerald');
+}
+
+async function handleResetAdminPasswordSubmit(e) {
+  e.preventDefault();
+  const waInp = document.getElementById('resetAdminWaInput');
+  const otpInp = document.getElementById('resetAdminOtpInput');
+  const newInp = document.getElementById('resetAdminNewPassInput');
+  const confInp = document.getElementById('resetAdminConfirmPassInput');
+  const sendWaCheck = document.getElementById('resetAdminSendWaCheck');
+  const errEl = document.getElementById('resetAdminError');
+
+  const enteredWa = normalizeWaLocal(waInp ? waInp.value : '');
+  const newPass = newInp ? newInp.value.trim() : '';
+  const confPass = confInp ? confInp.value.trim() : '';
+
+  const bendaharaSantri = state.santri.find(s => s.id === 's1');
+  const officialWa = normalizeWaLocal((bendaharaSantri && bendaharaSantri.wa) ? bendaharaSantri.wa : BENDAHARA_WA);
+
+  const showErr = (txt) => {
+    if (errEl) {
+      errEl.textContent = txt;
+      errEl.classList.remove('hidden');
+    }
+    showToast(txt, 'rose');
+  };
+
+  if (!enteredWa || (enteredWa !== officialWa && enteredWa !== normalizeWaLocal(BENDAHARA_WA))) {
+    showErr('Verifikasi gagal: Nomor WhatsApp tidak sesuai dengan nomor resmi Bendahara!');
+    return;
+  }
+
+  if (generatedAdminOtp && otpInp && otpInp.value.trim() !== generatedAdminOtp) {
+    showErr('Kode OTP WhatsApp yang dimasukkan belum sesuai!');
+    return;
+  }
+
+  if (newPass.length < 4) {
+    showErr('Sandi baru minimal harus 4 karakter!');
+    return;
+  }
+
+  if (newPass !== confPass) {
+    showErr('Konfirmasi sandi baru tidak cocok!');
+    return;
+  }
+
+  // Simpan ke backend MySQL jika online
+  if (window.location.protocol !== 'file:') {
+    try {
+      const res = await fetch('api.php?action=reset_admin_password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wa: enteredWa, new_password: newPass })
+      });
+      const json = await res.json();
+      if (!res.ok || json.status !== 'success') {
+        showErr(json.message || 'Gagal memperbarui sandi di server.');
+        return;
+      }
+    } catch (err) {
+      console.warn('Mode lokal aktif untuk simpan sandi:', err);
+    }
+  }
+
+  localStorage.setItem('paymojosari_custom_admin_pass', newPass);
+  localStorage.setItem('paymojosari_admin_pass', newPass);
+  localStorage.setItem('paymojosari_role', 'admin');
+  localStorage.removeItem('paymojosari_logged_santri_id');
+
+  state.userRole = 'admin';
+  state.isAdmin = true;
+  state.loggedSantriId = null;
+
+  if (sendWaCheck && sendWaCheck.checked) {
+    const intlWa = '62' + officialWa.replace(/^0+/, '');
+    const msg = `*SANDI BENDAHARA PAYMOJOSARI DIPERBARUI*\nKomplek Tuban (Rumah Wakaf)\n\nSandi Baru Anda: *${newPass}*\nWaktu: ${new Date().toLocaleString('id-ID')}\n\nSimpan pesan ini sebagai pengingat.`;
+    window.open(`https://wa.me/${intlWa}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  closeAdminLoginModal();
+  updateRoleUI();
+  renderAll();
+  showToast('✓ Sandi Bendahara berhasil diganti & Anda telah masuk!', 'emerald');
+}
+
+function openResetSantriPasswordForm() {
+  const modal = document.getElementById('modalAdminLogin');
+  if (modal && modal.classList.contains('hidden')) {
+    modal.classList.remove('hidden');
+  }
+  const selectEl = document.getElementById('loginSantriSelect');
+  if (selectEl && selectEl.value) {
+    loginModalTempSantriId = selectEl.value;
+  } else if (state.loggedSantriId) {
+    loginModalTempSantriId = state.loggedSantriId;
+  }
+
+  const s = state.santri.find(x => x.id === loginModalTempSantriId) || state.santri[0];
+  if (!s) return;
+
+  const formSantri = document.getElementById('formLoginSantri');
+  const formResetSantri = document.getElementById('formResetSantriPassword');
+  const formAdmin = document.getElementById('formLoginAdmin');
+  const formResetAdmin = document.getElementById('formResetAdminPassword');
+
+  if (formSantri) formSantri.classList.add('hidden');
+  if (formAdmin) formAdmin.classList.add('hidden');
+  if (formResetAdmin) formResetAdmin.classList.add('hidden');
+  if (formResetSantri) formResetSantri.classList.remove('hidden');
+
+  const nameEl = document.getElementById('resetSantriTargetName');
+  const maskEl = document.getElementById('resetSantriWaMasked');
+  if (nameEl) nameEl.textContent = `${s.nama} (${s.prodi})`;
+  if (maskEl) maskEl.textContent = maskPhoneNumber(normalizeWaLocal(s.wa));
+
+  const waInp = document.getElementById('resetSantriWaInput');
+  const newInp = document.getElementById('resetSantriNewPinInput');
+  const confInp = document.getElementById('resetSantriConfirmPinInput');
+  const errEl = document.getElementById('resetSantriError');
+
+  if (waInp) waInp.value = '';
+  if (newInp) newInp.value = '';
+  if (confInp) confInp.value = '';
+  if (errEl) errEl.classList.add('hidden');
+
+  if (waInp) setTimeout(() => waInp.focus(), 100);
+  if (window.lucide) window.lucide.createIcons();
+}
+
+async function handleResetSantriPasswordSubmit(e) {
+  e.preventDefault();
+  const s = state.santri.find(x => x.id === loginModalTempSantriId);
+  if (!s) return;
+
+  const waInp = document.getElementById('resetSantriWaInput');
+  const newInp = document.getElementById('resetSantriNewPinInput');
+  const confInp = document.getElementById('resetSantriConfirmPinInput');
+  const sendWaCheck = document.getElementById('resetSantriSendWaCheck');
+  const errEl = document.getElementById('resetSantriError');
+
+  const enteredWa = normalizeWaLocal(waInp ? waInp.value : '');
+  const registeredWa = normalizeWaLocal(s.wa);
+  const newPin = newInp ? newInp.value.trim() : '';
+  const confPin = confInp ? confInp.value.trim() : '';
+
+  const showErr = (txt) => {
+    if (errEl) {
+      errEl.textContent = txt;
+      errEl.classList.remove('hidden');
+    }
+    showToast(txt, 'rose');
+  };
+
+  if (!enteredWa || enteredWa !== registeredWa) {
+    showErr(`Nomor WhatsApp tidak cocok dengan nomor terdaftar milik ${s.nama}!`);
+    return;
+  }
+
+  if (newPin.length < 4) {
+    showErr('Sandi / PIN baru minimal 4 karakter!');
+    return;
+  }
+
+  if (newPin !== confPin) {
+    showErr('Konfirmasi sandi baru tidak cocok!');
+    return;
+  }
+
+  if (window.location.protocol !== 'file:') {
+    try {
+      const res = await fetch('api.php?action=reset_santri_password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ santri_id: s.id, wa: enteredWa, new_pin: newPin })
+      });
+      const json = await res.json();
+      if (!res.ok || json.status !== 'success') {
+        showErr(json.message || 'Gagal memperbarui sandi santri di server.');
+        return;
+      }
+    } catch (err) {
+      console.warn('Simpan sandi santri lokal:', err);
+    }
+  }
+
+  s.pinSandi = newPin;
+  saveState(true);
+
+  state.userRole = 'santri';
+  state.isAdmin = false;
+  state.loggedSantriId = s.id;
+  state.selectedSantriId = s.id;
+  localStorage.setItem('paymojosari_role', 'santri');
+  localStorage.setItem('paymojosari_logged_santri_id', s.id);
+  localStorage.removeItem('paymojosari_admin_pass');
+
+  if (sendWaCheck && sendWaCheck.checked) {
+    const intlWa = '62' + registeredWa.replace(/^0+/, '');
+    const msg = `*SANDI AKUN SANTRI PAYMOJOSARI*\nNama: *${s.nama}*\nSandi / Kode Akses Baru: *${newPin}*\n\nSimpan pesan ini untuk masuk ke PayMojosari.`;
+    window.open(`https://wa.me/${intlWa}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  closeAdminLoginModal();
+  updateRoleUI();
+  renderAll();
+  showToast(`✓ Sandi untuk ${s.nama} berhasil diperbarui!`, 'emerald');
+}
+
+function renderLoginModalSantriPicker() {
+  const avatarContainer = document.getElementById('loginSantriAvatarList');
+  const selectEl = document.getElementById('loginSantriSelect');
+  const hintEl = document.getElementById('loginSantriWaHint');
+  if (!avatarContainer || !selectEl) return;
+
+  if (!state.santri.some(s => s.id === loginModalTempSantriId) && state.santri.length > 0) {
+    loginModalTempSantriId = state.santri[0].id;
+  }
+
+  avatarContainer.innerHTML = state.santri.map((s, idx) => {
+    const isSel = s.id === loginModalTempSantriId;
+    const avatarUrl = s.avatar || AVATAR_IMAGES[idx % AVATAR_IMAGES.length];
+    return `
+      <div onclick="selectLoginSantriAvatar('${s.id}')" class="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group">
+        <div class="relative w-12 h-12 rounded-full p-0.5 ${isSel ? 'ring-2 ring-[#064e3b] ring-offset-2' : 'opacity-75 group-hover:opacity-100'} transition-all">
+          <img src="${avatarUrl}" alt="${s.nama}" class="w-full h-full rounded-full object-cover bg-slate-100" onerror="this.src='${AVATAR_IMAGES[0]}'" />
+          ${isSel ? `<span class="w-3.5 h-3.5 rounded-full bg-[#064e3b] text-white flex items-center justify-center absolute -bottom-0.5 -right-0.5 text-[8px] font-bold shadow-2xs">✓</span>` : ''}
+        </div>
+        <span class="text-[10px] ${isSel ? 'font-bold text-slate-900' : 'font-medium text-slate-500'} max-w-[56px] truncate">${s.shortName || s.nama.split(' ')[0]}</span>
+      </div>
+    `;
+  }).join('');
+
+  selectEl.innerHTML = state.santri.map(s =>
+    `<option value="${s.id}" ${s.id === loginModalTempSantriId ? 'selected' : ''}>${s.nama} — ${s.prodi}</option>`
+  ).join('');
+
+  const activeSantri = state.santri.find(s => s.id === loginModalTempSantriId);
+  if (hintEl && activeSantri) {
+    const cleanWa = String(activeSantri.wa || '').replace(/[^0-9]/g, '');
+    const last4 = cleanWa.slice(-4);
+    hintEl.textContent = `WA: ${maskPhoneNumber(cleanWa)} (4 digit: ${last4})`;
+  }
+}
+
+function selectLoginSantriAvatar(santriId) {
+  loginModalTempSantriId = santriId;
+  renderLoginModalSantriPicker();
+  const errSantri = document.getElementById('santriLoginError');
+  if (errSantri) errSantri.classList.add('hidden');
+}
+
+function handleSantriLoginSubmit(e) {
+  e.preventDefault();
+  const selectEl = document.getElementById('loginSantriSelect');
+  const pinInput = document.getElementById('loginSantriPinInput');
+  const errEl = document.getElementById('santriLoginError');
+
+  const chosenId = selectEl ? selectEl.value : loginModalTempSantriId;
+  const s = state.santri.find(x => x.id === chosenId);
+  if (!s) return;
+
+  const rawEntered = String(pinInput ? pinInput.value : '').trim();
+  const entered = rawEntered.replace(/[^0-9a-zA-Z]/g, '');
+  const cleanWa = String(s.wa || '').replace(/[^0-9]/g, '');
+  const last4 = cleanWa.slice(-4);
+
+  let isMatch = false;
+  if (s.pinSandi && String(s.pinSandi).trim() !== '') {
+    // Jika santri sudah mengatur sandi kustom, bisa masuk dengan sandi kustom atau nomor WA lengkap
+    isMatch = (rawEntered === String(s.pinSandi).trim()) || (entered === cleanWa);
+  } else {
+    isMatch = (entered === cleanWa || entered === last4 || entered.toLowerCase() === s.id.toLowerCase() || entered === '1234');
+  }
+
+  if (isMatch) {
+    state.userRole = 'santri';
+    state.isAdmin = false;
+    state.loggedSantriId = s.id;
+    state.selectedSantriId = s.id;
+    localStorage.setItem('paymojosari_role', 'santri');
+    localStorage.setItem('paymojosari_logged_santri_id', s.id);
+    localStorage.removeItem('paymojosari_admin_pass');
+
+    closeAdminLoginModal();
+    updateRoleUI();
+    renderAll();
+    showToast(`✓ Selamat datang, ${s.nama}! Menampilkan data pribadi Anda.`, 'emerald');
+  } else {
+    if (errEl) errEl.classList.remove('hidden');
+    showToast('Kode akses / Sandi Santri belum sesuai!', 'rose');
+  }
+}
+
+function togglePasswordVisibility() {
+  const input = document.getElementById('adminPasswordInput');
+  if (!input) return;
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+async function handleAdminLoginSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('adminPasswordInput');
+  const errEl = document.getElementById('adminLoginError');
+  const enteredPass = input ? input.value.trim() : '';
+
+  let isValid = (enteredPass === '@Deja1590' || enteredPass === getExpectedAdminPassword());
+
+  // Jika online, verifikasi ke backend api.php
+  if (window.location.protocol !== 'file:') {
+    try {
+      const res = await fetch('api.php?action=verify_admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: enteredPass })
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.status === 'success') {
+          isValid = true;
+          localStorage.setItem('paymojosari_custom_admin_pass', enteredPass);
+        }
+      }
+    } catch (err) {
+      // Gunakan fallback pengecekan lokal jika koneksi bermasalah
+    }
+  }
+
+  if (isValid) {
+    localStorage.setItem('paymojosari_role', 'admin');
+    localStorage.setItem('paymojosari_admin_pass', enteredPass);
+    localStorage.removeItem('paymojosari_logged_santri_id');
+    state.userRole = 'admin';
+    state.isAdmin = true;
+    state.loggedSantriId = null;
+    closeAdminLoginModal();
+    updateRoleUI();
+    renderAll();
+    showToast('✓ Berhasil masuk sebagai Bendahara (Akses Penuh)!', 'emerald');
+  } else {
+    if (errEl) errEl.classList.remove('hidden');
+    showToast('Sandi / PIN Bendahara salah. Gunakan Lupa Sandi jika perlu!', 'rose');
+  }
+}
+
+function continueAsGuest() {
+  localStorage.setItem('paymojosari_role', 'guest');
+  localStorage.removeItem('paymojosari_logged_santri_id');
+  localStorage.removeItem('paymojosari_admin_pass');
+  state.userRole = 'guest';
+  state.isAdmin = false;
+  state.loggedSantriId = null;
+  closeAdminLoginModal();
+  if (state.activeTab === 'tunggakan' || state.activeTab === 'utang') {
+    switchTab('dashboard');
+  } else {
+    updateRoleUI();
+    renderAll();
+  }
+  showToast('Mode Tamu Umum aktif (Hanya melihat informasi umum)', 'slate');
+}
+
+function logoutAdmin() {
+  const roleLabel = state.userRole === 'admin' ? 'Bendahara (Admin)' : 'Akun Santri';
+  if (!confirm(`Keluar dari ${roleLabel} dan kembali ke Mode Tamu Umum?`)) return;
+  continueAsGuest();
+}
+
+function updateRoleUI() {
+  const loggedSantri = state.userRole === 'santri'
+    ? (state.santri.find(s => s.id === state.loggedSantriId) || state.santri[0])
+    : null;
+  const loggedIdx = loggedSantri ? state.santri.findIndex(s => s.id === loggedSantri.id) : 0;
+
+  // 0. Top Profile Pill (Jordan Blake FinPilot style)
+  const topName = document.getElementById('topProfileName');
+  const topSub = document.getElementById('topProfileSub');
+  const topAvatar = document.getElementById('topProfileAvatar');
+  if (topName && topSub && topAvatar) {
+    if (state.userRole === 'admin') {
+      topName.textContent = 'Muhammad Abdul Aziz';
+      topSub.textContent = 'Bendahara • Akses Penuh';
+      topAvatar.src = state.santri[0]?.avatar || 'logo-mojosari.png?v=2';
+    } else if (state.userRole === 'santri' && loggedSantri) {
+      topName.textContent = loggedSantri.nama;
+      topSub.textContent = `Santri • ${loggedSantri.prodi}`;
+      topAvatar.src = loggedSantri.avatar || AVATAR_IMAGES[loggedIdx % AVATAR_IMAGES.length];
+    } else {
+      topName.textContent = 'Tamu Umum';
+      topSub.textContent = 'Klik untuk Masuk Akun';
+      topAvatar.src = 'logo-mojosari.png?v=2';
+    }
+  }
+
+  // 1. Desktop Role Indicator
+  const desk = document.getElementById('adminRoleIndicatorDesktop');
+  if (desk) {
+    if (state.userRole === 'admin') {
+      desk.innerHTML = `
+        <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200/90 rounded-full px-3 py-1.5 text-xs shadow-2xs select-none">
+          <span class="w-2 h-2 rounded-full bg-[#064e3b] animate-pulse"></span>
+          <span class="font-bold text-emerald-950">Bendahara</span>
+          <button onclick="openResetAdminPasswordForm()" class="text-[10px] text-emerald-800 font-bold hover:underline ml-1 cursor-pointer">Ganti Sandi</button>
+          <span class="text-emerald-300">•</span>
+          <button onclick="logoutAdmin()" class="text-[10px] text-rose-600 font-bold hover:underline cursor-pointer">Keluar</button>
+        </div>
+      `;
+    } else if (state.userRole === 'santri' && loggedSantri) {
+      desk.innerHTML = `
+        <div class="flex items-center gap-2 bg-white border border-slate-200/90 rounded-full px-3 py-1.5 text-xs shadow-2xs select-none">
+          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+          <span class="font-bold text-slate-800">Akun Santri</span>
+          <button onclick="openResetSantriPasswordForm()" class="text-[10px] text-emerald-800 font-bold hover:underline ml-1 cursor-pointer">Sandi</button>
+          <span class="text-slate-300">•</span>
+          <button onclick="openAdminLoginModal('santri')" class="text-[10px] text-slate-600 font-bold hover:underline cursor-pointer">Ganti</button>
+          <span class="text-slate-300">•</span>
+          <button onclick="logoutAdmin()" class="text-[10px] text-rose-600 font-bold hover:underline cursor-pointer">Keluar</button>
+        </div>
+      `;
+    } else {
+      desk.innerHTML = `
+        <button onclick="openAdminLoginModal('santri')" class="flex items-center gap-1.5 bg-[#064e3b] hover:bg-[#065f46] text-white rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer shadow-xs select-none">
+          <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+          <span>Masuk Akun</span>
+        </button>
+      `;
+    }
+  }
+
+  // 2. Mobile Role Indicator
+  const mob = document.getElementById('adminRoleIndicatorMobile');
+  if (mob) {
+    if (state.userRole === 'admin') {
+      mob.innerHTML = `
+        <button onclick="logoutAdmin()" class="px-2.5 py-1 bg-emerald-50 text-emerald-900 text-[10px] font-bold rounded-full border border-emerald-200 cursor-pointer flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#064e3b]"></span>
+          <span>Bendahara</span>
+        </button>
+      `;
+    } else if (state.userRole === 'santri' && loggedSantri) {
+      mob.innerHTML = `
+        <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 bg-emerald-50 text-emerald-900 text-[10px] font-bold rounded-full border border-emerald-200 cursor-pointer flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+          <span class="max-w-[65px] truncate">${loggedSantri.shortName || loggedSantri.nama.split(' ')[0]}</span>
+        </button>
+      `;
+    } else {
+      mob.innerHTML = `
+        <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 bg-[#064e3b] text-white text-[10px] font-bold rounded-full cursor-pointer flex items-center gap-1 shadow-2xs">
+          <i data-lucide="log-in" class="w-3 h-3"></i>
+          <span>Login</span>
+        </button>
+      `;
+    }
+  }
+
+  // 3. Mobile Drawer Role Indicator
+  const drawer = document.getElementById('adminRoleIndicatorDrawer');
+  if (drawer) {
+    if (state.userRole === 'admin') {
+      drawer.innerHTML = `
+        <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#064e3b] animate-pulse"></span>
+            <div>
+              <span class="text-xs font-bold block leading-tight">Bendahara (Admin)</span>
+              <span class="text-[10px] text-emerald-700">Akses Penuh Pembayaran</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="toggleMobileDrawer(false); openResetAdminPasswordForm();" class="px-2.5 py-1 rounded-lg bg-white text-emerald-900 text-[10px] font-bold border border-emerald-200 cursor-pointer">Sandi</button>
+            <button onclick="logoutAdmin()" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 text-[10px] font-bold hover:bg-rose-100 border border-rose-200 cursor-pointer">Keluar</button>
+          </div>
+        </div>
+      `;
+    } else if (state.userRole === 'santri' && loggedSantri) {
+      drawer.innerHTML = `
+        <div class="p-3 rounded-2xl bg-[#f8fafc] border border-slate-200 text-slate-900 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <img src="${loggedSantri.avatar || AVATAR_IMAGES[loggedIdx % AVATAR_IMAGES.length]}" class="w-8 h-8 rounded-full object-cover border border-emerald-600 shrink-0" />
+            <div class="min-w-0">
+              <span class="text-xs font-bold block truncate">${loggedSantri.nama}</span>
+              <span class="text-[10px] text-emerald-700 font-semibold block">Akun Santri Pribadi</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="toggleMobileDrawer(false); openResetSantriPasswordForm();" class="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200 cursor-pointer">Sandi</button>
+            <button onclick="logoutAdmin()" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[10px] font-bold cursor-pointer">Keluar</button>
+          </div>
+        </div>
+      `;
+    } else {
+      drawer.innerHTML = `
+        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="user" class="w-4 h-4 text-slate-500"></i>
+            <div>
+              <span class="text-xs font-bold text-slate-800 block leading-tight">Mode Tamu Umum</span>
+              <span class="text-[10px] text-slate-500">Login untuk akses fitur</span>
+            </div>
+          </div>
+          <button onclick="toggleMobileDrawer(false); openAdminLoginModal('santri');" class="px-3 py-1.5 rounded-xl bg-[#064e3b] text-white text-[10px] font-bold hover:bg-[#065f46] shadow-2xs cursor-pointer">Login</button>
+        </div>
+      `;
+    }
+  }
+
+  // 4. Quick Payment Card Controls (Admin vs Santri Pribadi vs Tamu)
+  const qNotice = document.getElementById('quickPaymentSantriNotice');
+  const qAdmin = document.getElementById('quickPaymentAdminSection');
+  const qBadge = document.getElementById('quickPaymentRoleBadge');
+  const qHint = document.getElementById('quickPaymentSubHint');
+
+  if (state.userRole === 'admin') {
+    if (qNotice) qNotice.classList.add('hidden');
+    if (qAdmin) qAdmin.classList.remove('hidden');
+    if (qBadge) {
+      qBadge.textContent = 'Bendahara Aktif';
+      qBadge.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200';
+    }
+    if (qHint) qHint.textContent = 'Klik avatar santri untuk catat bayar';
+  } else if (state.userRole === 'santri' && loggedSantri) {
+    if (qAdmin) qAdmin.classList.add('hidden');
+    if (qNotice) {
+      qNotice.classList.remove('hidden');
+      const rec = getPaymentRecord(loggedSantri.id, state.activeMonth);
+      const sum = calculateRecordSummary(rec, state.activeMonth, loggedSantri);
+      const nis = getNomorIndukSantri(loggedSantri, loggedIdx);
+      qNotice.className = 'p-5 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-slate-900 space-y-4';
+      qNotice.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/70">
+          <div class="flex items-center gap-3">
+            <img src="${loggedSantri.avatar || AVATAR_IMAGES[loggedIdx % AVATAR_IMAGES.length]}" class="w-12 h-12 rounded-full object-cover ring-2 ring-[#064e3b] ring-offset-2 bg-white" />
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-sm font-extrabold text-slate-900 font-display">${loggedSantri.nama}</h4>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${sum.isFullLunas ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}">
+                  ${sum.isFullLunas ? '✓ Lunas Bulan Ini' : `Kurang ${formatRp(sum.totalUnpaid)}`}
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-400 font-mono mt-0.5">${nis} • ${loggedSantri.prodi}</p>
+            </div>
+          </div>
+          <div class="text-left sm:text-right">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Terbayar (${getMonthLabel(state.activeMonth)})</span>
+            <span class="text-lg font-extrabold font-display text-[#064e3b]">${formatRp(sum.totalPaid)} <span class="text-xs font-normal text-slate-400">/ ${formatRp(sum.targetSantri)}</span></span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div class="p-2.5 rounded-xl bg-white border border-slate-200/70 flex items-center justify-between">
+            <span class="text-slate-500 font-medium">Makan</span>
+            <span class="font-bold ${sum.tanpaMakan ? 'text-slate-400' : (rec.makan ? 'text-emerald-700' : 'text-rose-600')}">${sum.tanpaMakan ? 'Bebas' : (rec.makan ? '✓ Lunas' : 'Belum')}</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-white border border-slate-200/70 flex items-center justify-between">
+            <span class="text-slate-500 font-medium">WiFi</span>
+            <span class="font-bold ${rec.wifi ? 'text-emerald-700' : 'text-rose-600'}">${rec.wifi ? '✓ Lunas' : 'Belum'}</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-white border border-slate-200/70 flex items-center justify-between">
+            <span class="text-slate-500 font-medium">Listrik</span>
+            <span class="font-bold ${rec.listrik ? 'text-emerald-700' : 'text-rose-600'}">${rec.listrik ? '✓ Lunas' : 'Belum'}</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-white border border-slate-200/70 flex items-center justify-between">
+            <span class="text-slate-500 font-medium">Air</span>
+            <span class="font-bold ${rec.air ? 'text-emerald-700' : 'text-rose-600'}">${rec.air ? '✓ Lunas' : 'Belum'}</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between gap-2 flex-wrap pt-1">
+          <span class="text-[11px] text-slate-400">Pencatatan bayar & penerbitan nota dilakukan oleh Bendahara.</span>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="openWaKonfirmasiKeBendahara('${loggedSantri.id}', '${state.activeMonth}')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-[#064e3b]"></i>
+              <span>Konfirmasi ke WA Bendahara</span>
+            </button>
+            <button type="button" onclick="openKartuSantriModal('${loggedSantri.id}')" class="px-3.5 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+              <i data-lucide="id-card" class="w-3.5 h-3.5"></i>
+              <span>Kartu KTA Saya</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    if (qBadge) {
+      qBadge.textContent = 'Data Pribadi Santri';
+      qBadge.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200';
+    }
+    if (qHint) qHint.textContent = loggedSantri.nama;
+  } else {
+    if (qAdmin) qAdmin.classList.add('hidden');
+    if (qNotice) {
+      qNotice.classList.remove('hidden');
+      qNotice.className = 'p-6 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-slate-800 space-y-3.5';
+      qNotice.innerHTML = `
+        <div class="flex items-center gap-2.5 text-sm font-bold text-slate-900">
+          <div class="w-8 h-8 rounded-xl bg-emerald-50 text-[#064e3b] flex items-center justify-center shrink-0">
+            <i data-lucide="lock" class="w-4 h-4"></i>
+          </div>
+          <span>Akses Fitur & Data Pribadi Terkunci (Mode Tamu)</span>
+        </div>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          Anda sedang melihat halaman sebagai <strong>Tamu Umum</strong>. Untuk melihat rincian tunggakan pribadi, pinjaman utang kas, atau mencetak Kartu Identitas Santri (KTA), silakan login terlebih dahulu.
+        </p>
+        <div class="pt-1 flex items-center gap-2.5 flex-wrap">
+          <button type="button" onclick="openAdminLoginModal('santri')" class="px-4 py-2.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+            <span>Masuk sebagai Santri</span>
+          </button>
+          <button type="button" onclick="openAdminLoginModal('admin')" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-500"></i>
+            <span>Login Bendahara</span>
+          </button>
+        </div>
+      `;
+    }
+    if (qBadge) {
+      qBadge.textContent = 'Mode Tamu Umum';
+      qBadge.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600';
+    }
+    if (qHint) qHint.textContent = 'Login Diperlukan';
+  }
+
+  // 5. Sembunyikan / nonaktifkan form input & tombol mutasi khusus Admin jika bukan Bendahara
+  const adminForms = ['formMasak', 'formUtangKas', 'formSantri'];
+  adminForms.forEach(fId => {
+    const formEl = document.getElementById(fId);
+    if (!formEl) return;
+    const cardEl = formEl.closest('div.bg-white');
+    if (cardEl) {
+      if (state.isAdmin) {
+        cardEl.classList.remove('opacity-60');
+      } else {
+        cardEl.classList.add('opacity-60');
+      }
+    }
+    formEl.querySelectorAll('input, select, textarea, button[type="submit"]').forEach(inp => {
+      inp.disabled = !state.isAdmin;
+    });
+  });
+
+  // Sembunyikan tombol Reset, Upload Bukti, dan Siaran Grup WA bagi selain Admin (Bendahara)
+  document.querySelectorAll('[onclick*="resetBulanIni"], [onclick*="resetSemuaKeNol"], [onclick*="openBendaharaWifiModal"], [onclick*="ubahTarifWifiManual"], [onclick*="deleteMasakLog"], [onclick*="openRekapGrupModal"], [onclick*="openRekapGrupForMonth"]').forEach(el => {
+    if (state.isAdmin) {
+      el.classList.remove('hidden');
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
 function loadState() {
   try {
     localStorage.removeItem('SIMKAS_MOJOSARI_FINPILOT_V7');
@@ -189,13 +1014,31 @@ function loadState() {
       state = getInitialDemoState();
       saveState(true);
     }
+    let savedRole = localStorage.getItem('paymojosari_role') || 'guest';
+    const savedAdminPass = localStorage.getItem('paymojosari_admin_pass') || '';
+    const expectedAdminPass = getExpectedAdminPassword();
+    if (savedRole === 'admin' && savedAdminPass !== expectedAdminPass) {
+      savedRole = 'guest';
+      localStorage.setItem('paymojosari_role', 'guest');
+      localStorage.removeItem('paymojosari_admin_pass');
+    }
+    const savedSantriId = localStorage.getItem('paymojosari_logged_santri_id') || null;
+    state.userRole = ['admin', 'santri', 'guest'].includes(savedRole) ? savedRole : 'guest';
+    state.isAdmin = state.userRole === 'admin';
+    state.loggedSantriId = state.userRole === 'santri' ? savedSantriId : null;
+
     purgeOldMonthsFromState();
-    if (!state.selectedSantriId && state.santri.length > 0) {
+    if (state.userRole === 'santri' && state.loggedSantriId) {
+      state.selectedSantriId = state.loggedSantriId;
+    } else if (!state.selectedSantriId && state.santri.length > 0) {
       state.selectedSantriId = state.santri[0].id;
     }
   } catch (e) {
     console.error('Gagal memuat state:', e);
     state = getInitialDemoState();
+    state.userRole = 'guest';
+    state.isAdmin = false;
+    state.loggedSantriId = null;
   }
   syncFromBackend();
 }
@@ -224,9 +1067,13 @@ async function syncFromBackend() {
           Object.keys(d.setoranWifiBendahara).forEach(k => {
             const item = d.setoranWifiBendahara[k];
             const existingImg = state.setoranWifiBendahara[k]?.proofImg || '';
+            const normNominal = (item.status === 'unpaid' && (!item.nominalBayar || Number(item.nominalBayar) === 340000))
+              ? TAGIHAN_WIFI_INDUK_DEFAULT
+              : Number(item.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT);
             state.setoranWifiBendahara[k] = {
               ...item,
-              proofImg: item.proofImg || existingImg || createSampleWifiChatDataUrl(getMonthLabel(k), formatRp(item.nominalBayar || 120000))
+              nominalBayar: normNominal,
+              proofImg: item.proofImg || existingImg || createSampleWifiChatDataUrl(getMonthLabel(k), formatRp(normNominal))
             };
           });
         }
@@ -255,10 +1102,13 @@ async function syncFromBackend() {
 
 function saveState(skipRemote = false) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  if (!skipRemote && window.location.protocol !== 'file:') {
+  if (!skipRemote && window.location.protocol !== 'file:' && state.isAdmin) {
     fetch('api.php?action=sync_all', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': getAdminKey()
+      },
       body: JSON.stringify(state)
     }).catch(err => console.warn('Gagal sinkron ke MySQL:', err));
   }
@@ -293,15 +1143,16 @@ function getPaymentRecord(santriId, monthKey) {
 }
 
 function getBendaharaWifiRecord(monthKey) {
-  const currentTarif = getTarif(monthKey);
   if (!state.setoranWifiBendahara[monthKey]) {
     state.setoranWifiBendahara[monthKey] = {
       status: 'unpaid',
       proofImg: '',
       proofNote: '',
       tanggalBayar: '2026-10-30',
-      nominalBayar: state.santri.length * currentTarif.wifi
+      nominalBayar: TAGIHAN_WIFI_INDUK_DEFAULT
     };
+  } else if (state.setoranWifiBendahara[monthKey].status === 'unpaid' && (!state.setoranWifiBendahara[monthKey].nominalBayar || state.setoranWifiBendahara[monthKey].nominalBayar === 340000)) {
+    state.setoranWifiBendahara[monthKey].nominalBayar = TAGIHAN_WIFI_INDUK_DEFAULT;
   }
   return state.setoranWifiBendahara[monthKey];
 }
@@ -392,6 +1243,16 @@ function calculateGlobalFinancials() {
 
   const totalKasCollectedAllTime = allTimeWifiCollected + allTimeListrikCollected + allTimeAirCollected;
 
+  // Hitung total setoran WiFi Induk (Rp 200.000/bln) yang sudah dibayarkan oleh Bendahara; sisa uang WiFi otomatis tersimpan di Saldo Kas Komplek
+  let totalSetoranWifiIndukPaid = 0;
+  Object.keys(state.setoranWifiBendahara || {}).forEach(mKey => {
+    if (!mKey || mKey < START_MONTH_KEY) return;
+    const wRec = state.setoranWifiBendahara[mKey];
+    if (wRec && wRec.status === 'paid') {
+      totalSetoranWifiIndukPaid += Number(wRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT);
+    }
+  });
+
   const totalUtangAktif = state.utangKas
     .filter(u => u.status === 'belum_lunas')
     .reduce((acc, u) => acc + Number(u.nominal), 0);
@@ -400,7 +1261,7 @@ function calculateGlobalFinancials() {
     .filter(u => u.status === 'lunas')
     .reduce((acc, u) => acc + Number(u.nominal), 0);
 
-  const saldoKasTersedia = totalKasCollectedAllTime - totalUtangAktif;
+  const saldoKasTersedia = totalKasCollectedAllTime - totalSetoranWifiIndukPaid - totalUtangAktif;
 
   const pemasukanMasakLain = state.masakLogs
     .filter(m => m.tipe === 'pemasukan')
@@ -473,17 +1334,44 @@ function calculateGlobalFinancials() {
 // UI CONTROLS & ROUTING
 // =========================================================================
 
+function toggleMobileDrawer(show) {
+  const drawer = document.getElementById('mobileDrawer');
+  if (!drawer) return;
+  if (show === undefined) {
+    drawer.classList.toggle('hidden');
+  } else if (show) {
+    drawer.classList.remove('hidden');
+  } else {
+    drawer.classList.add('hidden');
+  }
+}
+
 function initControls() {
   const select = document.getElementById('globalMonthSelect');
-  select.innerHTML = AVAILABLE_MONTHS.map(m =>
+  const mobileSelect = document.getElementById('mobileMonthSelect');
+  const monthOptions = AVAILABLE_MONTHS.map(m =>
     `<option value="${m.key}" ${m.key === state.activeMonth ? 'selected' : ''}>${m.label}</option>`
   ).join('');
 
-  select.onchange = (e) => {
-    state.activeMonth = e.target.value;
-    saveState(true);
-    renderAll();
-  };
+  if (select) {
+    select.innerHTML = monthOptions;
+    select.onchange = (e) => {
+      state.activeMonth = e.target.value;
+      if (mobileSelect) mobileSelect.value = e.target.value;
+      saveState(true);
+      renderAll();
+    };
+  }
+
+  if (mobileSelect) {
+    mobileSelect.innerHTML = monthOptions;
+    mobileSelect.onchange = (e) => {
+      state.activeMonth = e.target.value;
+      if (select) select.value = e.target.value;
+      saveState(true);
+      renderAll();
+    };
+  }
 
   const today = '2026-10-30';
   const masakDate = document.getElementById('masakTanggal');
@@ -494,6 +1382,14 @@ function initControls() {
 }
 
 function switchTab(tabName) {
+  // Jika Tamu Umum (Guest) mencoba menjelajah ke dalam fitur pribadi (Tunggakan / Utang Kas), minta login terlebih dahulu
+  if (state.userRole === 'guest' && ['tunggakan', 'utang'].includes(tabName)) {
+    toggleMobileDrawer(false);
+    openAdminLoginModal('santri');
+    showToast('Silakan masuk akun terlebih dahulu untuk menjelajahi fitur pribadi ini', 'amber');
+    return;
+  }
+
   state.activeTab = tabName;
   saveState(true);
 
@@ -502,18 +1398,41 @@ function switchTab(tabName) {
   const target = document.getElementById(`view-${tabName}`);
   if (target) target.classList.remove('hidden');
 
-  // Reset all nav buttons to inactive
-  document.querySelectorAll('nav button').forEach(btn => {
+  // Reset desktop sidebar nav buttons
+  document.querySelectorAll('aside nav button').forEach(btn => {
     btn.className = 'w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer font-medium text-[13px]';
   });
-
-  // Activate selected nav button (FinPilot dark green pill)
   const activeBtn = document.getElementById(`nav-${tabName}`);
   if (activeBtn) {
     activeBtn.className = 'w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all bg-[#064e3b] text-white font-semibold shadow-xs cursor-pointer text-[13px]';
   }
 
-  // Update Page Header Title
+  // Reset & update mobile drawer nav buttons
+  document.querySelectorAll('#mobileDrawer nav button').forEach(btn => {
+    btn.className = 'w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:bg-slate-50 cursor-pointer font-medium text-[13px]';
+  });
+  const activeDrawerBtn = document.getElementById(`drawer-${tabName}`);
+  if (activeDrawerBtn) {
+    activeDrawerBtn.className = 'w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all bg-[#064e3b] text-white font-semibold shadow-xs cursor-pointer text-[13px]';
+  }
+
+  // Reset & update mobile bottom navigation bar
+  const bnavItems = ['pembayaran', 'dashboard', 'tunggakan', 'masak', 'santri'];
+  bnavItems.forEach(item => {
+    const bBtn = document.getElementById(`bnav-${item}`);
+    if (bBtn) {
+      if (item === tabName) {
+        bBtn.className = 'flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-emerald-800 font-bold cursor-pointer';
+      } else {
+        bBtn.className = 'flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-slate-400 hover:text-slate-700 font-medium cursor-pointer';
+      }
+    }
+  });
+
+  // Close mobile drawer on navigation
+  toggleMobileDrawer(false);
+
+  // Update Page Header Titles
   const titles = {
     pembayaran: 'Payments',
     dashboard: 'Dashboard',
@@ -522,8 +1441,11 @@ function switchTab(tabName) {
     utang: 'Student Cash Loans',
     santri: 'Students Directory'
   };
+  const titleText = titles[tabName] || 'Payments';
   const titleEl = document.getElementById('pageHeadingTitle');
-  if (titleEl) titleEl.textContent = titles[tabName] || 'Payments';
+  if (titleEl) titleEl.textContent = titleText;
+  const mobileTitleEl = document.getElementById('mobilePageHeadingTitle');
+  if (mobileTitleEl) mobileTitleEl.textContent = titleText;
 
   renderAll();
 }
@@ -540,6 +1462,10 @@ function showToast(msg, color = 'emerald') {
 }
 
 function ubahTarifWifiManual() {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   const currentTarif = getTarif(state.activeMonth);
   const input = prompt(`Masukkan nominal manual tarif iuran WiFi santri (${getMonthLabel(state.activeMonth)}):`, currentTarif.wifi);
   if (input === null) return;
@@ -609,6 +1535,10 @@ function setQuickMode(mode) {
 }
 
 function handleQuickSubmitPayment() {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   if (!state.selectedSantriId) {
     showToast('Silakan pilih salah satu santri di deretan avatar!', 'amber');
     return;
@@ -674,44 +1604,125 @@ function renderAll() {
   const fin = calculateGlobalFinancials();
   const curTarif = getTarif(state.activeMonth);
 
-  // Metrics Bar (Payments Tab & Dashboard Tab)
+  // Metrics Bar (Payments Tab & Dashboard Tab) — Disesuaikan berdasarkan Role (Bendahara vs Santri Pribadi vs Tamu Umum)
   const monthLabelShort = getMonthLabel(state.activeMonth);
   if (document.getElementById('mMonthBadge')) document.getElementById('mMonthBadge').textContent = monthLabelShort;
   if (document.getElementById('dashMonthBadge')) document.getElementById('dashMonthBadge').textContent = monthLabelShort;
   if (document.getElementById('dashActiveMonthTitle')) document.getElementById('dashActiveMonthTitle').textContent = monthLabelShort;
 
-  document.getElementById('mTotalSent').textContent = formatRp(fin.activeMonthTotalSent);
-  const pctSent = fin.activeMonthTarget > 0 ? Math.round((fin.activeMonthTotalSent / fin.activeMonthTarget) * 100) : 0;
-  document.getElementById('mTotalSentPct').innerHTML = `<i data-lucide="arrow-up" class="w-3 h-3"></i> ${pctSent}%`;
+  const setMetricLabels = (l1, l2, l3, l4) => {
+    ['mLabel1', 'dashLabel1'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = l1; });
+    ['mLabel2', 'dashLabel2'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = l2; });
+    ['mLabel3', 'dashLabel3'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = l3; });
+    ['mLabel4', 'dashLabel4'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = l4; });
+  };
 
-  document.getElementById('mPending').textContent = formatRp(fin.activeMonthTunggakan);
-  const pctPending = fin.activeMonthTarget > 0 ? Math.round((fin.activeMonthTunggakan / fin.activeMonthTarget) * 100) : 0;
-  document.getElementById('mPendingPct').innerHTML = `<i data-lucide="arrow-down" class="w-3 h-3"></i> ${pctPending}%`;
+  if (state.userRole === 'admin') {
+    setMetricLabels('Total Terkumpul', 'Tunggakan (17 Santri)', 'Saldo Kas', 'Utang Kas');
+    const pctSent = fin.activeMonthTarget > 0 ? Math.round((fin.activeMonthTotalSent / fin.activeMonthTarget) * 100) : 0;
+    const pctPending = fin.activeMonthTarget > 0 ? Math.round((fin.activeMonthTunggakan / fin.activeMonthTarget) * 100) : 0;
+    const activeLoanCount = state.utangKas.filter(u => u.status === 'belum_lunas').length;
 
-  document.getElementById('mScheduled').textContent = formatRp(fin.saldoKasTersedia);
-  const activeLoanCount = state.utangKas.filter(u => u.status === 'belum_lunas').length;
-  document.getElementById('mFailed').textContent = formatRp(fin.totalUtangAktif);
-  document.getElementById('mFailedSub').textContent = `${activeLoanCount} Santri Utang`;
+    document.getElementById('mTotalSent').textContent = formatRp(fin.activeMonthTotalSent);
+    document.getElementById('mTotalSentPct').innerHTML = `<i data-lucide="arrow-up" class="w-3 h-3"></i> ${pctSent}%`;
+    document.getElementById('mPending').textContent = formatRp(fin.activeMonthTunggakan);
+    document.getElementById('mPendingPct').innerHTML = `<i data-lucide="arrow-down" class="w-3 h-3"></i> ${pctPending}%`;
+    document.getElementById('mScheduled').textContent = formatRp(fin.saldoKasTersedia);
+    if (document.getElementById('mScheduledSub')) document.getElementById('mScheduledSub').textContent = 'Aktif';
+    document.getElementById('mFailed').textContent = formatRp(fin.totalUtangAktif);
+    document.getElementById('mFailedSub').textContent = `${activeLoanCount} Santri Utang`;
 
-  // Sync Dashboard Top Cards
-  if (document.getElementById('dashTotalSent')) {
-    document.getElementById('dashTotalSent').textContent = formatRp(fin.activeMonthTotalSent);
-    document.getElementById('dashTotalSentPct').textContent = `${pctSent}%`;
-    document.getElementById('dashPending').textContent = formatRp(fin.activeMonthTunggakan);
-    document.getElementById('dashPendingPct').textContent = `${pctPending}%`;
-    document.getElementById('dashScheduled').textContent = formatRp(fin.saldoKasTersedia);
-    document.getElementById('dashFailed').textContent = formatRp(fin.totalUtangAktif);
-    document.getElementById('dashFailedSub').textContent = `${activeLoanCount} Santri Utang`;
+    if (document.getElementById('dashTotalSent')) {
+      document.getElementById('dashTotalSent').textContent = formatRp(fin.activeMonthTotalSent);
+      document.getElementById('dashTotalSentPct').textContent = `${pctSent}%`;
+      document.getElementById('dashPending').textContent = formatRp(fin.activeMonthTunggakan);
+      document.getElementById('dashPendingPct').textContent = `${pctPending}%`;
+      document.getElementById('dashScheduled').textContent = formatRp(fin.saldoKasTersedia);
+      if (document.getElementById('dashScheduledSub')) document.getElementById('dashScheduledSub').textContent = 'Aktif';
+      document.getElementById('dashFailed').textContent = formatRp(fin.totalUtangAktif);
+      document.getElementById('dashFailedSub').textContent = `${activeLoanCount} Santri Utang`;
+    }
+
+    if (document.getElementById('limitBar1Label')) document.getElementById('limitBar1Label').textContent = 'Iuran Terkumpul (17 Santri)';
+    document.getElementById('limitDailyRatio').textContent = `${formatRp(fin.activeMonthTotalSent)} / ${formatRp(fin.activeMonthTarget)}`;
+    document.getElementById('limitDailyBar').style.width = `${Math.min(100, pctSent)}%`;
+
+    const wifiRecAct = getBendaharaWifiRecord(state.activeMonth);
+    const wifiTarget = Number(wifiRecAct.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT);
+    const wifiPct = wifiTarget > 0 ? Math.round((fin.activeMonthWifi / wifiTarget) * 100) : 0;
+    if (document.getElementById('limitBar2Label')) document.getElementById('limitBar2Label').textContent = 'WiFi Masuk vs Setor Induk (200k)';
+    document.getElementById('limitMonthlyRatio').textContent = `${formatRp(fin.activeMonthWifi)} / ${formatRp(wifiTarget)}`;
+    document.getElementById('limitMonthlyBar').style.width = `${Math.min(100, wifiPct)}%`;
+
+  } else if (state.userRole === 'santri') {
+    setMetricLabels('Terbayar (Saya)', 'Tunggakan Saya', 'Utang Kas Saya', 'Status Syahriyah');
+    const mySantri = state.santri.find(s => s.id === state.loggedSantriId) || state.santri[0];
+    const myRec = getPaymentRecord(mySantri.id, state.activeMonth);
+    const mySum = calculateRecordSummary(myRec, state.activeMonth, mySantri);
+    const myPctPaid = mySum.targetSantri > 0 ? Math.round((mySum.totalPaid / mySum.targetSantri) * 100) : 0;
+    const myPctUnpaid = mySum.targetSantri > 0 ? Math.round((mySum.totalUnpaid / mySum.targetSantri) * 100) : 0;
+    const myActiveLoans = state.utangKas.filter(u => u.santriId === mySantri.id && u.status === 'belum_lunas');
+    const myLoanTotal = myActiveLoans.reduce((acc, u) => acc + Number(u.nominal), 0);
+
+    document.getElementById('mTotalSent').textContent = formatRp(mySum.totalPaid);
+    document.getElementById('mTotalSentPct').innerHTML = `<i data-lucide="arrow-up" class="w-3 h-3"></i> ${myPctPaid}%`;
+    document.getElementById('mPending').textContent = formatRp(mySum.totalUnpaid);
+    document.getElementById('mPendingPct').innerHTML = `<i data-lucide="arrow-down" class="w-3 h-3"></i> ${myPctUnpaid}%`;
+    document.getElementById('mScheduled').textContent = formatRp(myLoanTotal);
+    if (document.getElementById('mScheduledSub')) document.getElementById('mScheduledSub').textContent = myLoanTotal === 0 ? 'Aman' : `${myActiveLoans.length} Pinjaman`;
+    document.getElementById('mFailed').textContent = mySum.isFullLunas ? 'Lunas' : 'Belum';
+    document.getElementById('mFailedSub').textContent = `Target ${formatRp(mySum.targetSantri)}`;
+
+    if (document.getElementById('dashTotalSent')) {
+      document.getElementById('dashTotalSent').textContent = formatRp(mySum.totalPaid);
+      document.getElementById('dashTotalSentPct').textContent = `${myPctPaid}%`;
+      document.getElementById('dashPending').textContent = formatRp(mySum.totalUnpaid);
+      document.getElementById('dashPendingPct').textContent = `${myPctUnpaid}%`;
+      document.getElementById('dashScheduled').textContent = formatRp(myLoanTotal);
+      if (document.getElementById('dashScheduledSub')) document.getElementById('dashScheduledSub').textContent = myLoanTotal === 0 ? 'Aman' : `${myActiveLoans.length} Pinjaman`;
+      document.getElementById('dashFailed').textContent = mySum.isFullLunas ? 'Lunas' : 'Belum';
+      document.getElementById('dashFailedSub').textContent = `Target ${formatRp(mySum.targetSantri)}`;
+    }
+
+    if (document.getElementById('limitBar1Label')) document.getElementById('limitBar1Label').textContent = 'Progress Iuran Saya Bulan Ini';
+    document.getElementById('limitDailyRatio').textContent = `${formatRp(mySum.totalPaid)} / ${formatRp(mySum.targetSantri)}`;
+    document.getElementById('limitDailyBar').style.width = `${Math.min(100, myPctPaid)}%`;
+
+    const myWifiPct = myRec.wifi ? 100 : 0;
+    if (document.getElementById('limitBar2Label')) document.getElementById('limitBar2Label').textContent = 'Iuran Kas WiFi Saya';
+    document.getElementById('limitMonthlyRatio').textContent = `${formatRp(mySum.paidWifi)} / ${formatRp(curTarif.wifi)}`;
+    document.getElementById('limitMonthlyBar').style.width = `${myWifiPct}%`;
+
+  } else {
+    setMetricLabels('Santri Mukim', 'Syahriyah / Bln', 'Iuran Kas Komplek', 'Uang Makan');
+    document.getElementById('mTotalSent').textContent = `${state.santri.length} Santri`;
+    document.getElementById('mTotalSentPct').innerHTML = `Aktif`;
+    document.getElementById('mPending').textContent = formatRp(curTarif.totalBulanan);
+    document.getElementById('mPendingPct').innerHTML = `Full`;
+    document.getElementById('mScheduled').textContent = formatRp(curTarif.totalKas);
+    if (document.getElementById('mScheduledSub')) document.getElementById('mScheduledSub').textContent = 'Kas';
+    document.getElementById('mFailed').textContent = formatRp(curTarif.makan);
+    document.getElementById('mFailedSub').textContent = 'Dapur';
+
+    if (document.getElementById('dashTotalSent')) {
+      document.getElementById('dashTotalSent').textContent = `${state.santri.length} Santri`;
+      document.getElementById('dashTotalSentPct').textContent = 'Aktif';
+      document.getElementById('dashPending').textContent = formatRp(curTarif.totalBulanan);
+      document.getElementById('dashPendingPct').textContent = 'Full';
+      document.getElementById('dashScheduled').textContent = formatRp(curTarif.totalKas);
+      if (document.getElementById('dashScheduledSub')) document.getElementById('dashScheduledSub').textContent = 'Kas';
+      document.getElementById('dashFailed').textContent = formatRp(curTarif.makan);
+      document.getElementById('dashFailedSub').textContent = 'Dapur';
+    }
+
+    if (document.getElementById('limitBar1Label')) document.getElementById('limitBar1Label').textContent = 'Komponen Uang Makan';
+    document.getElementById('limitDailyRatio').textContent = `${formatRp(curTarif.makan)} / bln`;
+    document.getElementById('limitDailyBar').style.width = `50%`;
+
+    if (document.getElementById('limitBar2Label')) document.getElementById('limitBar2Label').textContent = 'Komponen Kas (WiFi, Listrik, Air)';
+    document.getElementById('limitMonthlyRatio').textContent = `${formatRp(curTarif.totalKas)} / bln`;
+    document.getElementById('limitMonthlyBar').style.width = `50%`;
   }
-
-  // Payment Limits Widget
-  document.getElementById('limitDailyRatio').textContent = `${formatRp(fin.activeMonthTotalSent)} / ${formatRp(fin.activeMonthTarget)}`;
-  document.getElementById('limitDailyBar').style.width = `${Math.min(100, pctSent)}%`;
-
-  const wifiTarget = state.santri.length * curTarif.wifi;
-  const wifiPct = wifiTarget > 0 ? Math.round((fin.activeMonthWifi / wifiTarget) * 100) : 0;
-  document.getElementById('limitMonthlyRatio').textContent = `${formatRp(fin.activeMonthWifi)} / ${formatRp(wifiTarget)}`;
-  document.getElementById('limitMonthlyBar').style.width = `${Math.min(100, wifiPct)}%`;
 
   // Status Setoran WiFi Induk Widget
   const wifiRecActive = getBendaharaWifiRecord(state.activeMonth);
@@ -741,6 +1752,8 @@ function renderAll() {
   renderMasakTab(fin);
   renderUtangTab(fin);
   renderSantriTab();
+
+  updateRoleUI();
 
   if (window.lucide) {
     window.lucide.createIcons();
@@ -851,7 +1864,34 @@ function renderActiveKartuSantriWidget() {
   const widget = document.getElementById('activeKartuSantriWidget');
   if (!widget) return;
 
-  const s = state.santri.find(x => x.id === state.selectedSantriId) || state.santri[0];
+  if (state.userRole === 'guest') {
+    widget.innerHTML = `
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 font-display">Kartu Identitas Santri</h3>
+          <p class="text-[11px] text-slate-400">Privasi data identitas & KTA santri</p>
+        </div>
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">Privat</span>
+      </div>
+      <div class="p-5 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#064e3b] flex items-center justify-center mx-auto">
+          <i data-lucide="id-card" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 class="text-xs font-bold text-slate-900">Kartu Identitas Bersifat Pribadi</h4>
+          <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">Masuk menggunakan akun santri Anda untuk melihat & mencetak Kartu Identitas Santri (KTA) milik Anda sendiri.</p>
+        </div>
+        <button type="button" onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer shadow-xs inline-flex items-center gap-1.5">
+          <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+          <span>Masuk Akun untuk Lihat KTA</span>
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const targetId = state.userRole === 'santri' ? state.loggedSantriId : state.selectedSantriId;
+  const s = state.santri.find(x => x.id === targetId) || state.santri[0];
   if (!s) {
     widget.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">Belum ada santri dipilih</div>`;
     return;
@@ -861,16 +1901,18 @@ function renderActiveKartuSantriWidget() {
   widget.innerHTML = `
     <div class="flex items-center justify-between">
       <div>
-        <h3 class="text-sm font-bold text-slate-900 font-display">Kartu Identitas Santri</h3>
-        <p class="text-[11px] text-slate-400">Identitas santri mukim Komplek Tuban</p>
+        <h3 class="text-sm font-bold text-slate-900 font-display">${state.userRole === 'santri' ? 'Kartu Identitas Saya' : 'Kartu Identitas Santri'}</h3>
+        <p class="text-[11px] text-slate-400">${state.userRole === 'santri' ? 'KTA resmi milik akun Anda' : 'Identitas santri mukim Komplek Tuban'}</p>
       </div>
       <div class="flex items-center gap-1.5">
         <button type="button" onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold cursor-pointer transition">
           Cetak Kartu
         </button>
-        <button type="button" onclick="openSemuaKartuSantriModal()" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold cursor-pointer transition">
-          Semua (17)
-        </button>
+        ${state.isAdmin ? `
+          <button type="button" onclick="openSemuaKartuSantriModal()" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold cursor-pointer transition">
+            Semua (17)
+          </button>
+        ` : ''}
       </div>
     </div>
     ${buildKartuSantriVisualHtml(s, idx >= 0 ? idx : 0, false)}
@@ -882,8 +1924,36 @@ function renderScheduledPayments(searchFilter = '') {
   const container = document.getElementById('scheduledPaymentsList');
   if (!container) return;
 
+  if (state.userRole === 'guest') {
+    container.innerHTML = `
+      <div class="p-6 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-3">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#064e3b] flex items-center justify-center mx-auto">
+          <i data-lucide="lock" class="w-5 h-5"></i>
+        </div>
+        <div class="max-w-md mx-auto">
+          <h4 class="text-xs font-bold text-slate-900">Rincian Tagihan & Pembayaran Bersifat Pribadi</h4>
+          <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Sebagai <strong>Tamu Umum</strong>, Anda dapat melihat ringkasan kas komplek secara umum di atas. Untuk melihat rincian pembayaran syahriyah, tunggakan, atau kartu santri, silakan login terlebih dahulu.</p>
+        </div>
+        <div class="flex items-center justify-center gap-2 pt-1">
+          <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer shadow-xs inline-flex items-center gap-1.5">
+            <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+            <span>Login Akun Santri</span>
+          </button>
+          <button onclick="switchTab('santri')" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold transition cursor-pointer">
+            Lihat Daftar 17 Santri
+          </button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
   const q = searchFilter.toLowerCase();
-  const list = state.santri.filter(s => {
+  const baseList = state.userRole === 'santri'
+    ? state.santri.filter(s => s.id === state.loggedSantriId)
+    : state.santri;
+
+  const list = baseList.filter(s => {
     return s.nama.toLowerCase().includes(q) || s.prodi.toLowerCase().includes(q);
   });
 
@@ -903,7 +1973,7 @@ function renderScheduledPayments(searchFilter = '') {
             <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
           </div>
           <div class="min-w-0">
-            <h4 class="text-xs font-bold text-slate-900 truncate">${s.nama} (${s.prodi.split(' ')[0]}) ${sum.tanpaMakan ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Makan</span>` : ''}</h4>
+            <h4 class="text-xs font-bold text-slate-900 truncate">${s.nama} (${s.prodi.split(' ')[0]}) ${sum.tanpaMakan ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Makan</span>` : ''} ${state.userRole === 'santri' ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold">Data Saya</span>` : ''}</h4>
             <p class="text-[11px] text-slate-400 truncate">${sum.tanpaMakan ? 'Iuran Kas Komplek (Tanpa Uang Makan)' : 'Iuran Syahriyah'} • ${getMonthLabel(state.activeMonth)}</p>
           </div>
         </div>
@@ -919,12 +1989,19 @@ function renderScheduledPayments(searchFilter = '') {
           </span>
 
           <div class="flex items-center gap-1">
-            <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" title="Nota Lunas" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-800 hover:bg-slate-100 cursor-pointer">
-              <i data-lucide="receipt" class="w-4 h-4"></i>
-            </button>
-            <button onclick="openNotaTunggakanSantriModal('${s.id}')" title="Kirim Tagihan WA" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 cursor-pointer">
-              <i data-lucide="send" class="w-4 h-4"></i>
-            </button>
+            ${state.isAdmin ? `
+              <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" title="Terbitkan Nota Pembayaran (Bendahara)" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-800 hover:bg-slate-100 cursor-pointer">
+                <i data-lucide="receipt" class="w-4 h-4"></i>
+              </button>
+              <button onclick="openNotaTunggakanSantriModal('${s.id}')" title="Kirim Tagihan WA ke Santri" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 cursor-pointer">
+                <i data-lucide="send" class="w-4 h-4"></i>
+              </button>
+            ` : `
+              <button onclick="openWaKonfirmasiKeBendahara('${s.id}', '${state.activeMonth}')" title="Konfirmasi Pembayaran ke WA Bendahara" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer flex items-center gap-1">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                <span>WA Bendahara</span>
+              </button>
+            `}
           </div>
         </div>
       </div>
@@ -971,6 +2048,10 @@ function renderRecentPayments() {
 
 // 4. Render Dashboard Tab Matrix & Monthly Recap
 function toggleComponentPayment(santriId, monthKey, field) {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   if (field === 'makan' && isSantriTanpaMakan(santriId)) {
     showToast('Santri ini terdaftar Tanpa Uang Makan (Hanya Kas Komplek)', 'amber');
     return;
@@ -986,20 +2067,33 @@ function selectDashboardMonth(monthKey) {
   state.activeMonth = monthKey;
   const select = document.getElementById('globalMonthSelect');
   if (select) select.value = monthKey;
+  const mobileSelect = document.getElementById('mobileMonthSelect');
+  if (mobileSelect) mobileSelect.value = monthKey;
   saveState(true);
   renderAll();
 }
 
 function openRekapGrupForMonth(monthKey) {
+  if (!state.isAdmin) {
+    openAdminLoginModal('admin');
+    showToast('Fitur Siaran Rekap Grup WA khusus untuk Bendahara (Admin)', 'amber');
+    return;
+  }
   state.activeMonth = monthKey;
   const select = document.getElementById('globalMonthSelect');
   if (select) select.value = monthKey;
+  const mobileSelect = document.getElementById('mobileMonthSelect');
+  if (mobileSelect) mobileSelect.value = monthKey;
   saveState(true);
   renderAll();
   openRekapGrupModal();
 }
 
 function resetBulanIni(monthKeyParam) {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   const mKey = monthKeyParam || state.activeMonth;
   const mLabel = getMonthLabel(mKey);
   if (!confirm(`Reset / kosongkan semua pembayaran pada bulan ${mLabel} menjadi Rp 0 (Belum Bayar)?`)) return;
@@ -1016,6 +2110,10 @@ function resetBulanIni(monthKeyParam) {
 }
 
 function resetSemuaKeNol() {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   if (!confirm('Reset seluruh pembayaran di semua bulan, kas masak, dan utang kas menjadi Rp 0 (Data Santri tetap tersimpan)?')) return;
   state.pembayaran = {};
   state.setoranWifiBendahara = {};
@@ -1044,28 +2142,37 @@ function renderDashboardTab(fin) {
         ? 'bg-amber-50 text-amber-800 border-amber-200'
         : 'bg-rose-50 text-rose-600 border-rose-200';
 
+    const nominalInduk = Number(wifiRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT);
+    const targetWifiSantri = state.santri.length * curTarif.wifi;
+    const potensiSisaKasWifi = Math.max(0, targetWifiSantri - nominalInduk);
+    const aktualSisaKasWifi = Math.max(0, fin.activeMonthWifi - nominalInduk);
+
     wifiSummaryBox.innerHTML = `
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
         <div class="lg:col-span-8 overflow-x-auto">
           <table class="w-full text-xs border-collapse">
             <tbody class="divide-y divide-slate-200/70">
               <tr>
-                <td class="py-1.5 text-slate-500 font-semibold w-44">Status Setoran WiFi Induk</td>
+                <td class="py-1.5 text-slate-500 font-semibold w-48">Status Setoran WiFi Induk</td>
                 <td class="py-1.5">
                   <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${statusClass}">${statusLabel}</span>
                 </td>
               </tr>
               <tr>
-                <td class="py-1.5 text-slate-500 font-semibold">Nominal Tagihan WiFi Induk</td>
-                <td class="py-1.5 font-mono font-bold text-slate-900">${formatRp(wifiRec.nominalBayar || 0)} <span class="text-[10px] font-normal text-slate-400">(Tarif Santri: ${formatRp(curTarif.wifi)}/santri)</span></td>
+                <td class="py-1.5 text-slate-500 font-semibold">Setoran ke WiFi Induk (Bendahara)</td>
+                <td class="py-1.5 font-mono font-bold text-slate-900">${formatRp(nominalInduk)} <span class="text-[10px] font-normal text-slate-500">(Dibayar Bendahara ke WiFi Induk / bln)</span></td>
               </tr>
               <tr>
                 <td class="py-1.5 text-slate-500 font-semibold">Kas WiFi Terkumpul (Santri)</td>
-                <td class="py-1.5 font-mono font-bold text-emerald-800">${formatRp(fin.activeMonthWifi)} <span class="text-[10px] font-normal text-slate-500">(${fin.activeMonthWifiSantriCount}/${state.santri.length} Santri Lunas WiFi)</span></td>
+                <td class="py-1.5 font-mono font-bold text-emerald-800">${formatRp(fin.activeMonthWifi)} <span class="text-[10px] font-normal text-slate-500">dari ${formatRp(targetWifiSantri)} (${fin.activeMonthWifiSantriCount}/${state.santri.length} Santri @ ${formatRp(curTarif.wifi)})</span></td>
+              </tr>
+              <tr>
+                <td class="py-1.5 text-slate-500 font-semibold">Sisa WiFi (Disimpan di Kas)</td>
+                <td class="py-1.5 font-mono font-bold text-emerald-900">${formatRp(potensiSisaKasWifi)}/bln <span class="text-[10px] font-normal text-slate-500">(Sisa dari ${formatRp(targetWifiSantri)} - ${formatRp(nominalInduk)} disimpan Bendahara • Aktual saat ini: ${formatRp(aktualSisaKasWifi)})</span></td>
               </tr>
               <tr>
                 <td class="py-1.5 text-slate-500 font-semibold">Tanggal Bayar & Catatan</td>
-                <td class="py-1.5 text-slate-700"><span class="font-mono font-semibold">${wifiRec.tanggalBayar || '-'}</span> • ${wifiRec.proofNote || 'Belum ada catatan setoran WiFi induk'}</td>
+                <td class="py-1.5 text-slate-700"><span class="font-mono font-semibold">${wifiRec.tanggalBayar || '-'}</span> • ${wifiRec.proofNote || 'Setoran bulanan Rp 200.000 ke pemilik WiFi induk, sisa disimpan di kas komplek'}</td>
               </tr>
             </tbody>
           </table>
@@ -1081,11 +2188,81 @@ function renderDashboardTab(fin) {
     `;
   }
 
-  // 2. Render Tabel Rekapitulasi Bulanan
+  // 2. Render Tabel Rekapitulasi Bulanan (Disesuaikan untuk Bendahara vs Santri Pribadi vs Tamu Umum)
   const recapBody = document.getElementById('dashboardMonthlyRecapBody');
   if (recapBody) {
     recapBody.innerHTML = AVAILABLE_MONTHS.map(m => {
       const mTarif = getTarif(m.key);
+      const isCurrent = m.key === state.activeMonth;
+      const wRec = getBendaharaWifiRecord(m.key);
+      const wifiStatusBadge = wRec.status === 'paid'
+        ? `<span onclick="openNotaWifiIndukModal('${m.key}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 cursor-pointer">✓ Lunas (${formatRp(wRec.nominalBayar)})</span>`
+        : wRec.status === 'pending_confirm'
+          ? `<span onclick="openNotaWifiIndukModal('${m.key}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 cursor-pointer">Pending (${formatRp(wRec.nominalBayar)})</span>`
+          : `<span onclick="${state.isAdmin ? `openBendaharaWifiModal('${m.key}')` : `openNotaWifiIndukModal('${m.key}')`}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 border border-rose-200 cursor-pointer">Belum Setor</span>`;
+
+      if (state.userRole === 'santri') {
+        const mySantri = state.santri.find(s => s.id === state.loggedSantriId) || state.santri[0];
+        const myRec = getPaymentRecord(mySantri.id, m.key);
+        const mySum = calculateRecordSummary(myRec, m.key, mySantri);
+        const myKas = mySum.paidWifi + mySum.paidListrik + mySum.paidAir;
+        const myPct = mySum.targetSantri > 0 ? Math.round((mySum.totalPaid / mySum.targetSantri) * 100) : 0;
+
+        return `
+          <tr class="${isCurrent ? 'bg-emerald-50/60 font-semibold' : 'hover:bg-slate-50'} transition">
+            <td class="py-2.5 px-3 cursor-pointer" onclick="selectDashboardMonth('${m.key}')">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900">${m.label}</span>
+                ${isCurrent ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#064e3b] text-white uppercase">Aktif</span>` : ''}
+              </div>
+            </td>
+            <td class="py-2.5 px-3 text-right font-mono text-slate-600">${formatRp(mySum.targetSantri)}</td>
+            <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-800">${formatRp(mySum.totalPaid)} <span class="text-[10px] text-slate-400">(${myPct}%)</span></td>
+            <td class="py-2.5 px-3 text-right font-mono font-bold ${mySum.totalUnpaid > 0 ? 'text-rose-600' : 'text-slate-400'}">${formatRp(mySum.totalUnpaid)}</td>
+            <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">${formatRp(myKas)}</td>
+            <td class="py-2.5 px-3 text-center">${wifiStatusBadge}</td>
+            <td class="py-2.5 px-3 text-center">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${mySum.isFullLunas ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-50 text-rose-600'}">
+                ${mySum.isFullLunas ? '✓ Lunas (Saya)' : 'Belum Lunas'}
+              </span>
+            </td>
+            <td class="py-2.5 px-3 text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                <button onclick="openWaKonfirmasiKeBendahara('${mySantri.id}', '${m.key}')" class="px-2 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[10px] font-bold cursor-pointer">
+                  WA Bendahara
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      if (state.userRole === 'guest') {
+        return `
+          <tr class="${isCurrent ? 'bg-emerald-50/60 font-semibold' : 'hover:bg-slate-50'} transition">
+            <td class="py-2.5 px-3 cursor-pointer" onclick="selectDashboardMonth('${m.key}')">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900">${m.label}</span>
+                ${isCurrent ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#064e3b] text-white uppercase">Aktif</span>` : ''}
+              </div>
+            </td>
+            <td class="py-2.5 px-3 text-right font-mono text-slate-600">${formatRp(mTarif.totalBulanan)}/santri</td>
+            <td class="py-2.5 px-3 text-right text-slate-400 text-[11px]">Login untuk lihat</td>
+            <td class="py-2.5 px-3 text-right text-slate-400 text-[11px]">Privat</td>
+            <td class="py-2.5 px-3 text-right font-mono text-slate-600">${formatRp(mTarif.totalKas)}/santri</td>
+            <td class="py-2.5 px-3 text-center">${wifiStatusBadge}</td>
+            <td class="py-2.5 px-3 text-center">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">${state.santri.length} Santri</span>
+            </td>
+            <td class="py-2.5 px-3 text-right">
+              <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold cursor-pointer">
+                Login
+              </button>
+            </td>
+          </tr>
+        `;
+      }
+
       const target = state.santri.reduce((acc, s) => {
         return acc + (isSantriTanpaMakan(s) ? mTarif.totalKas : mTarif.totalBulanan);
       }, 0);
@@ -1103,13 +2280,6 @@ function renderDashboardTab(fin) {
 
       const tunggakan = Math.max(0, target - terkumpul);
       const pct = target > 0 ? Math.round((terkumpul / target) * 100) : 0;
-      const isCurrent = m.key === state.activeMonth;
-      const wRec = getBendaharaWifiRecord(m.key);
-      const wifiStatusBadge = wRec.status === 'paid'
-        ? `<span onclick="openNotaWifiIndukModal('${m.key}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 cursor-pointer">✓ Lunas (${formatRp(wRec.nominalBayar)})</span>`
-        : wRec.status === 'pending_confirm'
-          ? `<span onclick="openNotaWifiIndukModal('${m.key}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 cursor-pointer">Pending (${formatRp(wRec.nominalBayar)})</span>`
-          : `<span onclick="openBendaharaWifiModal('${m.key}')" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 border border-rose-200 cursor-pointer">Belum Setor</span>`;
 
       return `
         <tr class="${isCurrent ? 'bg-emerald-50/60 font-semibold' : 'hover:bg-slate-50'} transition">
@@ -1150,18 +2320,54 @@ function renderDashboardTab(fin) {
   const matrixBody = document.getElementById('dashboardMatrixBody');
   if (!matrixBody) return;
 
+  if (state.userRole === 'guest') {
+    matrixBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="py-8 px-4 text-center">
+          <div class="max-w-md mx-auto space-y-2.5">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#064e3b] flex items-center justify-center mx-auto">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <h4 class="text-xs font-bold text-slate-900">Rincian Status Komponen per Santri Bersifat Pribadi</h4>
+            <p class="text-[11px] text-slate-500">Rekapitulasi kas bulanan & laporan WiFi induk di atas dapat dilihat umum. Untuk melihat status pembayaran pribadi Anda (Makan, WiFi, Listrik, Air), silakan login terlebih dahulu.</p>
+            <div class="pt-1 flex items-center justify-center gap-2">
+              <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer shadow-xs">
+                Masuk Akun Santri / Bendahara
+              </button>
+              <button onclick="switchTab('santri')" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer">
+                Direktori 17 Santri
+              </button>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   if (state.santri.length === 0) {
     matrixBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400 text-xs">Belum ada data santri. Klik menu <button onclick="switchTab('santri')" class="font-bold text-emerald-800 hover:underline cursor-pointer">Data Santri</button> untuk menambahkan santri baru.</td></tr>`;
     return;
   }
 
-  matrixBody.innerHTML = state.santri.map(s => {
+  const matrixSantriList = state.userRole === 'santri'
+    ? state.santri.filter(s => s.id === state.loggedSantriId)
+    : state.santri;
+
+  matrixBody.innerHTML = matrixSantriList.map(s => {
     const rec = getPaymentRecord(s.id, state.activeMonth);
     const sum = calculateRecordSummary(rec, state.activeMonth, s);
 
-    const badge = (paid, field) => paid
-      ? `<button onclick="toggleComponentPayment('${s.id}', '${state.activeMonth}', '${field}')" title="Klik untuk ubah status" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 cursor-pointer">✓ Lunas</button>`
-      : `<button onclick="toggleComponentPayment('${s.id}', '${state.activeMonth}', '${field}')" title="Klik untuk ubah status" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 cursor-pointer">Belum</button>`;
+    const badge = (paid, field) => {
+      if (!state.isAdmin) {
+        return paid
+          ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 select-none">✓ Lunas</span>`
+          : `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 border border-rose-200 select-none">Belum</span>`;
+      }
+      return paid
+        ? `<button onclick="toggleComponentPayment('${s.id}', '${state.activeMonth}', '${field}')" title="Klik untuk ubah status" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 cursor-pointer">✓ Lunas</button>`
+        : `<button onclick="toggleComponentPayment('${s.id}', '${state.activeMonth}', '${field}')" title="Klik untuk ubah status" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 cursor-pointer">Belum</button>`;
+    };
 
     const makanBadge = sum.tanpaMakan
       ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200" title="Santri ini tanpa Uang Makan (Hanya Kas Komplek)">Tanpa Makan</span>`
@@ -1170,7 +2376,7 @@ function renderDashboardTab(fin) {
     return `
       <tr class="hover:bg-slate-50/70 transition">
         <td class="py-3 px-3">
-          <div class="font-bold text-slate-900">${s.nama} ${sum.tanpaMakan ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Uang Makan</span>` : ''}</div>
+          <div class="font-bold text-slate-900">${s.nama} ${sum.tanpaMakan ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Uang Makan</span>` : ''} ${state.userRole === 'santri' ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold">Data Saya</span>` : ''}</div>
           <div class="text-[10px] text-slate-400">${s.prodi} • ${s.alamat}</div>
         </td>
         <td class="py-3 px-3 text-center">${makanBadge}</td>
@@ -1183,12 +2389,18 @@ function renderDashboardTab(fin) {
         </td>
         <td class="py-3 px-3 text-right">
           <div class="flex items-center justify-end gap-1.5">
-            <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold cursor-pointer">
-              Nota
-            </button>
-            <button onclick="openNotaTunggakanSantriModal('${s.id}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-semibold cursor-pointer">
-              WA
-            </button>
+            ${state.isAdmin ? `
+              <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold cursor-pointer">
+                Nota
+              </button>
+              <button onclick="openNotaTunggakanSantriModal('${s.id}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-semibold cursor-pointer">
+                Tagih WA
+              </button>
+            ` : `
+              <button onclick="openWaKonfirmasiKeBendahara('${s.id}', '${state.activeMonth}')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold cursor-pointer">
+                WA Bendahara
+              </button>
+            `}
           </div>
         </td>
       </tr>
@@ -1202,10 +2414,30 @@ function renderTunggakanTab(finData) {
   const listEl = document.getElementById('tunggakanSantriList');
   if (!listEl) return;
 
+  if (state.userRole === 'guest') {
+    listEl.innerHTML = `
+      <div class="p-8 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-3">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#064e3b] flex items-center justify-center mx-auto">
+          <i data-lucide="lock" class="w-5 h-5"></i>
+        </div>
+        <h4 class="text-xs font-bold text-slate-900">Data Tunggakan Santri Bersifat Pribadi</h4>
+        <p class="text-[11px] text-slate-500 max-w-md mx-auto">Silakan masuk menggunakan akun santri Anda untuk melihat rincian tunggakan pribadi Anda, atau login sebagai Bendahara.</p>
+        <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer shadow-xs">
+          Masuk Akun Sekarang
+        </button>
+      </div>
+    `;
+    return;
+  }
+
   const mode = document.getElementById('filterTunggakanMode')?.value || 'nunggak';
   const rows = [];
 
-  state.santri.forEach(s => {
+  const targetSantriList = state.userRole === 'santri'
+    ? state.santri.filter(s => s.id === state.loggedSantriId)
+    : state.santri;
+
+  targetSantriList.forEach(s => {
     const monthDetails = fin.monthsToCheck.map(mKey => {
       const rec = getPaymentRecord(s.id, mKey);
       const sum = calculateRecordSummary(rec, mKey, s);
@@ -1217,8 +2449,10 @@ function renderTunggakanTab(finData) {
     const totalUtang = activeLoans.reduce((acc, u) => acc + Number(u.nominal), 0);
     const grandTotal = totalArrears + totalUtang;
 
-    if (mode === 'nunggak' && grandTotal === 0) return;
-    if (mode === 'lunas' && grandTotal > 0) return;
+    if ( state.isAdmin ) {
+      if (mode === 'nunggak' && grandTotal === 0) return;
+      if (mode === 'lunas' && grandTotal > 0) return;
+    }
 
     rows.push({ santri: s, monthDetails, totalArrears, activeLoans, totalUtang, grandTotal });
   });
@@ -1230,19 +2464,26 @@ function renderTunggakanTab(finData) {
 
   listEl.innerHTML = rows.map(r => `
     <div class="p-4 rounded-2xl border ${r.grandTotal === 0 ? 'border-emerald-100 bg-emerald-50/20' : 'border-slate-100 bg-white'} shadow-xs space-y-3">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h4 class="text-xs font-bold text-slate-900">${r.santri.nama} ${isSantriTanpaMakan(r.santri) ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Uang Makan</span>` : ''} • <span class="text-slate-400 font-normal">${r.santri.prodi}</span></h4>
+          <h4 class="text-xs font-bold text-slate-900">${r.santri.nama} ${isSantriTanpaMakan(r.santri) ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Uang Makan</span>` : ''} ${state.userRole === 'santri' ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold">Tunggakan Saya</span>` : ''} • <span class="text-slate-400 font-normal">${r.santri.prodi}</span></h4>
           <p class="text-[11px] text-slate-500">WA: <span class="font-mono">${r.santri.wa}</span></p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
           <span class="text-xs font-bold font-mono ${r.grandTotal === 0 ? 'text-emerald-800' : 'text-rose-600'}">
-            ${r.grandTotal === 0 ? 'LUNAS SEMUA BULAN' : `Total Tunggakan: ${formatRp(r.grandTotal)}`}
+            ${r.grandTotal === 0 ? 'LUNAS SEMUA BULAN' : `Total: ${formatRp(r.grandTotal)}`}
           </span>
-          <button onclick="openNotaTunggakanSantriModal('${r.santri.id}')" class="px-3 py-1.5 rounded-xl bg-[#064e3b] text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer">
-            <i data-lucide="send" class="w-3.5 h-3.5"></i>
-            <span>Kirim WA</span>
-          </button>
+          ${state.isAdmin ? `
+            <button onclick="openNotaTunggakanSantriModal('${r.santri.id}')" class="px-3 py-1.5 rounded-xl bg-[#064e3b] text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>Kirim Tagihan WA</span>
+            </button>
+          ` : `
+            <button onclick="openWaKonfirmasiKeBendahara('${r.santri.id}', '${state.activeMonth}')" class="px-3 py-1.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+              <span>Konfirmasi ke WA Bendahara</span>
+            </button>
+          `}
         </div>
       </div>
 
@@ -1266,6 +2507,10 @@ function renderTunggakanTab(finData) {
 // 6. Render Jurnal Masak
 function handleSaveMasak(event) {
   event.preventDefault();
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   const tanggal = document.getElementById('masakTanggal').value;
   const tipe = document.querySelector('input[name="masakTipe"]:checked').value;
   const keterangan = document.getElementById('masakKeterangan').value.trim();
@@ -1328,6 +2573,10 @@ function renderMasakTab(finData) {
 // 7. Render Utang Kas
 function handleSaveUtangKas(event) {
   event.preventDefault();
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   const santriId = document.getElementById('utangSantriId').value;
   const tanggal = document.getElementById('utangTanggal').value;
   const nominal = Number(document.getElementById('utangNominal').value);
@@ -1365,6 +2614,10 @@ function handleSaveUtangKas(event) {
 }
 
 function markUtangLunas(id) {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   const item = state.utangKas.find(u => u.id === id);
   if (!item) return;
   item.status = 'lunas';
@@ -1377,7 +2630,6 @@ function markUtangLunas(id) {
 function renderUtangTab(finData) {
   const fin = finData || calculateGlobalFinancials();
   const badge = document.getElementById('rekapUtangAktifBadge');
-  if (badge) badge.textContent = `Total Utang: ${formatRp(fin.totalUtangAktif)}`;
 
   const sel = document.getElementById('utangSantriId');
   if (sel) {
@@ -1390,7 +2642,47 @@ function renderUtangTab(finData) {
   const tbody = document.getElementById('utangTableBody');
   if (!tbody) return;
 
-  tbody.innerHTML = state.utangKas.map(u => {
+  if (state.userRole === 'guest') {
+    if (badge) badge.textContent = 'Privat';
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="py-8 px-4 text-center">
+          <div class="max-w-md mx-auto space-y-2.5">
+            <p class="text-xs font-bold text-slate-900">Data Pinjaman / Utang Kas Bersifat Pribadi</p>
+            <p class="text-[11px] text-slate-500">Silakan login menggunakan akun santri Anda untuk memeriksa riwayat pinjaman kas pribadi Anda.</p>
+            <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] text-white text-xs font-bold cursor-pointer">Masuk Akun</button>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  const visibleLoans = state.userRole === 'santri'
+    ? state.utangKas.filter(u => u.santriId === state.loggedSantriId)
+    : state.utangKas;
+
+  if (badge) {
+    if (state.userRole === 'santri') {
+      const myActiveTotal = visibleLoans.filter(u => u.status === 'belum_lunas').reduce((acc, u) => acc + Number(u.nominal), 0);
+      badge.textContent = `Utang Saya: ${formatRp(myActiveTotal)}`;
+    } else {
+      badge.textContent = `Total Utang: ${formatRp(fin.totalUtangAktif)}`;
+    }
+  }
+
+  if (visibleLoans.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="py-6 text-center text-slate-400 text-xs">
+          ${state.userRole === 'santri' ? '✓ Alhamdulillah, Anda tidak memiliki catatan pinjaman / utang kas.' : 'Belum ada catatan pinjaman / utang kas santri.'}
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = visibleLoans.map(u => {
     const s = state.santri.find(x => x.id === u.santriId);
     return `
       <tr class="hover:bg-slate-50">
@@ -1404,7 +2696,7 @@ function renderUtangTab(finData) {
           </span>
         </td>
         <td class="py-2.5 px-3 text-right">
-          ${u.status === 'belum_lunas' ? `
+          ${state.isAdmin && u.status === 'belum_lunas' ? `
             <button onclick="markUtangLunas('${u.id}')" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer">
               Lunasi
             </button>
@@ -1488,6 +2780,10 @@ function handleResetFotoSantri() {
 
 function handleSaveSantri(event) {
   event.preventDefault();
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   const editId = document.getElementById('editSantriId').value;
   const nama = document.getElementById('santriNama').value.trim();
   const alamat = document.getElementById('santriAlamat').value.trim();
@@ -1538,6 +2834,10 @@ function handleSaveSantri(event) {
 }
 
 function editSantri(id) {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   const s = state.santri.find(x => x.id === id);
   if (!s) return;
   const idx = state.santri.findIndex(x => x.id === id);
@@ -1587,6 +2887,10 @@ function resetSantriForm() {
 }
 
 function deleteSantri(id) {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   const s = state.santri.find(x => x.id === id);
   if (!s || !confirm(`Hapus santri ${s.nama}?`)) return;
   state.santri = state.santri.filter(x => x.id !== id);
@@ -1612,37 +2916,86 @@ function renderSantriTab() {
     return;
   }
 
-  tbody.innerHTML = state.santri.map((s, idx) => `
-    <tr class="hover:bg-slate-50 transition-colors">
-      <td class="py-2.5 px-3 font-bold text-slate-900">
-        <div class="flex items-center gap-2.5">
-          <img src="${s.avatar || AVATAR_IMAGES[idx % AVATAR_IMAGES.length]}" alt="${s.nama}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-100" onerror="this.src='${AVATAR_IMAGES[0]}'" />
-          <div>
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span>${s.nama}</span>
-              ${isSantriTanpaMakan(s) ? `<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Uang Makan</span>` : ''}
-            </div>
-            <div class="text-[10px] font-mono text-slate-400 font-normal">${getNomorIndukSantri(s, idx)}</div>
-          </div>
-        </div>
-      </td>
-      <td class="py-2.5 px-3 text-slate-500">${s.alamat}</td>
-      <td class="py-2.5 px-3 text-slate-600">${s.prodi}</td>
-      <td class="py-2.5 px-3 font-mono text-slate-500">${s.wa}</td>
-      <td class="py-2.5 px-3 text-right whitespace-nowrap">
+  // Direktori 17 Santri dapat dilihat umum (Nama, Asal, Prodi), namun WA dan Kartu KTA diproteksi sesuai akun
+  tbody.innerHTML = state.santri.map((s, idx) => {
+    const isMe = state.userRole === 'santri' && s.id === state.loggedSantriId;
+    const canSeePrivate = state.isAdmin || isMe;
+    const displayedWa = canSeePrivate ? s.wa : maskPhoneNumber(s.wa);
+
+    let actionHtml = '';
+    if (state.isAdmin) {
+      actionHtml = `
         <button onclick="openKartuSantriModal('${s.id}')" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold mr-1.5 cursor-pointer">Kartu</button>
         <button onclick="editSantri('${s.id}')" class="text-xs font-semibold text-slate-600 hover:text-slate-900 mr-2 cursor-pointer">Edit</button>
         <button onclick="deleteSantri('${s.id}')" class="text-xs font-semibold text-rose-500 hover:text-rose-700 cursor-pointer">Hapus</button>
-      </td>
-    </tr>
-  `).join('');
+      `;
+    } else if (isMe) {
+      actionHtml = `
+        <button onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer shadow-2xs">Kartu Saya</button>
+      `;
+    } else if (state.userRole === 'santri') {
+      actionHtml = `<span class="text-[10px] font-semibold text-slate-400">Santri Mukim</span>`;
+    } else {
+      actionHtml = `
+        <button onclick="openAdminLoginModal('santri')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold cursor-pointer">Login</button>
+      `;
+    }
+
+    return `
+      <tr class="${isMe ? 'bg-emerald-50/40' : 'hover:bg-slate-50'} transition-colors">
+        <td class="py-2.5 px-3 font-bold text-slate-900">
+          <div class="flex items-center gap-2.5">
+            <img src="${s.avatar || AVATAR_IMAGES[idx % AVATAR_IMAGES.length]}" alt="${s.nama}" class="w-8 h-8 rounded-full object-cover border ${isMe ? 'border-[#064e3b] ring-2 ring-emerald-100' : 'border-slate-200'} shrink-0 bg-slate-100" onerror="this.src='${AVATAR_IMAGES[0]}'" />
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span>${s.nama}</span>
+                ${isMe ? `<span class="px-1.5 py-0.5 rounded bg-[#064e3b] text-white text-[9px] font-bold">Akun Saya</span>` : ''}
+                ${isSantriTanpaMakan(s) ? `<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Uang Makan</span>` : ''}
+              </div>
+              <div class="text-[10px] font-mono text-slate-400 font-normal">${getNomorIndukSantri(s, idx)}</div>
+            </div>
+          </div>
+        </td>
+        <td class="py-2.5 px-3 text-slate-500">${s.alamat}</td>
+        <td class="py-2.5 px-3 text-slate-600">${s.prodi}</td>
+        <td class="py-2.5 px-3 font-mono text-slate-500">${displayedWa}</td>
+        <td class="py-2.5 px-3 text-right whitespace-nowrap">${actionHtml}</td>
+      </tr>
+    `;
+  }).join('');
 
   if (cardsGrid) {
-    cardsGrid.innerHTML = state.santri.map((s, idx) => buildKartuSantriVisualHtml(s, idx, true)).join('');
+    if (state.isAdmin) {
+      cardsGrid.innerHTML = state.santri.map((s, idx) => buildKartuSantriVisualHtml(s, idx, true)).join('');
+    } else if (state.userRole === 'santri') {
+      const myIdx = state.santri.findIndex(s => s.id === state.loggedSantriId);
+      const mySantri = state.santri[myIdx >= 0 ? myIdx : 0];
+      cardsGrid.innerHTML = mySantri
+        ? `<div class="col-span-full max-w-md">${buildKartuSantriVisualHtml(mySantri, myIdx >= 0 ? myIdx : 0, true)}</div>`
+        : '';
+    } else {
+      cardsGrid.innerHTML = `
+        <div class="col-span-full p-6 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-2.5">
+          <p class="text-xs font-bold text-slate-900">Kartu Identitas Santri (KTA) Bersifat Pribadi</p>
+          <p class="text-[11px] text-slate-500 max-w-md mx-auto">Daftar nama santri Komplek Tuban di atas bersifat umum, namun pencetakan Kartu Identitas Santri hanya dapat diakses oleh pemilik akun santri masing-masing atau Bendahara.</p>
+          <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] text-white text-xs font-bold cursor-pointer">Masuk Akun untuk Lihat KTA</button>
+        </div>
+      `;
+    }
   }
 }
 
 function openKartuSantriModal(santriId) {
+  if (state.userRole === 'guest') {
+    openAdminLoginModal('santri');
+    showToast('Silakan login terlebih dahulu untuk melihat Kartu Identitas Santri', 'amber');
+    return;
+  }
+  if (state.userRole === 'santri' && santriId !== state.loggedSantriId) {
+    santriId = state.loggedSantriId;
+    showToast('Menampilkan Kartu Identitas milik Anda sendiri', 'emerald');
+  }
+
   const idx = state.santri.findIndex(x => x.id === santriId);
   const s = state.santri[idx >= 0 ? idx : 0];
   if (!s) return;
@@ -1713,10 +3066,59 @@ function openKartuSantriModal(santriId) {
   if (groupBtn) {
     groupBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(waLines)}`;
   }
+  syncNotaModalAdminButtons();
   document.getElementById('modalNota').classList.remove('hidden');
 }
 
+function syncNotaModalAdminButtons() {
+  const waSec = document.getElementById('notaAdminWaSection');
+  const groupBtn = document.getElementById('btnSendWaGroup');
+  const directBtn = document.getElementById('btnSendWaDirect');
+  if (state.isAdmin) {
+    if (waSec) waSec.classList.remove('hidden');
+    if (groupBtn) groupBtn.classList.remove('hidden');
+    if (directBtn) directBtn.classList.remove('hidden');
+  } else {
+    if (waSec) waSec.classList.add('hidden');
+    if (groupBtn) groupBtn.classList.add('hidden');
+    if (directBtn) directBtn.classList.add('hidden');
+  }
+}
+
+function openWaKonfirmasiKeBendahara(santriId, monthKeyParam) {
+  const mKey = monthKeyParam || state.activeMonth;
+  const s = state.santri.find(x => x.id === (state.userRole === 'santri' ? state.loggedSantriId : santriId));
+  if (!s) return;
+  const rec = getPaymentRecord(s.id, mKey);
+  const sum = calculateRecordSummary(rec, mKey, s);
+  const monthLabel = getMonthLabel(mKey);
+  const unpaidText = sum.unpaidItems.length > 0
+    ? sum.unpaidItems.map(i => `${i.nama} (${formatRp(i.nominal)})`).join(', ')
+    : 'Sudah Lunas 100%';
+
+  const msg = [
+    `Assalamu'alaikum Wr. Wb. Kang Bendahara,`,
+    `Saya *${s.nama}* (${s.prodi}) izin konfirmasi terkait pembayaran Syahriyah & Kas Komplek Tuban periode *${monthLabel}*:`,
+    `• Total Terbayar : ${formatRp(sum.totalPaid)}`,
+    `• Sisa Kekurangan: *${formatRp(sum.totalUnpaid)}* (${unpaidText})`,
+    ``,
+    `Mohon dicek / arahannya nggih Kang. Jazakumullah khairan katsiran.`
+  ].join('\n');
+
+  const url = `https://wa.me/${formatPhoneToWa(BENDAHARA_WA)}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 function openSemuaKartuSantriModal() {
+  if (!state.isAdmin) {
+    if (state.userRole === 'santri' && state.loggedSantriId) {
+      openKartuSantriModal(state.loggedSantriId);
+      return;
+    }
+    openAdminLoginModal('admin');
+    showToast('Cetak kolektif 17 kartu hanya untuk Bendahara (Admin)', 'amber');
+    return;
+  }
   document.getElementById('modalNotaHeaderTitle').textContent = `Cetak Kolektif Kartu Identitas Santri (${state.santri.length} Santri)`;
   const badge = document.getElementById('notaBadgeStatus');
   badge.textContent = `${state.santri.length} KARTU IDENTITAS`;
@@ -1758,12 +3160,11 @@ function openSemuaKartuSantriModal() {
 function openBendaharaWifiModal(monthKeyParam) {
   const monthKey = monthKeyParam || state.activeMonth;
   const wifiRec = getBendaharaWifiRecord(monthKey);
-  const curTarif = getTarif(monthKey);
   currentWifiModalCtx = { monthKey, tempImgDataUrl: wifiRec.proofImg || '' };
 
   document.getElementById('modalWifiSubtitle').textContent = `Periode: ${getMonthLabel(monthKey)}`;
   document.getElementById('wifiProofDateInput').value = wifiRec.tanggalBayar || '2026-10-30';
-  document.getElementById('wifiProofNominalInput').value = wifiRec.nominalBayar || (state.santri.length * curTarif.wifi);
+  document.getElementById('wifiProofNominalInput').value = wifiRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT;
   document.getElementById('wifiProofNoteInput').value = wifiRec.proofNote || '';
   document.getElementById('wifiProofFileInput').value = '';
 
@@ -1803,8 +3204,7 @@ function handleWifiFilePreview(event) {
 
 function useSampleWifiChatProof() {
   const monthLabel = getMonthLabel(currentWifiModalCtx.monthKey);
-  const curTarif = getTarif(currentWifiModalCtx.monthKey);
-  const nominalVal = Number(document.getElementById('wifiProofNominalInput').value) || (state.santri.length * curTarif.wifi);
+  const nominalVal = Number(document.getElementById('wifiProofNominalInput').value) || TAGIHAN_WIFI_INDUK_DEFAULT;
   const sampleUrl = createSampleWifiChatDataUrl(monthLabel, formatRp(nominalVal));
 
   currentWifiModalCtx.tempImgDataUrl = sampleUrl;
@@ -1816,21 +3216,24 @@ function useSampleWifiChatProof() {
 
   const noteInput = document.getElementById('wifiProofNoteInput');
   if (!noteInput.value) {
-    noteInput.value = `Bendahara transfer bayar WiFi ke Pak H. Mahmud (${monthLabel})`;
+    noteInput.value = `Bendahara setor bayar WiFi Induk Rp 200.000 (${monthLabel}), sisa disimpan di kas komplek`;
   }
 }
 
 function saveWifiProofOnly() {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   if (!currentWifiModalCtx.tempImgDataUrl) {
     showToast('Pilih foto bukti atau gunakan contoh screenshot!', 'amber');
     return;
   }
-  const curTarif = getTarif(currentWifiModalCtx.monthKey);
   const wifiRec = getBendaharaWifiRecord(currentWifiModalCtx.monthKey);
   wifiRec.proofImg = currentWifiModalCtx.tempImgDataUrl;
-  wifiRec.proofNote = document.getElementById('wifiProofNoteInput').value.trim() || 'Foto bukti chat bayar WiFi diupload';
+  wifiRec.proofNote = document.getElementById('wifiProofNoteInput').value.trim() || 'Foto bukti chat setor WiFi Induk Rp 200.000 diupload';
   wifiRec.tanggalBayar = document.getElementById('wifiProofDateInput').value || '2026-10-30';
-  wifiRec.nominalBayar = Number(document.getElementById('wifiProofNominalInput').value) || (state.santri.length * curTarif.wifi);
+  wifiRec.nominalBayar = Number(document.getElementById('wifiProofNominalInput').value) || TAGIHAN_WIFI_INDUK_DEFAULT;
   wifiRec.status = 'pending_confirm';
 
   saveState();
@@ -1840,16 +3243,19 @@ function saveWifiProofOnly() {
 }
 
 function confirmWifiPaidWithProof() {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
   if (!currentWifiModalCtx.tempImgDataUrl) {
     showToast('Wajib ada foto bukti chat bayar WiFi ke pemilik WiFi!', 'amber');
     return;
   }
-  const curTarif = getTarif(currentWifiModalCtx.monthKey);
   const wifiRec = getBendaharaWifiRecord(currentWifiModalCtx.monthKey);
   wifiRec.proofImg = currentWifiModalCtx.tempImgDataUrl;
-  wifiRec.proofNote = document.getElementById('wifiProofNoteInput').value.trim() || 'Setoran lunas dikonfirmasi Bendahara';
+  wifiRec.proofNote = document.getElementById('wifiProofNoteInput').value.trim() || 'Setoran WiFi Induk Rp 200.000 lunas dikonfirmasi Bendahara (sisa masuk kas)';
   wifiRec.tanggalBayar = document.getElementById('wifiProofDateInput').value || '2026-10-30';
-  wifiRec.nominalBayar = Number(document.getElementById('wifiProofNominalInput').value) || (state.santri.length * curTarif.wifi);
+  wifiRec.nominalBayar = Number(document.getElementById('wifiProofNominalInput').value) || TAGIHAN_WIFI_INDUK_DEFAULT;
   wifiRec.status = 'paid';
 
   saveState();
@@ -1869,6 +3275,15 @@ function formatPhoneToWa(phone) {
 }
 
 function openNotaPembayaranModal(santriId, monthKey) {
+  if (!state.isAdmin) {
+    if (state.userRole === 'santri') {
+      openWaKonfirmasiKeBendahara(state.loggedSantriId, monthKey);
+      return;
+    }
+    openAdminLoginModal('admin');
+    showToast('Penerbitan Nota Resmi hanya dilakukan oleh Bendahara (Admin)', 'amber');
+    return;
+  }
   const s = state.santri.find(x => x.id === santriId);
   if (!s) return;
   const rec = getPaymentRecord(santriId, monthKey);
@@ -2009,10 +3424,20 @@ function openNotaPembayaranModal(santriId, monthKey) {
   if (groupBtn) {
     groupBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(waLines)}`;
   }
+  syncNotaModalAdminButtons();
   document.getElementById('modalNota').classList.remove('hidden');
 }
 
 function openNotaTunggakanSantriModal(santriId) {
+  if (!state.isAdmin) {
+    if (state.userRole === 'santri') {
+      openWaKonfirmasiKeBendahara(state.loggedSantriId, state.activeMonth);
+      return;
+    }
+    openAdminLoginModal('admin');
+    showToast('Penerbitan Nota Tagihan WA hanya dilakukan oleh Bendahara (Admin)', 'amber');
+    return;
+  }
   const s = state.santri.find(x => x.id === santriId);
   if (!s) return;
   const fin = calculateGlobalFinancials();
@@ -2133,6 +3558,7 @@ function openNotaTunggakanSantriModal(santriId) {
   if (groupBtn) {
     groupBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(waLines)}`;
   }
+  syncNotaModalAdminButtons();
   document.getElementById('modalNota').classList.remove('hidden');
 }
 
@@ -2168,6 +3594,11 @@ function openNotaWifiIndukModal(monthKeyParam) {
       : 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-50 text-rose-700 border border-rose-200';
   document.getElementById('notaTimestamp').textContent = wifiRec.tanggalBayar || '30 Okt 2026';
 
+  const nominalInduk = Number(wifiRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT);
+  const targetWifiSantri = state.santri.length * curTarif.wifi;
+  const potensiSisaKasWifi = Math.max(0, targetWifiSantri - nominalInduk);
+  const aktualSisaKasWifi = Math.max(0, wifiCollectedMonth - nominalInduk);
+
   document.getElementById('notaContentHtml').innerHTML = `
     <div class="overflow-hidden rounded-xl border border-slate-200">
       <table class="w-full text-[11px] border-collapse">
@@ -2201,9 +3632,9 @@ function openNotaWifiIndukModal(monthKeyParam) {
         <tbody class="divide-y divide-slate-200">
           <tr>
             <td class="py-2 px-2.5 text-center text-slate-400 font-mono">1</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">Tarif Iuran WiFi per Santri (Manual)</td>
-            <td class="py-2 px-3 text-center text-slate-500">${state.santri.length} Santri Terdaftar</td>
-            <td class="py-2 px-3 text-right font-mono font-bold text-slate-800">${formatRp(curTarif.wifi)}</td>
+            <td class="py-2 px-3 font-semibold text-slate-800">Iuran WiFi per Santri (17 Santri)</td>
+            <td class="py-2 px-3 text-center text-slate-500">Target Maksimal: ${formatRp(targetWifiSantri)}</td>
+            <td class="py-2 px-3 text-right font-mono font-bold text-slate-800">${formatRp(curTarif.wifi)} / santri</td>
           </tr>
           <tr class="bg-slate-50/50">
             <td class="py-2 px-2.5 text-center text-slate-400 font-mono">2</td>
@@ -2213,16 +3644,22 @@ function openNotaWifiIndukModal(monthKeyParam) {
           </tr>
           <tr>
             <td class="py-2 px-2.5 text-center text-slate-400 font-mono">3</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">Tagihan WiFi Induk Dibayar ke Pemilik WiFi</td>
+            <td class="py-2 px-3 font-semibold text-slate-800">Setoran ke WiFi Induk (Dibayar Bendahara)</td>
             <td class="py-2 px-3 text-center">
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${wifiRec.status === 'paid' ? 'bg-emerald-50 text-emerald-800' : wifiRec.status === 'pending_confirm' ? 'bg-amber-50 text-amber-800' : 'bg-rose-50 text-rose-600'}">${statusText}</span>
             </td>
-            <td class="py-2 px-3 text-right font-mono font-bold text-slate-900">${formatRp(wifiRec.nominalBayar || 0)}</td>
+            <td class="py-2 px-3 text-right font-mono font-bold text-slate-900">${formatRp(nominalInduk)}</td>
+          </tr>
+          <tr class="bg-emerald-50/40">
+            <td class="py-2 px-2.5 text-center text-slate-400 font-mono">4</td>
+            <td class="py-2 px-3 font-semibold text-emerald-950">Sisa / Surplus Uang WiFi (Disimpan di Kas)</td>
+            <td class="py-2 px-3 text-center text-[11px] font-semibold text-emerald-800">Aktual saat ini: ${formatRp(aktualSisaKasWifi)}</td>
+            <td class="py-2 px-3 text-right font-mono font-bold text-emerald-800">${formatRp(potensiSisaKasWifi)} / bln</td>
           </tr>
           <tr class="bg-slate-50/50">
-            <td class="py-2 px-2.5 text-center text-slate-400 font-mono">4</td>
+            <td class="py-2 px-2.5 text-center text-slate-400 font-mono">5</td>
             <td class="py-2 px-3 font-semibold text-slate-800">Catatan Bendahara</td>
-            <td colspan="2" class="py-2 px-3 text-right text-slate-700">${wifiRec.proofNote || 'Belum ada catatan'}</td>
+            <td colspan="2" class="py-2 px-3 text-right text-slate-700">${wifiRec.proofNote || 'Setoran WiFi Induk Rp 200.000/bulan, sisa disimpan di kas komplek'}</td>
           </tr>
         </tbody>
       </table>
@@ -2253,13 +3690,14 @@ function openNotaWifiIndukModal(monthKeyParam) {
     '```',
     `${padW('Keterangan', 22)} | Nominal / Detail`,
     `------------------------------------------`,
-    `${padW('1. Tarif WiFi/Santri', 22)} | ${formatRp(curTarif.wifi)}`,
+    `${padW('1. Tarif WiFi/Santri', 22)} | ${formatRp(curTarif.wifi)} (Target ${formatRp(targetWifiSantri)})`,
     `${padW('2. Santri Lunas WiFi', 22)} | ${wifiPaidSantriCount}/${state.santri.length} Santri`,
-    `${padW('3. Dana WiFi Terkumpul', 22)} | ${formatRp(wifiCollectedMonth)}`,
-    `${padW('4. Setor WiFi Induk', 22)} | ${formatRp(wifiRec.nominalBayar || 0)}`,
-    `${padW('5. Bukti Foto Chat/TF', 22)} | ${wifiRec.proofImg ? 'Ada / Terlampir ✓' : 'Belum Diupload'}`,
+    `${padW('3. Dana WiFi Masuk', 22)} | ${formatRp(wifiCollectedMonth)}`,
+    `${padW('4. Setor WiFi Induk', 22)} | ${formatRp(nominalInduk)}`,
+    `${padW('5. Sisa Masuk Kas', 22)} | ${formatRp(potensiSisaKasWifi)}/bln (Aktual: ${formatRp(aktualSisaKasWifi)})`,
+    `${padW('6. Bukti Foto Chat/TF', 22)} | ${wifiRec.proofImg ? 'Ada / Terlampir ✓' : 'Belum Diupload'}`,
     '```',
-    `Catatan Bendahara : _${wifiRec.proofNote || '-'}_`,
+    `Catatan Bendahara : _${wifiRec.proofNote || 'Setoran ke induk Rp 200.000, sisa disimpan di kas komplek'}_`,
     `Kontak Bendahara  : ${BENDAHARA_WA}`,
     `Jazakumullah khairan katsiran.`
   ].join('\n');
@@ -2270,6 +3708,7 @@ function openNotaWifiIndukModal(monthKeyParam) {
   if (groupBtn) {
     groupBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(waLines)}`;
   }
+  syncNotaModalAdminButtons();
   document.getElementById('modalNota').classList.remove('hidden');
 }
 
@@ -2285,10 +3724,43 @@ function copyWaText() {
 }
 
 // =========================================================================
-// SIARAN REKAP LENGKAP KE GRUP WHATSAPP
+// SIARAN REKAP LENGKAP KE GRUP WHATSAPP (KHUSUS BENDAHARA)
 // =========================================================================
 
-function generateRekapGrupText() {
+let currentRekapGrupMode = 'santun';
+
+function setRekapGrupMode(mode) {
+  currentRekapGrupMode = mode === 'lengkap' ? 'lengkap' : 'santun';
+  const btnSantun = document.getElementById('btnRekapModeSantun');
+  const btnLengkap = document.getElementById('btnRekapModeLengkap');
+  const hintEl = document.getElementById('rekapModeHintText');
+
+  if (currentRekapGrupMode === 'santun') {
+    if (btnSantun) btnSantun.className = 'py-2 px-3 rounded-lg bg-white text-slate-900 font-bold shadow-xs cursor-pointer transition flex items-center justify-center gap-1.5';
+    if (btnLengkap) btnLengkap.className = 'py-2 px-3 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5';
+    if (hintEl) {
+      hintEl.className = 'text-[11px] text-emerald-800 bg-emerald-50/80 border border-emerald-100 rounded-xl px-3 py-2';
+      hintEl.innerHTML = '<strong>Format Santun (Direkomendasikan):</strong> Menampilkan ringkasan kas, laporan WiFi induk, dan daftar santri yang <strong>Sudah Lunas</strong>. Rincian nama & nominal tunggakan/utang disembunyikan agar tetap menjaga privasi santri di grup.';
+    }
+  } else {
+    if (btnLengkap) btnLengkap.className = 'py-2 px-3 rounded-lg bg-white text-slate-900 font-bold shadow-xs cursor-pointer transition flex items-center justify-center gap-1.5';
+    if (btnSantun) btnSantun.className = 'py-2 px-3 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5';
+    if (hintEl) {
+      hintEl.className = 'text-[11px] text-amber-800 bg-amber-50/80 border border-amber-200 rounded-xl px-3 py-2';
+      hintEl.innerHTML = '<strong>Format Lengkap (Detail 17 Nama):</strong> Menampilkan seluruh daftar nama santri yang sudah lunas maupun yang masih memiliki tunggakan & utang kas beserta rincian nominalnya.';
+    }
+  }
+
+  const text = generateRekapGrupText(currentRekapGrupMode);
+  const textArea = document.getElementById('rekapGrupWaText');
+  if (textArea) textArea.value = text;
+  const sendBtn = document.getElementById('btnSendGroupBroadcast');
+  if (sendBtn) sendBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function generateRekapGrupText(modeParam) {
+  const mode = modeParam || currentRekapGrupMode || 'santun';
   const fin = calculateGlobalFinancials();
   const curTarif = getTarif(state.activeMonth);
   const monthLabel = getMonthLabel(state.activeMonth);
@@ -2309,7 +3781,7 @@ function generateRekapGrupText() {
   });
 
   const activeLoans = state.utangKas.filter(u => u.status === 'belum_lunas');
-  const loanText = activeLoans.length > 0
+  const loanTextLengkap = activeLoans.length > 0
     ? `\n*PINJAMAN / UTANG KAS SANTRI:*\n` + activeLoans.map(u => {
         const s = state.santri.find(x => x.id === u.santriId);
         return `• ${s ? s.nama : 'Santri'} : ${formatRp(u.nominal)} (${u.keterangan})`;
@@ -2327,6 +3799,15 @@ function generateRekapGrupText() {
       ? 'PENDING KONFIRMASI'
       : 'BELUM DISETOR';
 
+  const sectionNunggak = mode === 'santun'
+    ? (nunggakList.length > 0
+        ? [
+            `• Terdapat *${nunggakList.length} Santri* yang belum lunas pada periode ${monthLabel}.`,
+            `• _(Demi menjaga privasi, rincian kekurangan & utang kas masing-masing santri dikirim via Japri WA oleh Bendahara atau dapat dicek mandiri melalui login akun di *http://paymojosari.my.id*)_`
+          ].join('\n')
+        : '• Alhamdulillah semua santri (17/17) sudah lunas ✓')
+    : (nunggakList.length > 0 ? nunggakList.join('\n') : '• Alhamdulillah semua sudah lunas');
+
   const text = [
     `*LAPORAN SYAHRIYAH & KAS KOMPLEK TUBAN (RUMAH WAKAF)*`,
     `*PAYMOJOSARI — PP. MOJOSARI LOCERET NGANJUK*`,
@@ -2336,12 +3817,13 @@ function generateRekapGrupText() {
     `• Total Terkumpul Bulan Ini : *${formatRp(fin.activeMonthTotalSent)}* (${pctSent}%)`,
     `• Tunggakan (Pending)       : *${formatRp(fin.activeMonthTunggakan)}* (${pctPending}%)`,
     `• Saldo Uang Kas Komplek    : *${formatRp(fin.saldoKasTersedia)}* (Kas Aktif)`,
-    `• Utang Kas Santri          : *${formatRp(fin.totalUtangAktif)}* (${activeLoanCount} Santri Utang)`,
+    `• Utang Kas Santri          : *${formatRp(fin.totalUtangAktif)}* (${activeLoanCount} Santri)`,
     `• Saldo Dapur / Uang Makan  : *${formatRp(fin.saldoMasakTersedia)}*`,
     `--------------------------------`,
     `*LAPORAN PEMBAYARAN WIFI INDUK (BENDAHARA):*`,
     `• Status Setoran WiFi       : *${wifiStatusLabel}*`,
-    `• Nominal Bayar WiFi Induk  : *${formatRp(wifiRec.nominalBayar || 0)}*`,
+    `• Setor ke WiFi Induk       : *${formatRp(wifiRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT)}* / bulan`,
+    `• Sisa WiFi Masuk Kas       : *${formatRp(Math.max(0, (state.santri.length * curTarif.wifi) - Number(wifiRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT)))}* (Disimpan di Kas Bendahara)`,
     `• Tanggal Pembayaran        : ${wifiRec.tanggalBayar || '-'}`,
     `• Bukti Chat / Transfer     : ${wifiRec.proofImg ? 'Ada / Terlampir ✓' : 'Belum Diupload'}`,
     `• Catatan Bendahara         : _${wifiRec.proofNote || '-'}_`,
@@ -2354,24 +3836,27 @@ function generateRekapGrupText() {
     `--------------------------------`,
     `*REKAP STATUS SANTRI (${monthLabel}):*`,
     `*A. SUDAH LUNAS (${lunasList.length} Santri):*`,
-    lunasList.length > 0 ? lunasList.join('\n') : '• (Belum ada yang lunas)',
+    lunasList.length > 0 ? lunasList.join('\n') : '• (Belum ada yang tercatat lunas penuh)',
     ``,
-    `*B. MASIH ADA TUNGGAKAN (${nunggakList.length} Santri):*`,
-    nunggakList.length > 0 ? nunggakList.join('\n') : '• Alhamdulillah semua sudah lunas',
-    loanText,
+    `*B. BELUM LUNAS / TUNGGAKAN (${nunggakList.length} Santri):*`,
+    sectionNunggak,
+    mode === 'lengkap' ? loanTextLengkap : '',
     `================================`,
     `Bagi kang santri yang masih ada kekurangan, mohon segera konfirmasi pembayaran ke Bendahara Komplek.`,
     `Jazakumullah khairan katsiran.`,
     `_Bendahara Komplek Tuban (Rumah Wakaf)_`,
     `_Kontak Bendahara: 081231256129_`
-  ].join('\n');
+  ].filter(line => line !== '').join('\n');
 
   return text;
 }
 
 function openRekapGrupModal() {
-  const text = generateRekapGrupText();
-  document.getElementById('rekapGrupWaText').value = text;
+  if (!state.isAdmin) {
+    openAdminLoginModal('admin');
+    showToast('Fitur Siaran Rekap Grup WA hanya dapat diakses oleh Bendahara (Admin)', 'amber');
+    return;
+  }
   document.getElementById('modalRekapGrupSubtitle').textContent = `Periode: ${getMonthLabel(state.activeMonth)}`;
 
   // Tampilkan link grup yang ditautkan
@@ -2381,8 +3866,7 @@ function openRekapGrupModal() {
   const btnDirectGroup = document.getElementById('btnBukaLinkGrupLangsung');
   if (btnDirectGroup) btnDirectGroup.href = state.linkGrupWa || DEFAULT_GRUP_LINK;
 
-  // Tombol Kirim Siaran Langsung ke WhatsApp (membawa teks siaran)
-  document.getElementById('btnSendGroupBroadcast').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  setRekapGrupMode(currentRekapGrupMode || 'santun');
   document.getElementById('modalRekapGrup').classList.remove('hidden');
 }
 

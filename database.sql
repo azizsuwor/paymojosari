@@ -4,8 +4,8 @@
 -- PONDOK PESANTREN MOJOSARI LOCERET NGANJUK
 -- =========================================================================
 
-CREATE DATABASE IF NOT EXISTS `db_kas_mojosari` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `db_kas_mojosari`;
+-- CREATE DATABASE IF NOT EXISTS `db_kas_mojosari` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE `db_kas_mojosari`;
 
 -- -------------------------------------------------------------------------
 -- 1. Tabel Santri (Data santri mukim Komplek Tuban)
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS `pembayaran_santri` (
 CREATE TABLE IF NOT EXISTS `setoran_wifi_bendahara` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `periode` VARCHAR(10) NOT NULL UNIQUE, -- Cth: '2026-10'
-  `nominal_bayar` INT NOT NULL DEFAULT 120000, -- Nominal manual sesuai tagihan riil
+  `nominal_bayar` INT NOT NULL DEFAULT 200000, -- Tagihan WiFi Induk Rp 200.000/bulan (sisa masuk kas)
   `tgl_bayar` DATE DEFAULT NULL,
   `bukti_foto_chat` LONGTEXT DEFAULT NULL, -- Path atau Data URL foto screenshot chat/transfer
   `catatan` VARCHAR(255) DEFAULT NULL,
@@ -167,9 +167,10 @@ INSERT INTO `tarif_bulanan` (`periode`, `tarif_makan`, `tarif_wifi`, `tarif_list
 ('2027-12', 50000, 20000, 20000, 10000)
 ON DUPLICATE KEY UPDATE `tarif_wifi`=VALUES(`tarif_wifi`);
 
--- Pengaturan Sistem (Kontak & Link Grup WA)
+-- Pengaturan Sistem (Kontak, Sandi Bendahara & Link Grup WA)
 INSERT INTO `pengaturan_sistem` (`kunci`, `nilai`, `keterangan`) VALUES
 ('kontak_bendahara', '081231256129', 'Nomor WA resmi Bendahara Komplek Tuban'),
+('sandi_bendahara', '@Deja1590', 'Sandi resmi login Bendahara Komplek Tuban'),
 ('link_grup_wa', 'https://chat.whatsapp.com/LgVFDhgRgHmDTuC3tCly7c', 'Tautan undangan grup WhatsApp Santri Komplek Tuban'),
 ('nama_komplek', 'Komplek Tuban (Rumah Wakaf)', 'Nama komplek pondok pesantren'),
 ('nama_pesantren', 'Pondok Pesantren Mojosari Loceret Nganjuk', 'Nama lembaga pesantren')

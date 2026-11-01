@@ -45,7 +45,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1.5rem;
+      padding: 0;
+    }
+    @media (min-width: 640px) {
+      body {
+        padding: 1rem;
+      }
+    }
+    @media (min-width: 1024px) {
+      body {
+        padding: 1.5rem;
+      }
     }
     .custom-scroll::-webkit-scrollbar {
       width: 5px;
@@ -54,6 +64,9 @@
     .custom-scroll::-webkit-scrollbar-thumb {
       background: #cbd5e1;
       border-radius: 4px;
+    }
+    .touch-scroll {
+      -webkit-overflow-scrolling: touch;
     }
     @media print {
       body {
@@ -76,11 +89,114 @@
 </head>
 <body class="antialiased selection:bg-emerald-900 selection:text-white">
 
-  <!-- Outer Dashboard Window Container (100% Match with FinPilot Frame) -->
-  <div id="mainAppContainer" class="w-full max-w-[1360px] bg-[#f8fafc] rounded-[38px] shadow-[0_25px_70px_rgba(15,23,42,0.18)] border border-white/60 flex overflow-hidden min-h-[820px] transition-all">
+  <!-- Outer Dashboard Window Container (100% Match with FinPilot Frame, fully responsive on mobile) -->
+  <div id="mainAppContainer" class="w-full max-w-[1360px] bg-[#f8fafc] rounded-none sm:rounded-[28px] lg:rounded-[38px] shadow-none sm:shadow-[0_25px_70px_rgba(15,23,42,0.18)] border-0 sm:border sm:border-white/60 flex flex-col lg:flex-row overflow-hidden min-h-screen sm:min-h-[820px] transition-all relative">
 
-    <!-- ================= SIDEBAR (FINPILOT STYLE) ================= -->
-    <aside class="w-[230px] shrink-0 bg-white border-r border-[#f1f5f9] p-6 flex flex-col justify-between select-none no-print">
+    <!-- ================= MOBILE HEADER (TOP BAR FOR SMARTPHONE/TABLET) ================= -->
+    <div class="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100 sticky top-0 z-30 select-none no-print">
+      <div class="flex items-center gap-2.5">
+        <button type="button" onclick="toggleMobileDrawer(true)" class="p-2 -ml-1 text-slate-700 hover:text-emerald-800 hover:bg-slate-50 rounded-xl focus:outline-none cursor-pointer" aria-label="Buka Menu">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <img src="logo-mojosari.png?v=2" alt="PayMojosari" class="w-8 h-8 object-contain shrink-0" />
+        <div class="flex flex-col">
+          <span class="font-display font-extrabold text-base text-slate-900 leading-none">PayMojosari</span>
+          <span class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">Komplek Tuban</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <!-- Role Indicator Mobile -->
+        <div id="adminRoleIndicatorMobile"></div>
+        <!-- Periode dropdown on mobile -->
+        <div class="flex items-center bg-slate-50 border border-slate-200/80 rounded-full px-2 py-1">
+          <select id="mobileMonthSelect" class="bg-transparent text-[11px] font-bold text-slate-800 focus:outline-none cursor-pointer">
+          </select>
+        </div>
+        <!-- Tunggakan Notif -->
+        <button onclick="switchTab('tunggakan')" title="Cek Tunggakan Santri" class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-600 relative cursor-pointer">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span id="mobileNotifDot" class="w-2 h-2 rounded-full bg-rose-500 absolute top-1.5 right-1.5"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= MOBILE OFF-CANVAS DRAWER ================= -->
+    <div id="mobileDrawer" class="fixed inset-0 z-50 lg:hidden hidden no-print">
+      <!-- Backdrop -->
+      <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-300" onclick="toggleMobileDrawer(false)"></div>
+      <!-- Slide-out Drawer Content -->
+      <div class="fixed inset-y-0 left-0 w-[280px] max-w-[85vw] bg-white shadow-2xl flex flex-col justify-between p-5 overflow-y-auto custom-scroll z-10">
+        <div class="space-y-4">
+          <!-- Drawer Header -->
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <img src="logo-mojosari.png?v=2" alt="PayMojosari Logo" class="w-9 h-9 object-contain shrink-0" />
+              <div>
+                <span class="font-display font-extrabold text-base text-slate-900 block leading-tight">PayMojosari</span>
+                <span class="text-[9px] font-semibold text-slate-400 block uppercase tracking-wider">Komplek Tuban</span>
+              </div>
+            </div>
+            <button onclick="toggleMobileDrawer(false)" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 cursor-pointer">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <!-- Drawer Role Indicator / Login Box -->
+          <div id="adminRoleIndicatorDrawer"></div>
+
+          <!-- Drawer Navigation Menu Items -->
+          <nav class="space-y-1.5 text-[13px] font-medium text-slate-600">
+            <button onclick="switchTab('pembayaran'); toggleMobileDrawer(false);" id="drawer-pembayaran" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all bg-[#064e3b] text-white font-semibold shadow-xs cursor-pointer">
+              <i data-lucide="wallet" class="w-4 h-4"></i>
+              <span>Payments (Bayar)</span>
+            </button>
+            <button onclick="switchTab('dashboard'); toggleMobileDrawer(false);" id="drawer-dashboard" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              <span>Dashboard & Rekap</span>
+            </button>
+            <button onclick="switchTab('tunggakan'); toggleMobileDrawer(false);" id="drawer-tunggakan" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+              <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+              <span>Tunggakan & WA</span>
+            </button>
+            <button onclick="openRekapGrupModal(); toggleMobileDrawer(false);" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-emerald-800 hover:bg-emerald-50 cursor-pointer font-semibold">
+              <i data-lucide="messages-square" class="w-4 h-4 text-emerald-800"></i>
+              <span>Siaran Grup WA</span>
+            </button>
+            <button onclick="switchTab('masak'); toggleMobileDrawer(false);" id="drawer-masak" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+              <i data-lucide="utensils" class="w-4 h-4"></i>
+              <span>Kas Masak</span>
+            </button>
+            <button onclick="switchTab('utang'); toggleMobileDrawer(false);" id="drawer-utang" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+              <i data-lucide="hand-coins" class="w-4 h-4"></i>
+              <span>Utang Kas</span>
+            </button>
+            <button onclick="switchTab('santri'); toggleMobileDrawer(false);" id="drawer-santri" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+              <i data-lucide="users" class="w-4 h-4"></i>
+              <span>Data Santri & KTA</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Drawer Bottom Actions -->
+        <div class="space-y-1.5 text-[12px] font-medium text-slate-600 pt-5 border-t border-slate-100">
+          <button onclick="ubahLinkGrupWa(); toggleMobileDrawer(false);" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-emerald-50 text-emerald-800 transition text-left cursor-pointer font-semibold">
+            <i data-lucide="link" class="w-4 h-4 text-emerald-800"></i>
+            <span class="truncate">Tautkan Link Grup WA</span>
+          </button>
+          <button onclick="openBendaharaWifiModal(); toggleMobileDrawer(false);" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
+            <i data-lucide="wifi" class="w-4 h-4 text-emerald-800"></i>
+            <span class="truncate">Setor WiFi Induk</span>
+          </button>
+          <button onclick="ubahTarifWifiManual(); toggleMobileDrawer(false);" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            <span>Atur Tarif Manual</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SIDEBAR DESKTOP (FINPILOT STYLE) ================= -->
+    <aside class="hidden lg:flex w-[230px] shrink-0 bg-white border-r border-[#f1f5f9] p-6 flex-col justify-between select-none no-print">
       <div class="space-y-7">
         <!-- Logo Header -->
         <div class="flex items-center gap-3 px-2">
@@ -151,7 +267,7 @@
     <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc] overflow-y-auto custom-scroll">
 
       <!-- TOP NAVBAR (MATCHING FINPILOT: TITLE, SEARCH, NOTIF, USER PROFILE) -->
-      <header class="px-8 pt-7 pb-4 flex items-center justify-between gap-4 no-print select-none">
+      <header class="hidden lg:flex px-8 pt-7 pb-4 items-center justify-between gap-4 no-print select-none">
         <div>
           <h1 id="pageHeadingTitle" class="text-2xl font-bold font-display text-slate-900 tracking-tight">Payments</h1>
           <p id="pageHeadingSubtitle" class="text-xs text-slate-400 font-medium mt-0.5">PP. Mojosari Loceret Nganjuk • Komplek Tuban (Rumah Wakaf)</p>
@@ -178,74 +294,83 @@
             <span id="navNotifDot" class="w-2 h-2 rounded-full bg-rose-500 absolute top-2 right-2"></span>
           </button>
 
-          <!-- User Profile Pill -->
-          <div class="flex items-center gap-2.5 bg-white border border-slate-200/80 rounded-full pl-3.5 pr-2 py-1 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+          <!-- User Profile Pill (FinPilot Jordan Blake Style) -->
+          <div onclick="handleTopProfileClick()" title="Klik untuk ganti akun / login" class="flex items-center gap-2.5 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-full pl-3.5 pr-1.5 py-1 shadow-[0_2px_4px_rgba(0,0,0,0.02)] cursor-pointer transition">
             <div class="text-right">
-              <span class="text-xs font-semibold text-slate-800 block leading-tight">PayMojosari • Tuban</span>
-              <span class="text-[10px] text-slate-400 font-mono">081231256129</span>
+              <span id="topProfileName" class="text-xs font-semibold text-slate-800 block leading-tight">Tamu Umum</span>
+              <span id="topProfileSub" class="text-[10px] text-slate-400 font-medium">Klik untuk Login</span>
             </div>
-            <img src="logo-mojosari.png?v=2" alt="PayMojosari" class="w-8 h-8 object-contain shrink-0" />
+            <img id="topProfileAvatar" src="logo-mojosari.png?v=2" alt="Profile" class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200 bg-slate-50" />
           </div>
+
+          <!-- Role Indicator Desktop -->
+          <div id="adminRoleIndicatorDesktop"></div>
         </div>
       </header>
 
+      <!-- Mobile Page Title Bar -->
+      <div class="lg:hidden px-4 pt-3 pb-1 flex items-center justify-between no-print">
+        <h2 id="mobilePageHeadingTitle" class="text-xl font-extrabold font-display text-slate-900 tracking-tight">Payments</h2>
+        <span class="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">Komplek Tuban</span>
+      </div>
+
       <!-- ================= CONTENT VIEW: PAYMENTS (DEFAULT FINPILOT LAYOUT) ================= -->
-      <main class="px-8 pb-8 flex-1 space-y-6">
+      <main class="px-3 sm:px-6 lg:px-8 pb-28 sm:pb-8 flex-1 space-y-5 sm:space-y-6">
 
         <!-- ================= TAB: PAYMENTS (FINPILOT EXACT VIEW) ================= -->
         <div id="view-pembayaran" class="view-panel space-y-6">
 
           <!-- TOP 4 METRICS CARDS (EXACT MATCH FINPILOT) -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <!-- Metric 1: Total Terkumpul Bulan Ini -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-400">Total Terkumpul Bulan Ini</span>
-                <span id="mMonthBadge" class="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">Okt 2026</span>
+            <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <div class="flex items-center justify-between gap-1 flex-wrap">
+                <span id="mLabel1" class="text-[11px] sm:text-xs font-semibold text-slate-400 truncate">Total Terkumpul</span>
+                <span id="mMonthBadge" class="text-[9px] sm:text-[10px] font-bold text-emerald-800 bg-emerald-50 px-1.5 sm:px-2 py-0.5 rounded-full">Okt 2026</span>
               </div>
-              <div class="mt-2.5 flex items-baseline justify-between">
-                <span id="mTotalSent" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
-                <span id="mTotalSentPct" class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                  <i data-lucide="arrow-up" class="w-3 h-3"></i> 0%
+              <div class="mt-2 sm:mt-2.5 flex items-baseline justify-between gap-1 flex-wrap">
+                <span id="mTotalSent" class="text-lg sm:text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="mTotalSentPct" class="text-[10px] sm:text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                  <i data-lucide="arrow-up" class="w-2.5 h-2.5 sm:w-3 sm:h-3"></i> 0%
                 </span>
               </div>
             </div>
 
             <!-- Metric 2: Tunggakan / Pending -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <span class="text-xs font-semibold text-slate-400">Tunggakan (Pending)</span>
-              <div class="mt-2.5 flex items-baseline justify-between">
-                <span id="mPending" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
-                <span id="mPendingPct" class="text-[11px] font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                  <i data-lucide="arrow-down" class="w-3 h-3"></i> 0%
+            <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <span id="mLabel2" class="text-[11px] sm:text-xs font-semibold text-slate-400">Tunggakan</span>
+              <div class="mt-2 sm:mt-2.5 flex items-baseline justify-between gap-1 flex-wrap">
+                <span id="mPending" class="text-lg sm:text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="mPendingPct" class="text-[10px] sm:text-[11px] font-semibold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                  <i data-lucide="arrow-down" class="w-2.5 h-2.5 sm:w-3 sm:h-3"></i> 0%
                 </span>
               </div>
             </div>
 
             <!-- Metric 3: Saldo Kas Komplek -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <span class="text-xs font-semibold text-slate-400">Saldo Uang Kas Komplek</span>
-              <div class="mt-2.5 flex items-baseline justify-between">
-                <span id="mScheduled" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
-                <span class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                  Kas Aktif
+            <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <span id="mLabel3" class="text-[11px] sm:text-xs font-semibold text-slate-400">Saldo Kas</span>
+              <div class="mt-2 sm:mt-2.5 flex items-baseline justify-between gap-1 flex-wrap">
+                <span id="mScheduled" class="text-lg sm:text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="mScheduledSub" class="text-[10px] sm:text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                  Aktif
                 </span>
               </div>
             </div>
 
             <!-- Metric 4: Utang Santri (Ambil Kas) -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-400">Utang Kas Santri</span>
+            <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <div class="flex items-center justify-between gap-1">
+                <span id="mLabel4" class="text-[11px] sm:text-xs font-semibold text-slate-400">Utang Kas</span>
                 <div class="flex items-center gap-1">
-                  <button onclick="openRekapGrupModal()" title="Kirim Rekap Bulan Ini ke WA" class="text-[10px] font-bold text-emerald-800 hover:bg-emerald-50 px-1.5 py-0.5 rounded-md cursor-pointer transition">WA</button>
-                  <button onclick="resetBulanIni()" title="Kosongkan / Reset Data Bulan Ini ke Rp 0" class="text-[10px] font-bold text-rose-600 hover:bg-rose-50 px-1.5 py-0.5 rounded-md cursor-pointer transition">Reset 0</button>
+                  <button onclick="openRekapGrupModal()" title="Kirim Rekap Bulan Ini ke WA" class="text-[9px] sm:text-[10px] font-bold text-emerald-800 hover:bg-emerald-50 px-1 py-0.5 rounded cursor-pointer transition">WA</button>
+                  <button onclick="resetBulanIni()" title="Reset Data Bulan Ini" class="text-[9px] sm:text-[10px] font-bold text-rose-600 hover:bg-rose-50 px-1 py-0.5 rounded cursor-pointer transition">Reset</button>
                 </div>
               </div>
-              <div class="mt-2.5 flex items-baseline justify-between">
-                <span id="mFailed" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
-                <span id="mFailedSub" class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                  0 Santri Utang
+              <div class="mt-2 sm:mt-2.5 flex items-baseline justify-between gap-1 flex-wrap">
+                <span id="mFailed" class="text-lg sm:text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="mFailedSub" class="text-[9px] sm:text-[11px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full truncate">
+                  0 Utang
                 </span>
               </div>
             </div>
@@ -258,47 +383,74 @@
             <div class="lg:col-span-8 space-y-6">
 
               <!-- CARD 1: QUICK TRANSFER (FINPILOT EXACT MATCH) -->
-              <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-5">
+              <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
                 <div class="flex items-center justify-between">
-                  <h3 class="text-sm font-bold text-slate-900 font-display">Quick Payment / Catat Bayar Santri</h3>
-                  <span class="text-[11px] text-slate-400 font-medium">Klik avatar santri untuk pilih</span>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-slate-900 font-display">Quick Payment / Catat Bayar Santri</h3>
+                    <span id="quickPaymentRoleBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Mode Santri</span>
+                  </div>
+                  <span id="quickPaymentSubHint" class="text-[11px] text-slate-400 font-medium">Khusus Bendahara</span>
                 </div>
 
-                <!-- Avatar Santri Horizontal List + Add New -->
-                <div id="quickTransferAvatarList" class="flex items-center gap-4 overflow-x-auto pb-2 custom-scroll">
+                <!-- Santri Mode Notice (Visible for Santri / Read-Only Guests) -->
+                <div id="quickPaymentSantriNotice" class="p-5 rounded-2xl bg-amber-50/80 border border-amber-200/90 text-amber-950 space-y-3">
+                  <div class="flex items-center gap-2 text-sm font-bold text-amber-900">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-amber-700"></i>
+                    <span>Mode Santri: Akses Pembayaran Terkunci</span>
+                  </div>
+                  <p class="text-xs text-amber-800 leading-relaxed">
+                    Hanya <strong>Bendahara / Pengurus</strong> yang berwenang mencatat dan mengonfirmasi pembayaran kas. Santri dapat memantau status lunas/tunggakan, mengunduh KTA santri, dan memeriksa rekap kas secara bebas.
+                  </p>
+                  <div class="pt-1 flex items-center gap-2 flex-wrap">
+                    <button type="button" onclick="openAdminLoginModal()" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+                      <i data-lucide="key-round" class="w-3.5 h-3.5"></i>
+                      <span>Masuk sebagai Bendahara</span>
+                    </button>
+                    <button type="button" onclick="switchTab('tunggakan')" class="px-3.5 py-2 rounded-xl bg-white border border-amber-300 text-amber-900 text-xs font-semibold hover:bg-amber-100 transition cursor-pointer">
+                      Lihat Rincian Tunggakan
+                    </button>
+                  </div>
                 </div>
 
-                <!-- 3 Segmented Filter Tabs (Makan, WiFi Manual, Kas All) -->
-                <div class="bg-[#f1f5f9] p-1 rounded-xl grid grid-cols-3 gap-1 text-xs font-semibold text-slate-600 text-center select-none">
-                  <button type="button" onclick="setQuickMode('full')" id="qtab-full" class="py-2 rounded-lg bg-white text-slate-900 shadow-xs cursor-pointer transition">
-                    Lunas Semua (100k)
-                  </button>
-                  <button type="button" onclick="setQuickMode('makan')" id="qtab-makan" class="py-2 rounded-lg hover:text-slate-900 cursor-pointer transition">
-                    Uang Makan (50k)
-                  </button>
-                  <button type="button" onclick="setQuickMode('wifi')" id="qtab-wifi" class="py-2 rounded-lg hover:text-slate-900 cursor-pointer transition">
-                    Kas WiFi Manual
-                  </button>
-                </div>
+                <!-- Admin Section (Only functional for Admin) -->
+                <div id="quickPaymentAdminSection" class="space-y-4">
+                  <!-- Avatar Santri Horizontal List + Add New -->
+                  <div id="quickTransferAvatarList" class="flex items-center gap-4 overflow-x-auto pb-2 custom-scroll">
+                  </div>
 
-                <!-- Amount & Note Inputs -->
-                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                  <div class="sm:col-span-5 space-y-1.5">
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Amount</label>
-                    <div class="relative">
-                      <input type="text" id="quickAmountInput" readonly value="Rp 100.000" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:outline-none" />
+                  <!-- 3 Segmented Filter Tabs (Makan, WiFi Manual, Kas All) -->
+                  <div class="bg-[#f1f5f9] p-1 rounded-xl grid grid-cols-3 gap-1 text-xs font-semibold text-slate-600 text-center select-none">
+                    <button type="button" onclick="setQuickMode('full')" id="qtab-full" class="py-2 rounded-lg bg-white text-slate-900 shadow-xs cursor-pointer transition">
+                      Lunas Semua (100k)
+                    </button>
+                    <button type="button" onclick="setQuickMode('makan')" id="qtab-makan" class="py-2 rounded-lg hover:text-slate-900 cursor-pointer transition">
+                      Uang Makan (50k)
+                    </button>
+                    <button type="button" onclick="setQuickMode('wifi')" id="qtab-wifi" class="py-2 rounded-lg hover:text-slate-900 cursor-pointer transition">
+                      Kas WiFi Manual
+                    </button>
+                  </div>
+
+                  <!-- Amount & Note Inputs -->
+                  <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <div class="sm:col-span-5 space-y-1.5">
+                      <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Amount</label>
+                      <div class="relative">
+                        <input type="text" id="quickAmountInput" readonly value="Rp 100.000" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div class="sm:col-span-7 space-y-1.5">
+                      <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Note (Optional)</label>
+                      <input type="text" id="quickNoteInput" placeholder="Cth: Iuran syahriyah lunas titip teman" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-800" />
                     </div>
                   </div>
-                  <div class="sm:col-span-7 space-y-1.5">
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Note (Optional)</label>
-                    <input type="text" id="quickNoteInput" placeholder="Cth: Iuran syahriyah lunas titip teman" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-800" />
-                  </div>
-                </div>
 
-                <!-- Big Primary Button: Send Money (FinPilot Style #064E3B) -->
-                <button type="button" onclick="handleQuickSubmitPayment()" class="w-full py-3.5 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
-                  <span>Send Money & Update Status Lunas</span>
-                </button>
+                  <!-- Big Primary Button: Send Money (FinPilot Style #064E3B) -->
+                  <button type="button" onclick="handleQuickSubmitPayment()" class="w-full py-3.5 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                    <span>Send Money & Update Status Lunas</span>
+                  </button>
+                </div>
               </div>
 
           <!-- Card 2: SCHEDULED PAYMENTS / RINCIAN TAGIHAN SANTRI (FINPILOT EXACT MATCH) -->
@@ -358,7 +510,7 @@
                 <!-- Bar 1: Iuran Terkumpul vs Target -->
                 <div class="space-y-1.5">
                   <div class="flex items-center justify-between text-xs">
-                    <span class="text-slate-400 font-medium">Iuran Terkumpul</span>
+                    <span id="limitBar1Label" class="text-slate-400 font-medium">Iuran Terkumpul</span>
                     <span id="limitDailyRatio" class="font-bold text-slate-900 font-mono">Rp 0 / Rp 0</span>
                   </div>
                   <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -369,7 +521,7 @@
                 <!-- Bar 2: Kas WiFi Terkumpul vs Bayar WiFi Manual -->
                 <div class="space-y-1.5 pt-1">
                   <div class="flex items-center justify-between text-xs">
-                    <span class="text-slate-400 font-medium">WiFi Terkumpul vs Tagihan</span>
+                    <span id="limitBar2Label" class="text-slate-400 font-medium">WiFi Terkumpul vs Tagihan</span>
                     <span id="limitMonthlyRatio" class="font-bold text-slate-900 font-mono">Rp 0 / Rp 0</span>
                   </div>
                   <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -404,39 +556,39 @@
         <!-- ================= TAB: DASHBOARD (OVERVIEW) ================= -->
         <div id="view-dashboard" class="view-panel hidden space-y-6">
           <!-- 4 Ringkasan Metrik Per Bulan di Dashboard + Aksi Kirim WA & Reset -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-400">Total Terkumpul Bulan Ini</span>
-                <span id="dashMonthBadge" class="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">Okt 2026</span>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <div class="flex items-center justify-between gap-1 flex-wrap">
+                <span id="dashLabel1" class="text-[11px] sm:text-xs font-semibold text-slate-400 truncate">Total Terkumpul</span>
+                <span id="dashMonthBadge" class="text-[9px] sm:text-[10px] font-bold text-emerald-800 bg-emerald-50 px-1.5 sm:px-2 py-0.5 rounded-full">Okt 2026</span>
               </div>
-              <div class="mt-2.5 flex items-baseline justify-between">
-                <span id="dashTotalSent" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
-                <span id="dashTotalSentPct" class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">0%</span>
-              </div>
-            </div>
-
-            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <span class="text-xs font-semibold text-slate-400">Tunggakan (Pending)</span>
-              <div class="mt-2.5 flex items-baseline justify-between">
-                <span id="dashPending" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
-                <span id="dashPendingPct" class="text-[11px] font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">0%</span>
+              <div class="mt-2 sm:mt-2.5 flex items-baseline justify-between gap-1 flex-wrap">
+                <span id="dashTotalSent" class="text-lg sm:text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="dashTotalSentPct" class="text-[10px] sm:text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">0%</span>
               </div>
             </div>
 
-            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <span class="text-xs font-semibold text-slate-400">Saldo Uang Kas Komplek</span>
-              <div class="mt-2.5 flex items-baseline justify-between">
-                <span id="dashScheduled" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
-                <span class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Kas Aktif</span>
+            <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <span id="dashLabel2" class="text-[11px] sm:text-xs font-semibold text-slate-400">Tunggakan</span>
+              <div class="mt-2 sm:mt-2.5 flex items-baseline justify-between gap-1 flex-wrap">
+                <span id="dashPending" class="text-lg sm:text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="dashPendingPct" class="text-[10px] sm:text-[11px] font-semibold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">0%</span>
               </div>
             </div>
 
-            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <span class="text-xs font-semibold text-slate-400">Utang Kas Santri</span>
-              <div class="mt-2.5 flex items-baseline justify-between">
-                <span id="dashFailed" class="text-2xl font-bold font-display text-slate-900">Rp 0</span>
-                <span id="dashFailedSub" class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">0 Santri Utang</span>
+            <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <span id="dashLabel3" class="text-[11px] sm:text-xs font-semibold text-slate-400">Saldo Kas</span>
+              <div class="mt-2 sm:mt-2.5 flex items-baseline justify-between gap-1 flex-wrap">
+                <span id="dashScheduled" class="text-lg sm:text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="dashScheduledSub" class="text-[10px] sm:text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">Aktif</span>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+              <span id="dashLabel4" class="text-[11px] sm:text-xs font-semibold text-slate-400">Utang Kas</span>
+              <div class="mt-2 sm:mt-2.5 flex items-baseline justify-between gap-1 flex-wrap">
+                <span id="dashFailed" class="text-lg sm:text-2xl font-bold font-display text-slate-900">Rp 0</span>
+                <span id="dashFailedSub" class="text-[9px] sm:text-[11px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full truncate">0 Utang</span>
               </div>
             </div>
           </div>
@@ -812,12 +964,40 @@
       </main>
     </div>
 
+    <!-- ================= MOBILE BOTTOM NAVIGATION BAR ================= -->
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-2 py-1.5 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.05)] no-print">
+      <button onclick="switchTab('pembayaran')" id="bnav-pembayaran" class="flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-emerald-800 font-bold cursor-pointer">
+        <i data-lucide="wallet" class="w-5 h-5"></i>
+        <span class="text-[10px] leading-none">Bayar</span>
+      </button>
+      <button onclick="switchTab('dashboard')" id="bnav-dashboard" class="flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-slate-500 hover:text-slate-800 font-medium cursor-pointer">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[10px] leading-none">Dashboard</span>
+      </button>
+      <button onclick="switchTab('tunggakan')" id="bnav-tunggakan" class="flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-slate-500 hover:text-slate-800 font-medium cursor-pointer">
+        <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+        <span class="text-[10px] leading-none">Tunggakan</span>
+      </button>
+      <button onclick="switchTab('masak')" id="bnav-masak" class="flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-slate-500 hover:text-slate-800 font-medium cursor-pointer">
+        <i data-lucide="utensils" class="w-5 h-5"></i>
+        <span class="text-[10px] leading-none">Masak</span>
+      </button>
+      <button onclick="switchTab('santri')" id="bnav-santri" class="flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-slate-500 hover:text-slate-800 font-medium cursor-pointer">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        <span class="text-[10px] leading-none">Santri</span>
+      </button>
+      <button onclick="toggleMobileDrawer(true)" class="flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-slate-500 hover:text-slate-800 font-medium cursor-pointer">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+        <span class="text-[10px] leading-none">Menu</span>
+      </button>
+    </nav>
+
   </div>
 
   <!-- ================= MODAL: SETORAN WIFI BULANAN (BENDAHARA) ================= -->
-  <div id="modalWifiProof" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
-    <div class="bg-white rounded-3xl max-w-lg w-full border border-slate-100 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-      <div class="px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
+  <div id="modalWifiProof" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 no-print">
+    <div class="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full border border-slate-100 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-5 sm:px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <i data-lucide="wifi" class="w-5 h-5 text-emerald-300"></i>
           <div>
@@ -830,7 +1010,7 @@
         </button>
       </div>
 
-      <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scroll text-xs">
+      <div class="p-4 sm:p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scroll text-xs">
         <div class="p-3.5 rounded-xl bg-sky-50 border border-sky-100 text-sky-900 space-y-1">
           <p class="font-bold flex items-center gap-1.5">
             <i data-lucide="shield-check" class="w-4 h-4 text-sky-700"></i>
@@ -873,17 +1053,17 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 flex-wrap">
-          <button type="button" onclick="closeWifiModal(); openNotaWifiIndukModal(currentWifiModalCtx.monthKey);" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold cursor-pointer flex items-center gap-1.5">
+        <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeWifiModal(); openNotaWifiIndukModal(currentWifiModalCtx.monthKey);" class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold cursor-pointer flex items-center justify-center gap-1.5">
             <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
             <span>Lihat Laporan / Nota WiFi</span>
           </button>
           <div class="flex items-center gap-2">
-            <button type="button" onclick="saveWifiProofOnly()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold cursor-pointer">
-              Simpan Foto Dulu
+            <button type="button" onclick="saveWifiProofOnly()" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold cursor-pointer text-center">
+              Simpan Foto
             </button>
-            <button type="button" onclick="confirmWifiPaidWithProof()" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold shadow-sm cursor-pointer">
-              ✓ Konfirmasi Lunas WiFi
+            <button type="button" onclick="confirmWifiPaidWithProof()" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold shadow-sm cursor-pointer text-center">
+              ✓ Konfirmasi Lunas
             </button>
           </div>
         </div>
@@ -892,9 +1072,9 @@
   </div>
 
   <!-- ================= MODAL: NOTA PEMBAYARAN / TUNGGAKAN & WA ================= -->
-  <div id="modalNota" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-xl w-full border border-slate-100 shadow-2xl overflow-hidden">
-      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print">
+  <div id="modalNota" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full border border-slate-100 shadow-2xl overflow-hidden">
+      <div class="px-5 sm:px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print">
         <div class="flex items-center gap-2">
           <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i>
           <h3 id="modalNotaHeaderTitle" class="text-sm font-bold font-display">Nota Resmi Komplek Tuban</h3>
@@ -904,16 +1084,16 @@
         </button>
       </div>
 
-      <div class="p-6 space-y-4 max-h-[82vh] overflow-y-auto custom-scroll text-xs">
+      <div class="p-4 sm:p-6 space-y-4 max-h-[82vh] overflow-y-auto custom-scroll text-xs">
         <!-- Printable Area -->
-        <div id="printArea" class="border border-slate-300 rounded-2xl p-5 bg-white space-y-4">
+        <div id="printArea" class="border border-slate-300 rounded-2xl p-4 sm:p-5 bg-white space-y-4">
           <div class="border-b border-dashed border-slate-300 pb-3 flex items-start justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <img src="logo-mojosari.png?v=2" alt="PayMojosari" class="w-11 h-11 object-contain shrink-0" />
+            <div class="flex items-center gap-2.5 sm:gap-3">
+              <img src="logo-mojosari.png?v=2" alt="PayMojosari" class="w-9 h-9 sm:w-11 sm:h-11 object-contain shrink-0" />
               <div>
-                <span class="text-[9px] font-bold uppercase tracking-widest text-emerald-800 block">PAYMOJOSARI • PP. MOJOSARI LOCERET NGANJUK</span>
-                <h4 class="text-base font-extrabold text-slate-900 font-display">KOMPLEK TUBAN (RUMAH WAKAF)</h4>
-                <p class="text-[11px] text-slate-500">Bukti Resmi Syahriyah Uang Makan & Kas Komplek</p>
+                <span class="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-emerald-800 block">PAYMOJOSARI • PP. MOJOSARI</span>
+                <h4 class="text-sm sm:text-base font-extrabold text-slate-900 font-display">KOMPLEK TUBAN (RUMAH WAKAF)</h4>
+                <p class="text-[10px] sm:text-[11px] text-slate-500">Bukti Resmi Syahriyah & Kas</p>
               </div>
             </div>
             <div id="notaBadgeStatus" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border">
@@ -925,13 +1105,13 @@
           </div>
 
           <div class="border-t border-dashed border-slate-300 pt-3 flex items-center justify-between text-[10px] text-slate-400 font-medium">
-            <span>Bendahara Komplek Tuban (Rumah Wakaf)</span>
+            <span>Bendahara Komplek Tuban</span>
             <span id="notaTimestamp" class="font-mono"></span>
           </div>
         </div>
 
-        <!-- WhatsApp Text Preview (Editable if needed) -->
-        <div class="no-print space-y-1.5">
+        <!-- WhatsApp Text Preview (Khusus Bendahara) -->
+        <div id="notaAdminWaSection" class="no-print space-y-1.5">
           <div class="flex items-center justify-between">
             <span class="text-[11px] font-bold text-slate-700">Format Pesan WhatsApp:</span>
             <button onclick="copyWaText()" class="text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer">
@@ -941,15 +1121,15 @@
           <textarea id="notaWaTextPreview" rows="5" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 focus:outline-none"></textarea>
         </div>
 
-        <div class="no-print flex items-center justify-end gap-2 pt-2 border-t border-slate-100 flex-wrap">
-          <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold cursor-pointer">
+        <div class="no-print flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold cursor-pointer text-center">
             Cetak / PDF
           </button>
-          <a id="btnSendWaGroup" href="https://wa.me/?text=" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer" title="Kirim ke Chat Grup WhatsApp Komplek Tuban">
+          <a id="btnSendWaGroup" href="https://wa.me/?text=" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer" title="Kirim ke Chat Grup WhatsApp Komplek Tuban">
             <i data-lucide="messages-square" class="w-3.5 h-3.5"></i>
             <span>Share ke Grup WA</span>
           </a>
-          <a id="btnSendWaDirect" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer" title="Kirim langsung ke kontak pribadi santri">
+          <a id="btnSendWaDirect" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer" title="Kirim langsung ke kontak pribadi santri">
             <i data-lucide="send" class="w-3.5 h-3.5"></i>
             <span>Kirim Japri Santri</span>
           </a>
@@ -975,12 +1155,21 @@
       </div>
 
       <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scroll text-xs">
-        <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-950 space-y-1">
-          <p class="font-bold flex items-center gap-1.5">
-            <i data-lucide="info" class="w-4 h-4 text-emerald-800"></i>
-            Format Transparansi Grup WhatsApp:
+        <div class="space-y-2">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Pilih Mode Privasi Laporan Grup WhatsApp</label>
+          <div class="bg-[#f1f5f9] p-1 rounded-xl grid grid-cols-2 gap-1 text-xs font-semibold">
+            <button type="button" id="btnRekapModeSantun" onclick="setRekapGrupMode('santun')" class="py-2 px-3 rounded-lg bg-white text-slate-900 font-bold shadow-xs cursor-pointer transition flex items-center justify-center gap-1.5">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-[#064e3b]"></i>
+              <span>Format Santun (Privasi)</span>
+            </button>
+            <button type="button" id="btnRekapModeLengkap" onclick="setRekapGrupMode('lengkap')" class="py-2 px-3 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5">
+              <i data-lucide="list-checks" class="w-3.5 h-3.5"></i>
+              <span>Format Lengkap (17 Nama)</span>
+            </button>
+          </div>
+          <p id="rekapModeHintText" class="text-[11px] text-emerald-800 bg-emerald-50/80 border border-emerald-100 rounded-xl px-3 py-2">
+            <strong>Format Santun (Direkomendasikan):</strong> Menampilkan ringkasan kas, laporan WiFi induk, dan daftar santri yang <strong>Sudah Lunas</strong>. Rincian nama & nominal tunggakan/utang disembunyikan agar tidak mempermalukan santri di grup.
           </p>
-          <p>Pesan ini merangkum status seluruh santri (yang sudah lunas dan yang masih ada tunggakan), saldo kas komplek, dan jurnal dapur masak untuk transparansi di grup santri.</p>
         </div>
 
         <!-- Input Link Tautan Grup WA -->
@@ -1027,9 +1216,241 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: LOGIN AKUN FINPILOT STYLE (SANTRI & BENDAHARA) ================= -->
+  <div id="modalAdminLogin" class="fixed inset-0 z-50 hidden bg-slate-900/45 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 no-print select-none">
+    <div class="bg-white rounded-[32px] max-w-[440px] w-full border border-white/80 shadow-[0_25px_70px_rgba(15,23,42,0.2)] overflow-hidden animate-in fade-in zoom-in-95 duration-150 p-6 sm:p-7 space-y-5">
+      
+      <!-- Top Header (FinPilot Style) -->
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-[#f8fafc] border border-slate-200/80 flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
+            <img src="logo-mojosari.png?v=2" alt="PayMojosari" class="w-full h-full object-contain" />
+          </div>
+          <div>
+            <h3 class="text-lg font-extrabold font-display text-slate-900 tracking-tight leading-tight">Masuk ke PayMojosari</h3>
+            <p class="text-[11px] font-medium text-slate-400 mt-0.5">Komplek Tuban (Rumah Wakaf) • PP. Mojosari</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeAdminLoginModal()" class="w-8 h-8 rounded-full bg-[#f8fafc] hover:bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-400 hover:text-slate-800 transition cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Segmented Filter Tabs (Exact FinPilot "Bank Account | Credit Card" Pill Style) -->
+      <div class="bg-[#f1f5f9] p-1 rounded-xl grid grid-cols-2 gap-1 text-xs font-semibold text-slate-500 text-center">
+        <button type="button" onclick="switchLoginModalTab('santri')" id="tabBtnLoginSantri" class="py-2.5 rounded-lg bg-white text-slate-900 font-bold shadow-xs cursor-pointer transition flex items-center justify-center gap-1.5">
+          <i data-lucide="user-check" class="w-3.5 h-3.5 text-[#064e3b]"></i>
+          <span>Akun Santri</span>
+        </button>
+        <button type="button" onclick="switchLoginModalTab('admin')" id="tabBtnLoginAdmin" class="py-2.5 rounded-lg hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+          <span>Bendahara (Admin)</span>
+        </button>
+      </div>
+
+      <!-- FORM 1: LOGIN SANTRI (LIHAT DATA PRIBADI SENDIRI) -->
+      <form id="formLoginSantri" onsubmit="handleSantriLoginSubmit(event)" class="space-y-4">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Pilih Profil Santri</label>
+            <span class="text-[10px] text-slate-400 font-medium">Geser & klik foto Anda</span>
+          </div>
+          <!-- FinPilot Quick Transfer Style Avatar Carousel -->
+          <div id="loginSantriAvatarList" class="flex items-center gap-3.5 overflow-x-auto py-1.5 px-1 custom-scroll touch-scroll">
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nama Lengkap Santri</label>
+          <select id="loginSantriSelect" onchange="selectLoginSantriAvatar(this.value)" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#064e3b] cursor-pointer">
+          </select>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Kode Akses / Sandi Santri</label>
+            <span id="loginSantriWaHint" class="text-[10px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md"></span>
+          </div>
+          <input type="password" id="loginSantriPinInput" required placeholder="Ketik 4 angka terakhir WA / Sandi Anda" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#064e3b]/15 focus:border-[#064e3b]" />
+          <div class="flex items-center justify-between pt-0.5">
+            <span class="text-[10px] text-slate-400">🔒 Privasi data pribadi terjaga</span>
+            <button type="button" onclick="openResetSantriPasswordForm()" class="text-[11px] font-bold text-[#064e3b] hover:underline cursor-pointer flex items-center gap-1">
+              <i data-lucide="key-round" class="w-3 h-3"></i>
+              <span>Ganti / Lupa Sandi?</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="santriLoginError" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-600 font-semibold text-[11px]">
+          Kode akses / Sandi atau 4 digit WA tidak cocok dengan santri yang dipilih.
+        </div>
+
+        <button type="submit" class="w-full py-3.5 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+          <span>Masuk ke Akun Santri Saya</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+      <!-- FORM 1B: GANTI / LUPA SANDI SANTRI (VERIFIKASI NO. WA) -->
+      <form id="formResetSantriPassword" onsubmit="handleResetSantriPasswordSubmit(event)" class="hidden space-y-3.5">
+        <div class="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center justify-between gap-2">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Verifikasi WhatsApp Santri</span>
+            <span id="resetSantriTargetName" class="text-xs font-extrabold text-slate-900 block mt-0.5">-</span>
+          </div>
+          <span id="resetSantriWaMasked" class="text-[10px] font-mono font-bold bg-white text-emerald-900 px-2.5 py-1 rounded-lg border border-emerald-200"></span>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">1. Verifikasi Nomor WhatsApp Lengkap</label>
+          <input type="tel" id="resetSantriWaInput" required placeholder="Ketik nomor WA lengkap Anda (08...)" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">2. Sandi / PIN Baru</label>
+            <input type="password" id="resetSantriNewPinInput" required minlength="4" placeholder="Minimal 4 karakter" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">3. Ulangi Sandi Baru</label>
+            <input type="password" id="resetSantriConfirmPinInput" required minlength="4" placeholder="Ketik ulang sandi" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2 text-[11px] text-slate-600 cursor-pointer select-none">
+          <input type="checkbox" id="resetSantriSendWaCheck" class="rounded border-slate-300 text-[#064e3b] focus:ring-[#064e3b]" />
+          <span>Kirim pengingat sandi baru ke WhatsApp saya</span>
+        </label>
+
+        <div id="resetSantriError" class="hidden p-2.5 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-600 font-semibold text-[11px]"></div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button type="button" onclick="switchLoginModalTab('santri')" class="px-3.5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer">
+            Batal
+          </button>
+          <button type="submit" class="flex-1 py-3 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span>Verifikasi WA & Simpan Sandi</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- FORM 2: LOGIN BENDAHARA / ADMIN (FULL ACCESS) -->
+      <form id="formLoginAdmin" onsubmit="handleAdminLoginSubmit(event)" class="hidden space-y-4">
+        <!-- FinPilot Style Profile Preview Card -->
+        <div class="p-3.5 rounded-2xl bg-[#f8fafc] border border-slate-200/70 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[#064e3b] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+              AA
+            </div>
+            <div>
+              <span class="text-xs font-bold text-slate-900 block leading-tight">Bendahara Komplek Tuban</span>
+              <span class="text-[11px] text-slate-400">Akses Penuh Pembayaran & Kas</span>
+            </div>
+          </div>
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/80">Admin</span>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Sandi / PIN Bendahara</label>
+            <button type="button" onclick="openResetAdminPasswordForm()" class="text-[11px] font-bold text-[#064e3b] hover:underline cursor-pointer flex items-center gap-1">
+              <i data-lucide="key-round" class="w-3 h-3"></i>
+              <span>Ganti / Lupa Sandi?</span>
+            </button>
+          </div>
+          <div class="relative">
+            <input type="password" id="adminPasswordInput" required placeholder="Masukkan Sandi Bendahara" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl pl-4 pr-10 py-2.5 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#064e3b]/15 focus:border-[#064e3b]" />
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer">
+              <i data-lucide="eye" id="adminPasswordEyeIcon" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="adminLoginError" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-600 font-semibold text-[11px]">
+          Sandi Bendahara salah. Silakan periksa kembali!
+        </div>
+
+        <button type="submit" class="w-full py-3.5 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+          <i data-lucide="unlock" class="w-4 h-4"></i>
+          <span>Masuk Dashboard Bendahara</span>
+        </button>
+      </form>
+
+      <!-- FORM 2B: GANTI / LUPA SANDI BENDAHARA (VERIFIKASI NO. WA) -->
+      <form id="formResetAdminPassword" onsubmit="handleResetAdminPasswordSubmit(event)" class="hidden space-y-3.5">
+        <div class="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center justify-between gap-2">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Pemulihan & Ganti Sandi Admin</span>
+            <span class="text-xs font-extrabold text-slate-900 block mt-0.5">Verifikasi No. WhatsApp Bendahara</span>
+          </div>
+          <span id="resetAdminWaMasked" class="text-[10px] font-mono font-bold bg-white text-emerald-900 px-2.5 py-1 rounded-lg border border-emerald-200">0812••••129</span>
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex items-center justify-between">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">1. Nomor WhatsApp Resmi Bendahara</label>
+            <button type="button" onclick="sendAdminOtpViaWa()" class="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer flex items-center gap-1">
+              <i data-lucide="message-circle" class="w-3 h-3"></i>
+              <span>Kirim Kode OTP ke WA</span>
+            </button>
+          </div>
+          <input type="tel" id="resetAdminWaInput" required placeholder="Masukkan No. WA Bendahara (0812...)" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+        </div>
+
+        <div id="resetAdminOtpContainer" class="hidden space-y-1 p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-amber-800">Kode OTP WhatsApp (4 Digit)</label>
+          <input type="text" id="resetAdminOtpInput" maxlength="6" placeholder="Ketik 4 digit kode OTP dari WA" class="w-full bg-white border border-amber-300 rounded-lg px-3 py-2 text-xs font-extrabold text-slate-900 tracking-widest focus:outline-none focus:border-[#064e3b]" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">2. Sandi Baru</label>
+            <div class="relative">
+              <input type="password" id="resetAdminNewPassInput" required minlength="4" placeholder="Sandi baru" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl pl-3.5 pr-9 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+              <button type="button" onclick="toggleResetAdminPassVisibility()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">3. Ulangi Sandi Baru</label>
+            <input type="password" id="resetAdminConfirmPassInput" required minlength="4" placeholder="Konfirmasi sandi" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2 text-[11px] text-slate-600 cursor-pointer select-none">
+          <input type="checkbox" id="resetAdminSendWaCheck" class="rounded border-slate-300 text-[#064e3b] focus:ring-[#064e3b]" />
+          <span>Kirim catatan sandi baru ke WhatsApp Bendahara</span>
+        </label>
+
+        <div id="resetAdminError" class="hidden p-2.5 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-600 font-semibold text-[11px]"></div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button type="button" onclick="switchLoginModalTab('admin')" class="px-3.5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer">
+            Batal
+          </button>
+          <button type="submit" class="flex-1 py-3 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span>Verifikasi WA & Simpan Sandi</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Footer: Guest Mode Option -->
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+        <span>Bukan pengurus / santri?</span>
+        <button type="button" onclick="continueAsGuest()" class="font-bold text-slate-600 hover:text-[#064e3b] cursor-pointer transition">
+          Lihat Info Umum Saja (Tamu)
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-2 no-print"></div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=20261101i"></script>
 </body>
 </html>
