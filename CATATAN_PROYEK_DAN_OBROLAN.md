@@ -202,3 +202,25 @@ Ketika Anda kembali nanti, propagasi DNS dipastikan sudah selesai (telah lewat >
    - **Setoran WiFi Induk `Rp 200.000 / bulan` & Sisa Masuk Kas:**
      - Tagihan bulanan ke WiFi Induk yang dibayarkan Bendahara adalah **`Rp 200.000 / bulan`**.
      - Dari target iuran WiFi 17 santri (`17 × Rp 20.000 = Rp 340.000`), sisa **`Rp 140.000 / bulan`** otomatis tercatat dan disimpan di **Saldo Kas Komplek (Bendahara)**.
+
+---
+
+## 9. Pembaruan 5 Fitur Lengkap & E-Wallet DANA (`085335219903`) — 1 November 2026
+
+Sesuai instruksi lanjutan untuk mengimplementasikan seluruh 5 saran pengembangan menggunakan nomor **DANA `085335219903`**:
+
+1. **Info Pembayaran DANA Resmi (`085335219903` — Bendahara Komplek Tuban):**
+   - Nomor tujuan transfer resmi syahriyah & kas komplek: **DANA `085335219903`** (a.n. *Bendahara Komplek Tuban*, tetap menjaga anonimitas pengurus).
+   - Dilengkapi tombol **Salin Nomor (1-Klik)** di dasbor Akun Santri, di dalam modal Upload Bukti Transfer, serta otomatis tercantum pada teks tagihan & siaran WhatsApp.
+2. **Upload Bukti Transfer oleh Santri & Verifikasi 1-Klik oleh Bendahara (`konfirmasi_bayar`):**
+   - Santri yang login dapat menekan tombol **Upload Bukti**, memilih komponen iuran yang dibayar (*Makan, WiFi, Listrik, Air*), dan mengunggah screenshot bukti transfer DANA (otomatis dikompresi via HTML5 Canvas & tersimpan ke tabel `konfirmasi_bayar` di MySQL melalui endpoint `?action=submit_payment_proof`).
+   - Saat Bendahara login, muncul kotak notifikasi **Verifikasi Bukti Transfer Santri** dengan tombol **Lihat Bukti**, **✓ Terima & Lunasi** (otomatis mengubah komponen pembayaran santri menjadi LUNAS dengan 1 klik melalui `?action=verify_payment_proof`), serta **Tolak**.
+3. **Progressive Web App / PWA (Install Aplikasi seperti HP Asli):**
+   - Penambahan `manifest.json`, Service Worker `sw.js`, dan tombol **Install Aplikasi** di sidebar desktop & menu laci HP agar santri maupun bendahara dapat meng-install **PayMojosari** langsung di layar utama HP Android/iOS dengan ikon logo PP. Mojosari.
+4. **Export Laporan Bulanan ke Excel (`.xls`) & Cetak LPJ Resmi (PDF):**
+   - Tombol **Export Excel** (`exportLpjExcel()`) pada tab Dashboard untuk mengunduh tabel matriks pembayaran 17 santri beserta rincian kas umum dalam format Microsoft Excel (`.xls`).
+   - Tombol **LPJ Resmi (PDF)** (`openModalLpjResmi()`) untuk membuka lembar Laporan Pertanggungjawaban resmi lengkap dengan kolom tanda tangan Ketua Komplek & Bendahara Komplek yang siap dicetak atau disimpan sebagai PDF.
+5. **Jurnal Pengeluaran & Pemasukan Kas Umum Komplek (`jurnal_kas_umum`):**
+   - Penambahan menu tab **Kas Umum** (`view-kasumum`) untuk mencatat pengeluaran fasilitas komplek di luar dapur (*Token Listrik, Air & Pompa, Alat Kebersihan, Lampu & Fasilitas, Perlengkapan Komplek, Lain-lain*).
+   - Saldo Kas Komplek Tersedia kini dihitung secara akurat: `(Total Kas WiFi + Listrik + Air + Pemasukan Kas Umum) - Setoran WiFi Induk - Pengeluaran Kas Umum - Pinjaman/Utang Kas Aktif`.
+

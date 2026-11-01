@@ -1,0 +1,25 @@
+{
+  "name": "PayMojosari — Sistem Kas & Uang Makan Komplek Tuban",
+  "short_name": "PayMojosari",
+  "description": "Aplikasi Pembukuan Syahriyah, Kas Komplek, dan Uang Makan PP. Mojosari Komplek Tuban (Rumah Wakaf)",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
+  "theme_color": "#064e3b",
+  "icons": [
+    {
+      "src": "logo-mojosari.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo-mojosari.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

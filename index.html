@@ -3,8 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="theme-color" content="#064e3b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PayMojosari" />
   <title>PayMojosari — Sistem Kas & Uang Makan Komplek Tuban (PP. Mojosari)</title>
   <link rel="icon" type="image/png" href="logo-mojosari.png?v=2" />
+  <link rel="apple-touch-icon" href="logo-mojosari.png?v=2" />
+  <link rel="manifest" href="manifest.json?v=2" />
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Inter & Plus Jakarta Sans -->
@@ -166,6 +175,10 @@
               <i data-lucide="utensils" class="w-4 h-4"></i>
               <span>Kas Masak</span>
             </button>
+            <button onclick="switchTab('kasumum'); toggleMobileDrawer(false);" id="drawer-kasumum" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+              <i data-lucide="receipt-text" class="w-4 h-4"></i>
+              <span>Kas Umum</span>
+            </button>
             <button onclick="switchTab('utang'); toggleMobileDrawer(false);" id="drawer-utang" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
               <i data-lucide="hand-coins" class="w-4 h-4"></i>
               <span>Utang Kas</span>
@@ -179,6 +192,10 @@
 
         <!-- Drawer Bottom Actions -->
         <div class="space-y-1.5 text-[12px] font-medium text-slate-600 pt-5 border-t border-slate-100">
+          <button onclick="triggerInstallPwa(); toggleMobileDrawer(false);" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl bg-emerald-50/80 hover:bg-emerald-100 text-emerald-900 transition text-left cursor-pointer font-bold">
+            <i data-lucide="smartphone" class="w-4 h-4 text-[#064e3b]"></i>
+            <span class="truncate">Install Aplikasi</span>
+          </button>
           <button onclick="ubahLinkGrupWa(); toggleMobileDrawer(false);" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-emerald-50 text-emerald-800 transition text-left cursor-pointer font-semibold">
             <i data-lucide="link" class="w-4 h-4 text-emerald-800"></i>
             <span class="truncate">Link Grup WA</span>
@@ -234,6 +251,11 @@
             <span>Kas Masak</span>
           </button>
 
+          <button onclick="switchTab('kasumum')" id="nav-kasumum" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="receipt-text" class="w-4 h-4"></i>
+            <span>Kas Umum</span>
+          </button>
+
           <button onclick="switchTab('utang')" id="nav-utang" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
             <i data-lucide="hand-coins" class="w-4 h-4"></i>
             <span>Utang Kas</span>
@@ -248,6 +270,10 @@
 
       <!-- Bottom Sidebar Links -->
       <div class="space-y-1.5 text-[13px] font-medium text-slate-500 pt-6 border-t border-slate-100">
+        <button onclick="triggerInstallPwa()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl bg-emerald-50/80 hover:bg-emerald-100 text-emerald-900 transition text-left cursor-pointer font-bold">
+          <i data-lucide="smartphone" class="w-4 h-4 text-[#064e3b]"></i>
+          <span class="truncate">Install Aplikasi</span>
+        </button>
         <button onclick="ubahLinkGrupWa()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-emerald-50 text-emerald-800 transition text-left cursor-pointer font-semibold">
           <i data-lucide="link" class="w-4 h-4 text-emerald-800"></i>
           <span class="truncate">Link Grup WA</span>
@@ -375,6 +401,9 @@
               </div>
             </div>
           </div>
+
+          <!-- KOTAK ANTREAN VERIFIKASI BUKTI TRANSFER SANTRI (KHUSUS BENDAHARA) -->
+          <div id="adminPendingProofsBox" class="hidden"></div>
 
           <!-- TWO COLUMN MAIN WORKSPACE (LEFT 65%, RIGHT 35%) -->
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -597,6 +626,49 @@
             </div>
           </div>
 
+          <!-- Kotak Verifikasi Bukti Transfer di Dashboard -->
+          <div id="dashPendingProofsBox" class="hidden"></div>
+
+          <!-- Kartu Info Rekening DANA Resmi & Pintasan LPJ / Kas Umum -->
+          <div class="bg-gradient-to-r from-[#064e3b] to-[#065f46] rounded-2xl p-5 text-white shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex items-start sm:items-center gap-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
+                <i data-lucide="smartphone" class="w-5 h-5 text-emerald-200"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-100 border border-emerald-300/30">Rekening Transfer Resmi</span>
+                  <span class="text-xs text-emerald-100/90 font-medium">a.n. Bendahara Komplek Tuban</span>
+                </div>
+                <div class="flex items-center gap-2.5 mt-1 flex-wrap">
+                  <span class="text-base sm:text-lg font-extrabold font-mono tracking-wide">DANA: 085335219903</span>
+                  <button type="button" onclick="copyDanaNumber()" class="px-2.5 py-1 rounded-lg bg-white text-[#064e3b] hover:bg-emerald-50 text-[11px] font-extrabold transition cursor-pointer shadow-2xs inline-flex items-center gap-1">
+                    <i data-lucide="copy" class="w-3 h-3"></i>
+                    <span>Salin Nomor</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" onclick="openUploadBuktiSantriModal()" class="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                <span>Upload Bukti TF</span>
+              </button>
+              <button type="button" onclick="switchTab('kasumum')" class="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+                <i data-lucide="Zap" class="w-3.5 h-3.5"></i>
+                <span>Kas Umum</span>
+              </button>
+              <button type="button" onclick="openModalLpjResmi()" class="px-3.5 py-2 rounded-xl bg-white text-[#064e3b] hover:bg-emerald-50 text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5 shadow-xs">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <span>LPJ Resmi (PDF)</span>
+              </button>
+              <button type="button" onclick="exportLpjExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-200 text-[#064e3b] hover:bg-emerald-100 text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5 shadow-xs">
+                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                <span>Export Excel</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Kartu Laporan Pembayaran WiFi Induk (Bendahara ke Pemilik WiFi) -->
           <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -629,6 +701,14 @@
                 <h3 class="text-base font-bold text-slate-900 font-display">Rekapitulasi Bulanan</h3>
               </div>
               <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="openModalLpjResmi()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200/80 transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                  <span>LPJ Resmi (PDF)</span>
+                </button>
+                <button onclick="exportLpjExcel()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200/80 transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                  <span>Export Excel</span>
+                </button>
                 <button onclick="openRekapGrupModal()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-[#064e3b] text-white hover:bg-[#065f46] transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="messages-square" class="w-3.5 h-3.5"></i>
                   <span>Rekap WA</span>
@@ -667,7 +747,15 @@
               <div>
                 <h3 class="text-base font-bold text-slate-900 font-display">Status Syahriyah (<span id="dashActiveMonthTitle" class="text-emerald-800">Oktober 2026</span>)</h3>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="openModalLpjResmi()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-[#064e3b] text-white hover:bg-[#065f46] transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                  <span>LPJ Resmi (PDF)</span>
+                </button>
+                <button onclick="exportLpjExcel()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200 transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                  <span>Export Excel</span>
+                </button>
                 <button onclick="openRekapGrupModal()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition cursor-pointer">
                   Rekap Grup
                 </button>
@@ -785,6 +873,98 @@
                     </tr>
                   </thead>
                   <tbody id="masakTableBody" class="divide-y divide-slate-100">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TAB: JURNAL KAS UMUM KOMPLEK (LISTRIK, AIR, KEBERSIHAN, FASILITAS) ================= -->
+        <div id="view-kasumum" class="view-panel hidden space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
+            <!-- Form Input Kas Umum -->
+            <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-900 font-display">Input Kas Umum Komplek</h3>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800">Listrik • Air • Alat</span>
+              </div>
+              <form id="formKasUmum" onsubmit="handleSaveKasUmum(event)" class="space-y-3.5">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Tanggal</label>
+                    <input type="date" id="kasUmumTanggal" required class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Kategori</label>
+                    <select id="kasUmumKategori" required class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 cursor-pointer">
+                      <option value="Token Listrik">Token Listrik</option>
+                      <option value="Air & Pompa">Air & Pompa</option>
+                      <option value="Alat Kebersihan">Alat Kebersihan</option>
+                      <option value="Lampu & Fasilitas">Lampu & Fasilitas</option>
+                      <option value="Perlengkapan Komplek">Perlengkapan Komplek</option>
+                      <option value="Lain-lain">Lain-lain</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Tipe Transaksi</label>
+                  <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+                    <label class="cursor-pointer">
+                      <input type="radio" name="kasUmumTipe" value="pengeluaran" checked class="peer sr-only" />
+                      <div class="py-2 text-center rounded-xl border border-slate-200 peer-checked:bg-rose-50 peer-checked:border-rose-400 peer-checked:text-rose-700 transition">
+                        Pengeluaran Kas
+                      </div>
+                    </label>
+                    <label class="cursor-pointer">
+                      <input type="radio" name="kasUmumTipe" value="pemasukan" class="peer sr-only" />
+                      <div class="py-2 text-center rounded-xl border border-slate-200 peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 transition">
+                        Pemasukan Kas Lain
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Keterangan</label>
+                  <input type="text" id="kasUmumKeterangan" required placeholder="Cth: Beli Token Listrik Komplek / Sapu & Pel" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Nominal (Rp)</label>
+                    <input type="number" id="kasUmumNominal" required min="500" placeholder="50000" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-mono" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Pencatat</label>
+                    <input type="text" id="kasUmumPetugas" required value="Bendahara Komplek" placeholder="Bendahara Komplek" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                  </div>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer">
+                  Simpan Kas Umum
+                </button>
+              </form>
+            </div>
+
+            <!-- Tabel Riwayat Kas Umum (Tinggi Sama dengan Form di Samping & Scroll ke Bawah) -->
+            <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col lg:h-0 lg:min-h-full max-h-[480px] lg:max-h-none overflow-hidden">
+              <div class="flex items-center justify-between flex-wrap gap-2 shrink-0 pb-3">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900 font-display">Riwayat Pengeluaran & Kas Umum</h3>
+                  <p class="text-[11px] text-slate-400">Otomatis menghitung sisa Saldo Kas Komplek</p>
+                </div>
+                <span id="rekapKasUmumSaldoBadge" class="text-xs font-bold font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">Saldo Kas: Rp 0</span>
+              </div>
+              <div class="flex-1 min-h-0 overflow-y-auto overflow-x-auto custom-scroll pr-1">
+                <table class="w-full text-left text-xs">
+                  <thead class="sticky top-0 bg-white z-10">
+                    <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] font-bold">
+                      <th class="pb-2.5 px-3">Tanggal</th>
+                      <th class="pb-2.5 px-3">Kategori</th>
+                      <th class="pb-2.5 px-3">Keterangan</th>
+                      <th class="pb-2.5 px-3 text-right">Nominal</th>
+                      <th class="pb-2.5 px-3 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="kasUmumTableBody" class="divide-y divide-slate-100">
                   </tbody>
                 </table>
               </div>
@@ -1440,9 +1620,121 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: UPLOAD BUKTI TRANSFER DANA SANTRI ================= -->
+  <div id="modalUploadBuktiSantri" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 no-print select-none">
+    <div class="bg-white rounded-[28px] max-w-md w-full border border-white/80 shadow-[0_25px_70px_rgba(15,23,42,0.2)] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-5 sm:px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="upload-cloud" class="w-5 h-5 text-emerald-300"></i>
+          <div>
+            <h3 class="text-sm font-bold font-display">Upload Bukti Transfer</h3>
+            <p id="modalBuktiSantriSubtitle" class="text-[11px] text-emerald-200">Konfirmasi Pembayaran Syahriyah</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeUploadBuktiSantriModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSubmitBuktiTransferSantri(event)" class="p-5 sm:p-6 space-y-4 max-h-[82vh] overflow-y-auto custom-scroll text-xs">
+        <!-- Kartu Informasi Tujuan Transfer DANA -->
+        <div class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-slate-50 border border-emerald-200/80 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-[#008CEB] text-white font-extrabold text-[11px] tracking-tight flex items-center justify-center shrink-0 shadow-xs">
+              DANA
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Tujuan Transfer DANA</span>
+              <span id="modalBuktiDanaNum" class="text-sm font-extrabold font-mono text-slate-900 block tracking-wide">085335219903</span>
+              <span class="text-[10px] font-medium text-emerald-800 block">Bendahara Komplek Tuban</span>
+            </div>
+          </div>
+          <button type="button" onclick="copyDanaNumber()" class="px-3 py-2 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-200 text-[#064e3b] text-[11px] font-bold transition cursor-pointer shrink-0 flex items-center gap-1 shadow-2xs">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Salin</span>
+          </button>
+        </div>
+
+        <!-- Komponen yang Dibayar -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Komponen yang Dibayar</label>
+            <span id="buktiSantriNominalLabel" class="text-xs font-extrabold font-mono text-[#064e3b]">Rp 100.000</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <label id="lblBuktiMakan" class="flex items-center gap-2 p-2.5 rounded-xl bg-[#f8fafc] border border-slate-200 cursor-pointer">
+              <input type="checkbox" id="chkBuktiMakan" onchange="recalcBuktiSantriNominal()" checked class="w-4 h-4 rounded accent-[#064e3b]" />
+              <span class="font-semibold text-slate-800">Uang Makan</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-[#f8fafc] border border-slate-200 cursor-pointer">
+              <input type="checkbox" id="chkBuktiWifi" onchange="recalcBuktiSantriNominal()" checked class="w-4 h-4 rounded accent-[#064e3b]" />
+              <span class="font-semibold text-slate-800">Kas WiFi</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-[#f8fafc] border border-slate-200 cursor-pointer">
+              <input type="checkbox" id="chkBuktiListrik" onchange="recalcBuktiSantriNominal()" checked class="w-4 h-4 rounded accent-[#064e3b]" />
+              <span class="font-semibold text-slate-800">Kas Listrik</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-[#f8fafc] border border-slate-200 cursor-pointer">
+              <input type="checkbox" id="chkBuktiAir" onchange="recalcBuktiSantriNominal()" checked class="w-4 h-4 rounded accent-[#064e3b]" />
+              <span class="font-semibold text-slate-800">Kas Air</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Upload File Bukti Transfer -->
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Foto / Screenshot Bukti Transfer *</label>
+          <input type="file" id="buktiSantriFileInput" accept="image/*" onchange="handleBuktiSantriFilePreview(event)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-900 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded-xl p-1.5" />
+          <div class="border border-dashed border-slate-200 rounded-2xl p-3 bg-slate-50 text-center mt-2">
+            <img id="buktiSantriPreviewImg" src="" alt="Preview Bukti Transfer" class="max-h-48 mx-auto rounded-xl shadow-xs hidden object-contain border border-slate-200 bg-white" />
+            <div id="buktiSantriEmptyState" class="py-5 text-xs text-slate-400">
+              Pilih foto bukti transfer DANA / QRIS / Bank
+            </div>
+          </div>
+        </div>
+
+        <!-- Catatan -->
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Catatan (Opsional)</label>
+          <input type="text" id="buktiSantriCatatanInput" placeholder="Cth: Transfer via DANA" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeUploadBuktiSantriModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer">
+            Batal
+          </button>
+          <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold shadow-sm cursor-pointer flex items-center justify-center gap-1.5">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span>Kirim Bukti Pembayaran</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: LIHAT FOTO BUKTI TRANSFER ================= -->
+  <div id="modalPreviewBuktiBayar" class="fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 no-print" onclick="closePreviewBuktiBayarModal()">
+    <div class="bg-white rounded-3xl max-w-md w-full p-4 space-y-3 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <div>
+          <h4 id="previewBuktiTitle" class="text-xs font-bold text-slate-900">Bukti Transfer Santri</h4>
+          <p id="previewBuktiBayarSubtitle" class="text-[10px] text-slate-400"></p>
+        </div>
+        <button type="button" onclick="closePreviewBuktiBayarModal()" class="p-1 text-slate-400 hover:text-slate-800 cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div id="previewBuktiBayarInfo" class="text-xs text-slate-700 bg-slate-50 rounded-xl p-3 space-y-1 border border-slate-100"></div>
+      <div class="bg-slate-50 rounded-2xl p-2 text-center">
+        <img id="previewBuktiBayarImg" src="" alt="Bukti Transfer" class="max-h-[55vh] mx-auto rounded-xl object-contain" />
+      </div>
+      <div id="previewBuktiBayarAdminActions" class="flex items-center gap-2 pt-1"></div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-2 no-print"></div>
 
-  <script src="app.js?v=20261101o"></script>
+  <script src="app.js?v=20261101q"></script>
 </body>
 </html>

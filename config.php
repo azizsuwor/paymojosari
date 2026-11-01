@@ -5,7 +5,7 @@
 // =========================================================================
 
 $host = $_SERVER['HTTP_HOST'] ?? '';
-$is_local = in_array($host, ['localhost', '127.0.0.1']) || strpos($host, 'localhost:') === 0 || strpos($host, '127.0.0.1:') === 0;
+$is_local = (php_sapi_name() === 'cli') || in_array($host, ['localhost', '127.0.0.1']) || strpos($host, 'localhost:') === 0 || strpos($host, '127.0.0.1:') === 0;
 
 if ($is_local) {
     // Konfigurasi Database Lokal (Laragon)

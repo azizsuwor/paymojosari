@@ -6,6 +6,7 @@
 
 const STORAGE_KEY = 'SIMKAS_MOJOSARI_FINPILOT_V13';
 const BENDAHARA_WA = '081231256129';
+const NOMOR_DANA_DEFAULT = '085335219903';
 const DEFAULT_GRUP_LINK = 'https://chat.whatsapp.com/LgVFDhgRgHmDTuC3tCly7c';
 
 const TARIF_DEFAULT = {
@@ -88,11 +89,14 @@ let state = {
   selectedSantriId: 's1',  // Selected in Quick Transfer
   quickMode: 'full',       // 'full' (100k) | 'makan' (50k) | 'wifi' (manual)
   linkGrupWa: DEFAULT_GRUP_LINK,
+  nomorDanaBendahara: NOMOR_DANA_DEFAULT,
   santri: JSON.parse(JSON.stringify(DEFAULT_SANTRI)),
   tarifWifiPerBulan: buildDefaultTarifMap(),
   pembayaran: {},
   setoranWifiBendahara: {},
   masakLogs: [],
+  kasUmumLogs: [],
+  konfirmasiBayar: [],
   utangKas: [],
   recentTransactions: []
 };
@@ -101,6 +105,14 @@ let currentWifiModalCtx = {
   monthKey: null,
   tempImgDataUrl: ''
 };
+
+let currentBuktiSantriCtx = {
+  santriId: null,
+  monthKey: null,
+  tempImgDataUrl: ''
+};
+
+let deferredPwaPrompt = null;
 
 let currentSantriPhotoUrl = '';
 
@@ -145,11 +157,14 @@ function getInitialDemoState() {
     selectedSantriId: 's1',
     quickMode: 'full',
     linkGrupWa: DEFAULT_GRUP_LINK,
+    nomorDanaBendahara: NOMOR_DANA_DEFAULT,
     santri: JSON.parse(JSON.stringify(DEFAULT_SANTRI)),
     tarifWifiPerBulan: buildDefaultTarifMap(),
     pembayaran: {},
     setoranWifiBendahara: {},
     masakLogs: [],
+    kasUmumLogs: [],
+    konfirmasiBayar: [],
     utangKas: [],
     recentTransactions: []
   };
@@ -159,6 +174,9 @@ function purgeOldMonthsFromState() {
   if (!AVAILABLE_MONTHS.some(m => m.key === state.activeMonth)) {
     state.activeMonth = START_MONTH_KEY;
   }
+  if (!Array.isArray(state.kasUmumLogs)) state.kasUmumLogs = [];
+  if (!Array.isArray(state.konfirmasiBayar)) state.konfirmasiBayar = [];
+  if (!state.nomorDanaBendahara) state.nomorDanaBendahara = NOMOR_DANA_DEFAULT;
   state.tarifWifiPerBulan = { ...buildDefaultTarifMap(), ...(state.tarifWifiPerBulan || {}) };
   Object.keys(state.tarifWifiPerBulan).forEach(mKey => {
     if (mKey < START_MONTH_KEY) delete state.tarifWifiPerBulan[mKey];
@@ -962,6 +980,17 @@ function updateRoleUI() {
       const rec = getPaymentRecord(loggedSantri.id, state.activeMonth);
       const sum = calculateRecordSummary(rec, state.activeMonth, loggedSantri);
       const nis = getNomorIndukSantri(loggedSantri, loggedIdx);
+      const danaNum = state.nomorDanaBendahara || NOMOR_DANA_DEFAULT;
+      const myProof = (state.konfirmasiBayar || []).find(kb => kb.santriId === loggedSantri.id && kb.periode === state.activeMonth);
+      const myProofBanner = myProof
+        ? `<div class="p-2.5 rounded-xl border ${myProof.status === 'approved' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : myProof.status === 'rejected' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-amber-50 border-amber-200 text-amber-900'} flex items-center justify-between gap-2 text-[11px]">
+             <div class="flex items-center gap-2 min-w-0">
+               <span class="font-bold truncate">${myProof.status === 'approved' ? '✓ Bukti Transfer Diverifikasi Bendahara' : myProof.status === 'rejected' ? '✗ Bukti Transfer Ditolak (Silakan upload ulang)' : '⏳ Bukti Transfer Menunggu Verifikasi Bendahara'}</span>
+             </div>
+             <button type="button" onclick="openPreviewBuktiBayarModal('${myProof.id}')" class="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-[10px] font-bold text-slate-700 shrink-0 cursor-pointer">Lihat Foto</button>
+           </div>`
+        : '';
+
       qNotice.className = 'p-5 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-slate-900 space-y-4';
       qNotice.innerHTML = `
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/70">
@@ -1000,7 +1029,29 @@ function updateRoleUI() {
             <span class="font-bold ${rec.air ? 'text-emerald-700' : 'text-rose-600'}">${rec.air ? '✓ Lunas' : 'Belum'}</span>
           </div>
         </div>
+
+        <!-- Info Pembayaran Transfer DANA -->
+        <div class="p-3 rounded-xl bg-white border border-emerald-200/80 flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2.5">
+            <span class="px-2 py-1 rounded-lg bg-[#008CEB] text-white text-[10px] font-extrabold tracking-wide">DANA</span>
+            <div>
+              <span class="text-xs font-extrabold font-mono text-slate-900">${danaNum}</span>
+              <span class="text-[10px] text-slate-400 block">Transfer Syahriyah & Kas (Bendahara Komplek)</span>
+            </div>
+          </div>
+          <button type="button" onclick="copyDanaNumber()" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#064e3b] text-[11px] font-bold transition cursor-pointer flex items-center gap-1">
+            <i data-lucide="copy" class="w-3 h-3"></i>
+            <span>Salin Nomor</span>
+          </button>
+        </div>
+
+        ${myProofBanner}
+
         <div class="flex items-center justify-end gap-2 flex-wrap pt-1">
+          <button type="button" onclick="openUploadBuktiSantriModal('${loggedSantri.id}', '${state.activeMonth}')" class="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-2xs">
+            <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
+            <span>Upload Bukti Transfer</span>
+          </button>
           <button type="button" onclick="openWaKonfirmasiKeBendahara('${loggedSantri.id}', '${state.activeMonth}')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-[#064e3b]"></i>
             <span>Konfirmasi WA</span>
@@ -1052,7 +1103,7 @@ function updateRoleUI() {
   }
 
   // 5. Sembunyikan / nonaktifkan form input & tombol mutasi khusus Admin jika bukan Bendahara
-  const adminForms = ['formMasak', 'formUtangKas'];
+  const adminForms = ['formMasak', 'formKasUmum', 'formUtangKas'];
   adminForms.forEach(fId => {
     const formEl = document.getElementById(fId);
     if (!formEl) return;
@@ -1097,8 +1148,8 @@ function updateRoleUI() {
     }
   }
 
-  // Sembunyikan tombol Reset, Upload Bukti, dan Siaran Grup WA bagi selain Admin (Bendahara)
-  document.querySelectorAll('[onclick*="resetBulanIni"], [onclick*="resetSemuaKeNol"], [onclick*="openBendaharaWifiModal"], [onclick*="ubahTarifWifiManual"], [onclick*="deleteMasakLog"], [onclick*="openRekapGrupModal"], [onclick*="openRekapGrupForMonth"]').forEach(el => {
+  // Sembunyikan tombol Reset, Upload Bukti, Export LPJ, dan Siaran Grup WA bagi selain Admin (Bendahara)
+  document.querySelectorAll('[onclick*="resetBulanIni"], [onclick*="resetSemuaKeNol"], [onclick*="openBendaharaWifiModal"], [onclick*="ubahTarifWifiManual"], [onclick*="deleteMasakLog"], [onclick*="deleteKasUmumLog"], [onclick*="openRekapGrupModal"], [onclick*="openRekapGrupForMonth"], [onclick*="exportLpjExcel"], [onclick*="openModalLpjResmi"]').forEach(el => {
     if (state.isAdmin) {
       el.classList.remove('hidden');
     } else {
@@ -1192,8 +1243,17 @@ async function syncFromBackend() {
       if (Array.isArray(d.masakLogs)) {
         state.masakLogs = d.masakLogs;
       }
+      if (Array.isArray(d.kasUmumLogs)) {
+        state.kasUmumLogs = d.kasUmumLogs;
+      }
+      if (Array.isArray(d.konfirmasiBayar)) {
+        state.konfirmasiBayar = d.konfirmasiBayar;
+      }
       if (Array.isArray(d.utangKas)) {
         state.utangKas = d.utangKas;
+      }
+      if (d.nomorDanaBendahara) {
+        state.nomorDanaBendahara = d.nomorDanaBendahara;
       }
       if (d.linkGrupWa) {
         state.linkGrupWa = d.linkGrupWa;
@@ -1364,6 +1424,13 @@ function calculateGlobalFinancials() {
     }
   });
 
+  const pemasukanKasUmumLain = (state.kasUmumLogs || [])
+    .filter(k => k.tipe === 'pemasukan')
+    .reduce((acc, k) => acc + Number(k.nominal), 0);
+  const pengeluaranKasUmum = (state.kasUmumLogs || [])
+    .filter(k => k.tipe === 'pengeluaran')
+    .reduce((acc, k) => acc + Number(k.nominal), 0);
+
   const totalUtangAktif = state.utangKas
     .filter(u => u.status === 'belum_lunas')
     .reduce((acc, u) => acc + Number(u.nominal), 0);
@@ -1372,7 +1439,7 @@ function calculateGlobalFinancials() {
     .filter(u => u.status === 'lunas')
     .reduce((acc, u) => acc + Number(u.nominal), 0);
 
-  const saldoKasTersedia = totalKasCollectedAllTime - totalSetoranWifiIndukPaid - totalUtangAktif;
+  const saldoKasTersedia = totalKasCollectedAllTime + pemasukanKasUmumLain - totalSetoranWifiIndukPaid - pengeluaranKasUmum - totalUtangAktif;
 
   const pemasukanMasakLain = state.masakLogs
     .filter(m => m.tipe === 'pemasukan')
@@ -1427,6 +1494,9 @@ function calculateGlobalFinancials() {
     activeMonthTarget,
     activeMonthTunggakan,
     totalKasCollectedAllTime,
+    totalSetoranWifiIndukPaid,
+    pemasukanKasUmumLain,
+    pengeluaranKasUmum,
     totalUtangAktif,
     totalUtangLunas,
     saldoKasTersedia,
@@ -1487,6 +1557,9 @@ function initControls() {
   const today = '2026-10-30';
   const masakDate = document.getElementById('masakTanggal');
   if (masakDate && !masakDate.value) masakDate.value = today;
+
+  const kasUmumDate = document.getElementById('kasUmumTanggal');
+  if (kasUmumDate && !kasUmumDate.value) kasUmumDate.value = today;
 
   const utangDate = document.getElementById('utangTanggal');
   if (utangDate && !utangDate.value) utangDate.value = today;
@@ -1549,6 +1622,7 @@ function switchTab(tabName) {
     dashboard: 'Dashboard',
     tunggakan: 'Tunggakan',
     masak: 'Kas Masak',
+    kasumum: 'Kas Umum Komplek',
     utang: 'Pinjaman Kas',
     santri: 'Data Santri'
   };
@@ -1856,11 +1930,13 @@ function renderAll() {
 
   renderQuickTransfer();
   setQuickMode(state.quickMode || 'full');
+  renderPendingProofsForAdmin();
   renderScheduledPayments();
   renderRecentPayments();
   renderDashboardTab(fin);
   renderTunggakanTab(fin);
   renderMasakTab(fin);
+  renderKasUmumTab(fin);
   renderUtangTab(fin);
   renderSantriTab();
 
@@ -2073,6 +2149,7 @@ function renderScheduledPayments(searchFilter = '') {
   container.innerHTML = list.map(s => {
     const rec = getPaymentRecord(s.id, state.activeMonth);
     const sum = calculateRecordSummary(rec, state.activeMonth, s);
+    const pendingProof = (state.konfirmasiBayar || []).find(p => p.santriId === s.id && p.monthKey === state.activeMonth && p.status === 'pending');
 
     return `
       <div class="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100">
@@ -2081,7 +2158,7 @@ function renderScheduledPayments(searchFilter = '') {
             <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
           </div>
           <div class="min-w-0">
-            <h4 class="text-xs font-bold text-slate-900 truncate">${s.nama} (${s.prodi.split(' ')[0]}) ${sum.tanpaMakan ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Makan</span>` : ''} ${state.userRole === 'santri' ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold">Data Saya</span>` : ''}</h4>
+            <h4 class="text-xs font-bold text-slate-900 truncate">${s.nama} (${s.prodi.split(' ')[0]}) ${sum.tanpaMakan ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Makan</span>` : ''} ${state.userRole === 'santri' ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold">Data Saya</span>` : ''} ${pendingProof ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 text-[9px] font-bold">Menunggu Verifikasi</span>` : ''}</h4>
             <p class="text-[11px] text-slate-400 truncate">${sum.tanpaMakan ? 'Iuran Kas Komplek (Tanpa Uang Makan)' : 'Iuran Syahriyah'} • ${getMonthLabel(state.activeMonth)}</p>
           </div>
         </div>
@@ -2105,9 +2182,13 @@ function renderScheduledPayments(searchFilter = '') {
                 <i data-lucide="send" class="w-4 h-4"></i>
               </button>
             ` : `
+              <button onclick="openUploadBuktiSantriModal('${s.id}', '${state.activeMonth}')" title="Upload Bukti Transfer DANA" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[10px] font-bold cursor-pointer flex items-center gap-1 shadow-2xs">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                <span>Upload Bukti</span>
+              </button>
               <button onclick="openWaKonfirmasiKeBendahara('${s.id}', '${state.activeMonth}')" title="Konfirmasi Pembayaran ke WA Bendahara" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer flex items-center gap-1">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-                <span>WA Bendahara</span>
+                <span>WA</span>
               </button>
             `}
           </div>
@@ -2222,10 +2303,12 @@ function resetSemuaKeNol() {
     openAdminLoginModal();
     return;
   }
-  if (!confirm('Reset seluruh pembayaran di semua bulan, kas masak, dan utang kas menjadi Rp 0 (Data Santri tetap tersimpan)?')) return;
+  if (!confirm('Reset seluruh pembayaran di semua bulan, kas masak, kas umum, dan utang kas menjadi Rp 0 (Data Santri tetap tersimpan)?')) return;
   state.pembayaran = {};
   state.setoranWifiBendahara = {};
   state.masakLogs = [];
+  state.kasUmumLogs = [];
+  state.konfirmasiBayar = [];
   state.utangKas = [];
   state.recentTransactions = [];
   saveState();
@@ -2336,8 +2419,11 @@ function renderDashboardTab(fin) {
             </td>
             <td class="py-2.5 px-3 text-right">
               <div class="flex items-center justify-end gap-1.5">
-                <button onclick="openWaKonfirmasiKeBendahara('${mySantri.id}', '${m.key}')" class="px-2 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[10px] font-bold cursor-pointer">
-                  WA Bendahara
+                <button onclick="openUploadBuktiSantriModal('${mySantri.id}', '${m.key}')" class="px-2 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[10px] font-bold cursor-pointer">
+                  Upload Bukti
+                </button>
+                <button onclick="openWaKonfirmasiKeBendahara('${mySantri.id}', '${m.key}')" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer">
+                  WA
                 </button>
               </div>
             </td>
@@ -2409,6 +2495,9 @@ function renderDashboardTab(fin) {
           </td>
           <td class="py-2.5 px-3 text-right">
             <div class="flex items-center justify-end gap-1.5">
+              <button onclick="openModalLpjResmi('${m.key}')" title="Cetak LPJ Resmi Bulan ${m.label}" class="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-950 text-[10px] font-extrabold cursor-pointer">
+                LPJ
+              </button>
               <button onclick="openNotaWifiIndukModal('${m.key}')" title="Laporan Pembayaran WiFi Induk" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer">
                 Nota WiFi
               </button>
@@ -2505,8 +2594,11 @@ function renderDashboardTab(fin) {
                 Tagih WA
               </button>
             ` : `
+              <button onclick="openUploadBuktiSantriModal('${s.id}', '${state.activeMonth}')" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer">
+                Upload Bukti
+              </button>
               <button onclick="openWaKonfirmasiKeBendahara('${s.id}', '${state.activeMonth}')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold cursor-pointer">
-                WA Bendahara
+                WA
               </button>
             `}
           </div>
@@ -2587,9 +2679,13 @@ function renderTunggakanTab(finData) {
               <span>Kirim Tagihan WA</span>
             </button>
           ` : `
-            <button onclick="openWaKonfirmasiKeBendahara('${r.santri.id}', '${state.activeMonth}')" class="px-3 py-1.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0">
+            <button onclick="openUploadBuktiSantriModal('${r.santri.id}', '${state.activeMonth}')" class="px-3 py-1.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0 shadow-xs">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+              <span>Upload Bukti</span>
+            </button>
+            <button onclick="openWaKonfirmasiKeBendahara('${r.santri.id}', '${state.activeMonth}')" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0">
               <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-              <span>Konfirmasi ke WA Bendahara</span>
+              <span>WA Bendahara</span>
             </button>
           `}
         </div>
@@ -2673,6 +2769,108 @@ function renderMasakTab(finData) {
         <button onclick="deleteMasakLog('${m.id}')" class="text-slate-300 hover:text-rose-500 cursor-pointer">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
         </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// 6B. Render Jurnal Kas Umum Komplek
+function handleSaveKasUmum(event) {
+  event.preventDefault();
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
+  const tanggal = document.getElementById('kasUmumTanggal').value;
+  const tipe = document.querySelector('input[name="kasUmumTipe"]:checked').value;
+  const kategori = document.getElementById('kasUmumKategori').value || 'Lain-lain';
+  const keterangan = document.getElementById('kasUmumKeterangan').value.trim();
+  const nominal = Number(document.getElementById('kasUmumNominal').value);
+  const petugas = document.getElementById('kasUmumPetugas').value.trim() || 'Bendahara Komplek';
+
+  if (!tanggal || !keterangan || !nominal) return;
+
+  if (!Array.isArray(state.kasUmumLogs)) state.kasUmumLogs = [];
+  state.kasUmumLogs.unshift({
+    id: 'KU' + Date.now(),
+    tanggal,
+    tipe,
+    kategori,
+    keterangan,
+    nominal,
+    petugas
+  });
+
+  state.recentTransactions.unshift({
+    id: 'T' + Date.now(),
+    title: `${kategori}: ${keterangan}`,
+    subtitle: `Oleh: ${petugas}`,
+    type: tipe === 'pemasukan' ? 'income' : 'expense',
+    amount: nominal,
+    date: 'Hari ini',
+    status: 'Completed',
+    icon: tipe === 'pemasukan' ? 'arrow-down-left' : 'zap'
+  });
+
+  saveState();
+  document.getElementById('kasUmumKeterangan').value = '';
+  document.getElementById('kasUmumNominal').value = '';
+  renderAll();
+  showToast('Transaksi Kas Umum berhasil disimpan');
+}
+
+function deleteKasUmumLog(id) {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
+  state.kasUmumLogs = (state.kasUmumLogs || []).filter(k => k.id !== id);
+  saveState();
+  renderAll();
+  showToast('Catatan Kas Umum dihapus', 'amber');
+}
+
+function renderKasUmumTab(finData) {
+  const fin = finData || calculateGlobalFinancials();
+  const badge = document.getElementById('rekapKasUmumSaldoBadge');
+  if (badge) badge.textContent = `Saldo Kas Umum: ${formatRp(fin.saldoKasTersedia)}`;
+
+  const totalMasukIuran = fin.totalWifi + fin.totalListrik + fin.totalAir + (fin.pemasukanKasUmumLain || 0);
+  const totalKeluarAll = fin.totalWifiPaidToOwner + (fin.pengeluaranKasUmum || 0) + fin.totalUtangAktif;
+
+  const elIn = document.getElementById('kasUmumStatIn');
+  const elOut = document.getElementById('kasUmumStatOut');
+  const elNet = document.getElementById('kasUmumStatNet');
+  if (elIn) elIn.textContent = formatRp(totalMasukIuran);
+  if (elOut) elOut.textContent = formatRp(totalKeluarAll);
+  if (elNet) elNet.textContent = formatRp(fin.saldoKasTersedia);
+
+  const tbody = document.getElementById('kasUmumTableBody');
+  if (!tbody) return;
+
+  const logs = state.kasUmumLogs || [];
+  if (logs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400 text-xs">Belum ada catatan pengeluaran / pemasukan kas umum.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = logs.map(k => `
+    <tr class="hover:bg-slate-50">
+      <td class="py-2.5 px-3 font-mono text-slate-500">${k.tanggal}</td>
+      <td class="py-2.5 px-3">
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">${k.kategori || 'Lain-lain'}</span>
+      </td>
+      <td class="py-2.5 px-3 font-medium text-slate-900">${k.keterangan}</td>
+      <td class="py-2.5 px-3 text-slate-500">${k.petugas || 'Bendahara Komplek'}</td>
+      <td class="py-2.5 px-3 text-right font-mono font-bold ${k.tipe === 'pemasukan' ? 'text-emerald-800' : 'text-rose-600'}">
+        ${k.tipe === 'pemasukan' ? '+' : '-'}${formatRp(k.nominal)}
+      </td>
+      <td class="py-2.5 px-3 text-center">
+        ${state.isAdmin ? `
+          <button onclick="deleteKasUmumLog('${k.id}')" class="text-slate-300 hover:text-rose-500 cursor-pointer">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        ` : `<span class="text-[10px] text-slate-300">-</span>`}
       </td>
     </tr>
   `).join('');
@@ -3276,12 +3474,14 @@ function openWaKonfirmasiKeBendahara(santriId, monthKeyParam) {
   const unpaidText = sum.unpaidItems.length > 0
     ? sum.unpaidItems.map(i => i.nama).join(', ')
     : 'Lunas';
+  const danaNum = state.nomorDanaBendahara || NOMOR_DANA_DEFAULT;
 
   const msg = [
     `Assalamu'alaikum, konfirmasi syahriyah *${monthLabel}*:`,
     `• Nama : *${s.nama}*`,
     `• Dibayar : ${formatRp(sum.totalPaid)}`,
-    `• Kurang : *${formatRp(sum.totalUnpaid)}* (${unpaidText})`
+    `• Kurang : *${formatRp(sum.totalUnpaid)}* (${unpaidText})`,
+    `• Transfer DANA : *${danaNum}* (Bendahara Komplek Tuban)`
   ].join('\n');
 
   const url = `https://wa.me/${formatPhoneToWa(BENDAHARA_WA)}?text=${encodeURIComponent(msg)}`;
@@ -3705,7 +3905,8 @@ function openNotaTunggakanSantriModal(santriId) {
     tableRowsWa.length > 0 ? tableRowsWa.join('\n') : '• Lunas semua bulan ✓',
     ``,
     `Total Tagihan : *${formatRp(grandTotal)}*`,
-    `Cek detail: https://paymojosari.my.id`
+    `Transfer DANA : *${state.nomorDanaBendahara || NOMOR_DANA_DEFAULT}* (Bendahara Komplek Tuban)`,
+    `Cek & Upload Bukti: https://paymojosari.my.id`
   ].filter(Boolean).join('\n');
 
   document.getElementById('notaWaTextPreview').value = waLines;
@@ -3961,7 +4162,11 @@ function generateRekapGrupText(modeParam) {
     lines.push(loanTextLengkap);
   }
 
-  lines.push('', `Cek & konfirmasi: https://paymojosari.my.id`);
+  lines.push(
+    '',
+    `Transfer DANA : *${state.nomorDanaBendahara || NOMOR_DANA_DEFAULT}*`,
+    `Cek & upload bukti: https://paymojosari.my.id`
+  );
 
   return lines.join('\n');
 }
@@ -4014,6 +4219,693 @@ function copyGroupWaText() {
 }
 
 // =========================================================================
+// FITUR 1 & 2: NOMOR DANA BENDAHARA, UPLOAD BUKTI TRANSFER SANTRI & VERIFIKASI 1-KLIK
+// =========================================================================
+
+function copyDanaNumber() {
+  const danaNum = state.nomorDanaBendahara || NOMOR_DANA_DEFAULT;
+  navigator.clipboard.writeText(danaNum);
+  showToast(`Nomor DANA ${danaNum} berhasil disalin!`, 'emerald');
+}
+
+function openUploadBuktiSantriModal(santriIdParam, monthKeyParam) {
+  if (state.userRole === 'guest') {
+    openAdminLoginModal('santri');
+    showToast('Silakan masuk akun santri terlebih dahulu untuk upload bukti transfer', 'amber');
+    return;
+  }
+
+  const targetSantriId = state.userRole === 'santri'
+    ? (state.loggedSantriId || santriIdParam)
+    : (santriIdParam || state.selectedSantriId);
+  const mKey = monthKeyParam || state.activeMonth;
+  const s = state.santri.find(x => x.id === targetSantriId) || state.santri[0];
+  if (!s) return;
+
+  const rec = getPaymentRecord(s.id, mKey);
+  const tanpaMakan = isSantriTanpaMakan(s);
+
+  currentBuktiSantriCtx = {
+    santriId: s.id,
+    monthKey: mKey,
+    tempImgDataUrl: ''
+  };
+
+  const subEl = document.getElementById('modalBuktiSantriSubtitle');
+  if (subEl) subEl.textContent = `${s.nama} • Periode ${getMonthLabel(mKey)}`;
+
+  const danaEl = document.getElementById('modalBuktiNomorDanaText');
+  if (danaEl) danaEl.textContent = state.nomorDanaBendahara || NOMOR_DANA_DEFAULT;
+
+  const chkMakan = document.getElementById('chkBuktiMakan');
+  const chkWifi = document.getElementById('chkBuktiWifi');
+  const chkListrik = document.getElementById('chkBuktiListrik');
+  const chkAir = document.getElementById('chkBuktiAir');
+  const lblMakan = document.getElementById('lblBuktiMakanBox');
+
+  if (chkMakan) {
+    if (tanpaMakan) {
+      chkMakan.checked = false;
+      chkMakan.disabled = true;
+      if (lblMakan) lblMakan.classList.add('opacity-50');
+    } else {
+      chkMakan.disabled = false;
+      chkMakan.checked = !rec.makan;
+      if (lblMakan) lblMakan.classList.remove('opacity-50');
+    }
+  }
+  if (chkWifi) chkWifi.checked = !rec.wifi;
+  if (chkListrik) chkListrik.checked = !rec.listrik;
+  if (chkAir) chkAir.checked = !rec.air;
+
+  // Jika semua sudah lunas tapi ingin upload bukti, centang semua komponen aktif
+  if ((tanpaMakan || rec.makan) && rec.wifi && rec.listrik && rec.air) {
+    if (chkMakan && !tanpaMakan) chkMakan.checked = true;
+    if (chkWifi) chkWifi.checked = true;
+    if (chkListrik) chkListrik.checked = true;
+    if (chkAir) chkAir.checked = true;
+  }
+
+  recalcBuktiSantriNominal();
+
+  const noteInput = document.getElementById('buktiSantriCatatanInput');
+  if (noteInput) noteInput.value = `Transfer DANA ${state.nomorDanaBendahara || NOMOR_DANA_DEFAULT} (${getMonthLabel(mKey)})`;
+
+  const fileInput = document.getElementById('buktiSantriFileInput');
+  if (fileInput) fileInput.value = '';
+  const preview = document.getElementById('buktiSantriPreviewImg');
+  const empty = document.getElementById('buktiSantriEmptyState');
+  if (preview) {
+    preview.src = '';
+    preview.classList.add('hidden');
+  }
+  if (empty) empty.classList.remove('hidden');
+
+  const modal = document.getElementById('modalUploadBuktiSantri');
+  if (modal) modal.classList.remove('hidden');
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function closeUploadBuktiSantriModal() {
+  const modal = document.getElementById('modalUploadBuktiSantri');
+  if (modal) modal.classList.add('hidden');
+}
+
+function recalcBuktiSantriNominal() {
+  const mKey = currentBuktiSantriCtx.monthKey || state.activeMonth;
+  const curTarif = getTarif(mKey);
+  const chkMakan = document.getElementById('chkBuktiMakan');
+  const chkWifi = document.getElementById('chkBuktiWifi');
+  const chkListrik = document.getElementById('chkBuktiListrik');
+  const chkAir = document.getElementById('chkBuktiAir');
+
+  let total = 0;
+  if (chkMakan && chkMakan.checked && !chkMakan.disabled) total += curTarif.makan;
+  if (chkWifi && chkWifi.checked) total += curTarif.wifi;
+  if (chkListrik && chkListrik.checked) total += curTarif.listrik;
+  if (chkAir && chkAir.checked) total += curTarif.air;
+
+  const nomInput = document.getElementById('buktiSantriNominalInput');
+  if (nomInput) nomInput.value = total;
+}
+
+function handleBuktiSantriFilePreview(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    showToast('Pilih file gambar bukti transfer (JPG/PNG/WebP)', 'amber');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const maxDim = 900;
+      let w = img.width;
+      let h = img.height;
+      if (w > h) {
+        if (w > maxDim) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        }
+      } else {
+        if (h > maxDim) {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+      currentBuktiSantriCtx.tempImgDataUrl = compressedDataUrl;
+      const preview = document.getElementById('buktiSantriPreviewImg');
+      const empty = document.getElementById('buktiSantriEmptyState');
+      if (preview) {
+        preview.src = compressedDataUrl;
+        preview.classList.remove('hidden');
+      }
+      if (empty) empty.classList.add('hidden');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function handleSubmitBuktiTransferSantri(event) {
+  event.preventDefault();
+  const sId = currentBuktiSantriCtx.santriId;
+  const mKey = currentBuktiSantriCtx.monthKey || state.activeMonth;
+  const s = state.santri.find(x => x.id === sId);
+  if (!s) return;
+
+  if (!currentBuktiSantriCtx.tempImgDataUrl) {
+    showToast('Silakan pilih foto / screenshot bukti transfer DANA terlebih dahulu!', 'amber');
+    return;
+  }
+
+  const makan = Boolean(document.getElementById('chkBuktiMakan')?.checked && !document.getElementById('chkBuktiMakan')?.disabled);
+  const wifi = Boolean(document.getElementById('chkBuktiWifi')?.checked);
+  const listrik = Boolean(document.getElementById('chkBuktiListrik')?.checked);
+  const air = Boolean(document.getElementById('chkBuktiAir')?.checked);
+
+  if (!makan && !wifi && !listrik && !air) {
+    showToast('Pilih minimal 1 komponen iuran yang dibayar!', 'amber');
+    return;
+  }
+
+  const nominal = Number(document.getElementById('buktiSantriNominalInput')?.value || 0);
+  const catatan = (document.getElementById('buktiSantriCatatanInput')?.value || '').trim() || `Transfer DANA ${state.nomorDanaBendahara || NOMOR_DANA_DEFAULT}`;
+  const tanggal = new Date().toISOString().slice(0, 10);
+
+  const newProof = {
+    id: 'KB' + Date.now(),
+    santriId: s.id,
+    monthKey: mKey,
+    nominal,
+    makan,
+    wifi,
+    listrik,
+    air,
+    catatan,
+    proofImg: currentBuktiSantriCtx.tempImgDataUrl,
+    status: 'pending',
+    tanggal
+  };
+
+  if (!Array.isArray(state.konfirmasiBayar)) state.konfirmasiBayar = [];
+  // Hapus bukti pending lama untuk santri & bulan yang sama agar tidak duplikat
+  state.konfirmasiBayar = state.konfirmasiBayar.filter(p => !(p.santriId === s.id && p.monthKey === mKey && p.status === 'pending'));
+  state.konfirmasiBayar.unshift(newProof);
+
+  if (window.location.protocol !== 'file:') {
+    try {
+      await fetch('api.php?action=submit_payment_proof', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProof)
+      });
+    } catch (err) {
+      console.warn('Gagal mengirim bukti pembayaran ke server:', err);
+    }
+  }
+
+  saveState();
+  closeUploadBuktiSantriModal();
+  renderAll();
+  showToast('✓ Bukti transfer berhasil dikirim! Menunggu verifikasi Bendahara.', 'emerald');
+}
+
+function renderPendingProofsForAdmin() {
+  const boxPembayaran = document.getElementById('adminPendingProofsBox');
+  const boxDash = document.getElementById('dashPendingProofsBox');
+
+  if (!state.isAdmin) {
+    if (boxPembayaran) { boxPembayaran.classList.add('hidden'); boxPembayaran.innerHTML = ''; }
+    if (boxDash) { boxDash.classList.add('hidden'); boxDash.innerHTML = ''; }
+    return;
+  }
+
+  const pendingList = (state.konfirmasiBayar || []).filter(p => p.status === 'pending');
+  if (pendingList.length === 0) {
+    if (boxPembayaran) { boxPembayaran.classList.add('hidden'); boxPembayaran.innerHTML = ''; }
+    if (boxDash) { boxDash.classList.add('hidden'); boxDash.innerHTML = ''; }
+    return;
+  }
+
+  const cardsHtml = pendingList.map(p => {
+    const s = state.santri.find(x => x.id === p.santriId);
+    const namaSantri = s ? s.nama : p.santriId;
+    const mLabel = getMonthLabel(p.monthKey);
+    const items = [];
+    if (p.makan) items.push('Makan');
+    if (p.wifi) items.push('WiFi');
+    if (p.listrik) items.push('Listrik');
+    if (p.air) items.push('Air');
+
+    return `
+      <div class="p-3.5 rounded-2xl bg-white border border-amber-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <img src="${p.proofImg}" alt="Bukti" onclick="openPreviewBuktiBayarModal('${p.id}')" class="w-12 h-12 rounded-xl object-cover border border-amber-200 cursor-pointer hover:opacity-80 shrink-0 bg-slate-100" title="Klik untuk perbesar bukti transfer" />
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-extrabold text-slate-900">${namaSantri}</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-900">${mLabel}</span>
+            </div>
+            <div class="text-[11px] font-mono font-bold text-emerald-800 mt-0.5">${formatRp(p.nominal)} <span class="font-sans font-normal text-slate-500">(${items.join(', ')})</span></div>
+            <p class="text-[10px] text-slate-400 truncate">${p.tanggal} • ${p.catatan || 'Transfer DANA'}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button type="button" onclick="openPreviewBuktiBayarModal('${p.id}')" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer">
+            Lihat Bukti
+          </button>
+          <button type="button" onclick="approveBuktiTransferSantri('${p.id}')" class="px-3 py-1.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer shadow-2xs flex items-center gap-1">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <span>Terima & Lunasi</span>
+          </button>
+          <button type="button" onclick="rejectBuktiTransferSantri('${p.id}')" class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold cursor-pointer">
+            Tolak
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const wrapperHtml = `
+    <div class="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 space-y-3 shadow-xs">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-950">Verifikasi Bukti Transfer Santri (${pendingList.length} Menunggu)</h4>
+        </div>
+        <span class="text-[10px] font-semibold text-amber-800">Klik "Terima & Lunasi" untuk otomatis mencatat lunas</span>
+      </div>
+      <div class="space-y-2">
+        ${cardsHtml}
+      </div>
+    </div>
+  `;
+
+  if (boxPembayaran) {
+    boxPembayaran.innerHTML = wrapperHtml;
+    boxPembayaran.classList.remove('hidden');
+  }
+  if (boxDash) {
+    boxDash.innerHTML = wrapperHtml;
+    boxDash.classList.remove('hidden');
+  }
+}
+
+async function approveBuktiTransferSantri(proofId) {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
+  const proof = (state.konfirmasiBayar || []).find(p => p.id === proofId);
+  if (!proof) return;
+
+  const s = state.santri.find(x => x.id === proof.santriId);
+  const rec = getPaymentRecord(proof.santriId, proof.monthKey);
+  const tanpaMakan = isSantriTanpaMakan(s || proof.santriId);
+
+  if (!tanpaMakan && proof.makan) rec.makan = true;
+  if (proof.wifi) rec.wifi = true;
+  if (proof.listrik) rec.listrik = true;
+  if (proof.air) rec.air = true;
+  rec.updatedAt = new Date().toISOString().slice(0, 10);
+
+  proof.status = 'approved';
+
+  state.recentTransactions.unshift({
+    id: 'T' + Date.now(),
+    title: s ? s.nama : 'Santri',
+    subtitle: `Transfer DANA Terverifikasi (${getMonthLabel(proof.monthKey)})`,
+    type: 'income',
+    amount: Number(proof.nominal || 0),
+    date: 'Hari ini',
+    status: 'Completed',
+    icon: 'check-circle-2'
+  });
+
+  if (window.location.protocol !== 'file:') {
+    try {
+      await fetch('api.php?action=verify_payment_proof', {
+        method: 'POST',
+        headers: getAdminHeaders(),
+        body: JSON.stringify({ id: proof.id, status: 'approved' })
+      });
+    } catch (err) {
+      console.warn('Gagal verifikasi ke server:', err);
+    }
+  }
+
+  closePreviewBuktiBayarModal();
+  saveState();
+  renderAll();
+  showToast(`✓ Pembayaran ${s ? s.nama : 'Santri'} (${getMonthLabel(proof.monthKey)}) diterima & otomatis LUNAS!`, 'emerald');
+}
+
+async function rejectBuktiTransferSantri(proofId) {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
+  const proof = (state.konfirmasiBayar || []).find(p => p.id === proofId);
+  if (!proof) return;
+  if (!confirm('Tolak bukti transfer ini? Status pembayaran santri tidak akan diubah.')) return;
+
+  proof.status = 'rejected';
+
+  if (window.location.protocol !== 'file:') {
+    try {
+      await fetch('api.php?action=verify_payment_proof', {
+        method: 'POST',
+        headers: getAdminHeaders(),
+        body: JSON.stringify({ id: proof.id, status: 'rejected' })
+      });
+    } catch (err) {
+      console.warn('Gagal update status tolak ke server:', err);
+    }
+  }
+
+  closePreviewBuktiBayarModal();
+  saveState();
+  renderAll();
+  showToast('Bukti transfer ditolak', 'amber');
+}
+
+function openPreviewBuktiBayarModal(proofId) {
+  const proof = (state.konfirmasiBayar || []).find(p => p.id === proofId);
+  if (!proof) return;
+  const s = state.santri.find(x => x.id === proof.santriId);
+  const items = [];
+  if (proof.makan) items.push('Makan');
+  if (proof.wifi) items.push('WiFi');
+  if (proof.listrik) items.push('Listrik');
+  if (proof.air) items.push('Air');
+
+  const subEl = document.getElementById('previewBuktiBayarSubtitle');
+  if (subEl) subEl.textContent = `${s ? s.nama : proof.santriId} • ${getMonthLabel(proof.monthKey)}`;
+
+  const imgEl = document.getElementById('previewBuktiBayarImg');
+  if (imgEl) imgEl.src = proof.proofImg || '';
+
+  const infoEl = document.getElementById('previewBuktiBayarInfo');
+  if (infoEl) {
+    infoEl.innerHTML = `
+      <div><strong>Santri:</strong> ${s ? s.nama : proof.santriId}</div>
+      <div><strong>Periode:</strong> ${getMonthLabel(proof.monthKey)} (${proof.tanggal})</div>
+      <div><strong>Nominal & Komponen:</strong> <span class="font-mono font-bold text-emerald-800">${formatRp(proof.nominal)}</span> (${items.join(', ')})</div>
+      <div><strong>Catatan:</strong> ${proof.catatan || '-'}</div>
+    `;
+  }
+
+  const actionsEl = document.getElementById('previewBuktiBayarAdminActions');
+  if (actionsEl) {
+    if (state.isAdmin && proof.status === 'pending') {
+      actionsEl.innerHTML = `
+        <button type="button" onclick="approveBuktiTransferSantri('${proof.id}')" class="flex-1 py-2.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold cursor-pointer">
+          ✓ Terima & Lunasi Sekarang
+        </button>
+        <button type="button" onclick="rejectBuktiTransferSantri('${proof.id}')" class="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold cursor-pointer">
+          Tolak
+        </button>
+      `;
+    } else {
+      actionsEl.innerHTML = '';
+    }
+  }
+
+  const modal = document.getElementById('modalPreviewBuktiBayar');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closePreviewBuktiBayarModal() {
+  const modal = document.getElementById('modalPreviewBuktiBayar');
+  if (modal) modal.classList.add('hidden');
+}
+
+// =========================================================================
+// FITUR 4: EXPORT LAPORAN BULANAN KE EXCEL (.XLS) & CETAK LPJ RESMI (PDF)
+// =========================================================================
+
+function exportLpjExcel() {
+  if (!state.isAdmin) {
+    openAdminLoginModal('admin');
+    showToast('Export Laporan Excel khusus untuk Bendahara', 'amber');
+    return;
+  }
+
+  const fin = calculateGlobalFinancials();
+  const mKey = state.activeMonth;
+  const mLabel = getMonthLabel(mKey);
+  const curTarif = getTarif(mKey);
+
+  const rowsSantri = state.santri.map((s, idx) => {
+    const rec = getPaymentRecord(s.id, mKey);
+    const sum = calculateRecordSummary(rec, mKey, s);
+    return `
+      <tr>
+        <td style="text-align:center;">${idx + 1}</td>
+        <td>${s.nama}</td>
+        <td>${s.prodi}</td>
+        <td style="text-align:center;">${sum.tanpaMakan ? 'Tanpa Makan' : (rec.makan ? 'Lunas' : 'Belum')}</td>
+        <td style="text-align:center;">${rec.wifi ? 'Lunas' : 'Belum'}</td>
+        <td style="text-align:center;">${rec.listrik ? 'Lunas' : 'Belum'}</td>
+        <td style="text-align:center;">${rec.air ? 'Lunas' : 'Belum'}</td>
+        <td style="text-align:right;">${sum.targetSantri}</td>
+        <td style="text-align:right;">${sum.totalPaid}</td>
+        <td style="text-align:right;">${sum.totalUnpaid}</td>
+        <td style="text-align:center;">${sum.isFullLunas ? 'LUNAS' : 'BELUM LUNAS'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const rowsKasUmum = (state.kasUmumLogs || []).map((k, idx) => `
+    <tr>
+      <td style="text-align:center;">${idx + 1}</td>
+      <td>${k.tanggal}</td>
+      <td>${k.kategori || 'Lain-lain'}</td>
+      <td>${k.keterangan}</td>
+      <td>${k.tipe.toUpperCase()}</td>
+      <td style="text-align:right;">${k.nominal}</td>
+    </tr>
+  `).join('');
+
+  const htmlExcel = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 11pt; }
+        th, td { border: 1px solid #333333; padding: 6px 8px; }
+        th { background-color: #064e3b; color: #ffffff; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h2>LAPORAN PERTANGGUNGJAWABAN (LPJ) KAS & SYAHRIYAH KOMPLEK TUBAN</h2>
+      <p><strong>Pondok Pesantren Mojosari Loceret Nganjuk — Periode: ${mLabel}</strong></p>
+      <p>Saldo Kas Komplek Tersedia: <strong>${formatRp(fin.saldoKasTersedia)}</strong> | Saldo Kas Dapur: <strong>${formatRp(fin.saldoMasakTersedia)}</strong> | Nomor DANA: <strong>${state.nomorDanaBendahara || NOMOR_DANA_DEFAULT}</strong></p>
+
+      <h3>A. Matriks Pembayaran Syahriyah Santri (${mLabel})</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Nama Santri</th>
+            <th>Program Studi</th>
+            <th>Makan (${formatRp(curTarif.makan)})</th>
+            <th>WiFi (${formatRp(curTarif.wifi)})</th>
+            <th>Listrik (${formatRp(curTarif.listrik)})</th>
+            <th>Air (${formatRp(curTarif.air)})</th>
+            <th>Target (Rp)</th>
+            <th>Terbayar (Rp)</th>
+            <th>Tunggakan (Rp)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsSantri}
+        </tbody>
+      </table>
+
+      <br/>
+      <h3>B. Riwayat Pengeluaran & Pemasukan Kas Umum Komplek</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Tanggal</th>
+            <th>Kategori</th>
+            <th>Keterangan</th>
+            <th>Jenis</th>
+            <th>Nominal (Rp)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsKasUmum || '<tr><td colspan="6" style="text-align:center;">Belum ada transaksi kas umum</td></tr>'}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff', htmlExcel], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `LPJ_Kas_Komplek_Tuban_${mKey}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✓ File Excel LPJ ${mLabel} berhasil diunduh!`, 'emerald');
+}
+
+function openModalLpjResmi(monthKeyParam) {
+  if (!state.isAdmin) {
+    openAdminLoginModal('admin');
+    showToast('Cetak LPJ Resmi khusus untuk Bendahara', 'amber');
+    return;
+  }
+
+  if (monthKeyParam && monthKeyParam !== state.activeMonth) {
+    state.activeMonth = monthKeyParam;
+    const select = document.getElementById('globalMonthSelect');
+    if (select) select.value = monthKeyParam;
+    const mobileSelect = document.getElementById('mobileMonthSelect');
+    if (mobileSelect) mobileSelect.value = monthKeyParam;
+    renderAll();
+  }
+
+  const fin = calculateGlobalFinancials();
+  const mKey = monthKeyParam || state.activeMonth;
+  const mLabel = getMonthLabel(mKey);
+  const wifiRec = getBendaharaWifiRecord(mKey);
+
+  document.getElementById('modalNotaHeaderTitle').textContent = `LPJ Resmi Komplek Tuban — ${mLabel}`;
+  const badge = document.getElementById('notaBadgeStatus');
+  badge.textContent = 'LPJ RESMI';
+  badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200';
+  document.getElementById('notaTimestamp').textContent = new Date().toISOString().slice(0, 10);
+
+  const santriRowsHtml = state.santri.map((s, idx) => {
+    const rec = getPaymentRecord(s.id, mKey);
+    const sum = calculateRecordSummary(rec, mKey, s);
+    return `
+      <tr class="${idx % 2 === 1 ? 'bg-slate-50/60' : ''}">
+        <td class="py-1.5 px-2 text-center font-mono text-slate-400">${idx + 1}</td>
+        <td class="py-1.5 px-2.5 font-semibold text-slate-900">${s.nama} ${sum.tanpaMakan ? '<span class="text-[9px] text-amber-700">(Tanpa Makan)</span>' : ''}</td>
+        <td class="py-1.5 px-2 text-center">${sum.tanpaMakan ? '-' : (rec.makan ? '✓' : '✗')}</td>
+        <td class="py-1.5 px-2 text-center">${rec.wifi ? '✓' : '✗'}</td>
+        <td class="py-1.5 px-2 text-center">${rec.listrik ? '✓' : '✗'}</td>
+        <td class="py-1.5 px-2 text-center">${rec.air ? '✓' : '✗'}</td>
+        <td class="py-1.5 px-2.5 text-right font-mono font-bold text-emerald-800">${formatRp(sum.totalPaid)}</td>
+        <td class="py-1.5 px-2.5 text-right font-mono ${sum.totalUnpaid > 0 ? 'text-rose-600 font-bold' : 'text-slate-400'}">${formatRp(sum.totalUnpaid)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('notaContentHtml').innerHTML = `
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[11px]">
+        <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+          <div class="text-slate-500">Terkumpul (${mLabel})</div>
+          <div class="font-mono font-extrabold text-emerald-800 text-xs mt-0.5">${formatRp(fin.activeMonthTotalSent)}</div>
+        </div>
+        <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+          <div class="text-slate-500">Tunggakan (${mLabel})</div>
+          <div class="font-mono font-extrabold text-rose-600 text-xs mt-0.5">${formatRp(fin.activeMonthTunggakan)}</div>
+        </div>
+        <div class="p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/60">
+          <div class="text-emerald-800">Saldo Kas Komplek</div>
+          <div class="font-mono font-extrabold text-emerald-950 text-xs mt-0.5">${formatRp(fin.saldoKasTersedia)}</div>
+        </div>
+        <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+          <div class="text-slate-500">Saldo Kas Dapur</div>
+          <div class="font-mono font-extrabold text-slate-900 text-xs mt-0.5">${formatRp(fin.saldoMasakTersedia)}</div>
+        </div>
+      </div>
+
+      <div class="overflow-hidden rounded-xl border border-slate-200">
+        <table class="w-full text-[11px] border-collapse">
+          <thead class="bg-slate-900 text-white text-[10px] uppercase font-bold">
+            <tr>
+              <th class="py-1.5 px-2 text-center w-7">No</th>
+              <th class="py-1.5 px-2.5 text-left">Nama Santri</th>
+              <th class="py-1.5 px-2 text-center">Mkn</th>
+              <th class="py-1.5 px-2 text-center">WiFi</th>
+              <th class="py-1.5 px-2 text-center">Lstrk</th>
+              <th class="py-1.5 px-2 text-center">Air</th>
+              <th class="py-1.5 px-2.5 text-right">Dibayar</th>
+              <th class="py-1.5 px-2.5 text-right">Kurang</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            ${santriRowsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pt-3 flex items-center justify-between text-[11px] text-slate-600 border-t border-slate-200">
+        <div>
+          <p class="font-bold text-slate-800">Mengetahui,</p>
+          <p class="text-[10px] text-slate-500">Ketua Komplek Tuban</p>
+          <div class="h-10"></div>
+          <p class="font-bold text-slate-900 underline">( Pengurus Komplek Tuban )</p>
+        </div>
+        <div class="text-right">
+          <p class="font-bold text-slate-800">Nganjuk, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          <p class="text-[10px] text-slate-500">Bendahara Komplek Tuban</p>
+          <div class="h-10"></div>
+          <p class="font-bold text-emerald-900 underline">( Bendahara Komplek Tuban )</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const waText = generateRekapGrupText('santun');
+  document.getElementById('notaWaTextPreview').value = waText;
+  document.getElementById('btnSendWaDirect').href = `https://wa.me/${formatPhoneToWa(BENDAHARA_WA)}?text=${encodeURIComponent(waText)}`;
+  const groupBtn = document.getElementById('btnSendWaGroup');
+  if (groupBtn) groupBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+
+  syncNotaModalAdminButtons();
+  document.getElementById('modalNota').classList.remove('hidden');
+}
+
+// =========================================================================
+// FITUR 3: PWA INSTALL & SERVICE WORKER
+// =========================================================================
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPwaPrompt = e;
+  const btnDesktop = document.getElementById('btnInstallPwaDesktop');
+  const btnMobile = document.getElementById('btnInstallPwaMobile');
+  if (btnDesktop) btnDesktop.classList.remove('hidden');
+  if (btnMobile) btnMobile.classList.remove('hidden');
+});
+
+async function triggerInstallPwa() {
+  if (deferredPwaPrompt) {
+    deferredPwaPrompt.prompt();
+    const { outcome } = await deferredPwaPrompt.userChoice;
+    if (outcome === 'accepted') {
+      showToast('✓ Aplikasi PayMojosari berhasil di-install di perangkat Anda!', 'emerald');
+    }
+    deferredPwaPrompt = null;
+  } else {
+    showToast('Untuk install di HP: Buka menu browser (⋮ atau Share) lalu pilih "Tambahkan ke Layar Utama / Install Aplikasi"', 'emerald');
+  }
+}
+
+// =========================================================================
 // BOOTSTRAP
 // =========================================================================
 
@@ -4021,4 +4913,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadState();
   initControls();
   switchTab(state.activeTab || 'pembayaran');
+
+  if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 });

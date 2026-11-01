@@ -100,7 +100,41 @@ CREATE TABLE IF NOT EXISTS `utang_kas` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- -------------------------------------------------------------------------
--- 7. Tabel Pengaturan Sistem (Kontak Bendahara, Link Grup WA, dll.)
+-- 7. Tabel Jurnal Kas Umum Komplek (Listrik, Air, Alat Kebersihan, Fasilitas)
+-- -------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `jurnal_kas_umum` (
+  `id` VARCHAR(50) NOT NULL PRIMARY KEY,
+  `tanggal` DATE NOT NULL,
+  `tipe` ENUM('pemasukan', 'pengeluaran') NOT NULL DEFAULT 'pengeluaran',
+  `kategori` VARCHAR(100) NOT NULL DEFAULT 'Token Listrik',
+  `keterangan` VARCHAR(255) NOT NULL,
+  `nominal` INT NOT NULL,
+  `petugas` VARCHAR(100) NOT NULL DEFAULT 'Bendahara Komplek',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- -------------------------------------------------------------------------
+-- 8. Tabel Konfirmasi Bukti Transfer Santri (Upload Bukti DANA / Transfer)
+-- -------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `konfirmasi_bayar` (
+  `id` VARCHAR(50) NOT NULL PRIMARY KEY,
+  `santri_id` VARCHAR(50) NOT NULL,
+  `periode` VARCHAR(10) NOT NULL,
+  `bayar_makan` TINYINT(1) NOT NULL DEFAULT 0,
+  `bayar_wifi` TINYINT(1) NOT NULL DEFAULT 0,
+  `bayar_listrik` TINYINT(1) NOT NULL DEFAULT 0,
+  `bayar_air` TINYINT(1) NOT NULL DEFAULT 0,
+  `nominal` INT NOT NULL DEFAULT 0,
+  `bukti_foto` LONGTEXT NOT NULL,
+  `catatan` VARCHAR(255) DEFAULT NULL,
+  `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  `tanggal` VARCHAR(30) NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- -------------------------------------------------------------------------
+-- 9. Tabel Pengaturan Sistem (Kontak Bendahara, Nomor DANA, Link Grup WA, dll.)
 -- -------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `pengaturan_sistem` (
   `kunci` VARCHAR(50) NOT NULL PRIMARY KEY,
@@ -167,9 +201,10 @@ INSERT INTO `tarif_bulanan` (`periode`, `tarif_makan`, `tarif_wifi`, `tarif_list
 ('2027-12', 50000, 20000, 20000, 10000)
 ON DUPLICATE KEY UPDATE `tarif_wifi`=VALUES(`tarif_wifi`);
 
--- Pengaturan Sistem (Kontak, Sandi Bendahara & Link Grup WA)
+-- Pengaturan Sistem (Kontak, Nomor DANA, Sandi Bendahara & Link Grup WA)
 INSERT INTO `pengaturan_sistem` (`kunci`, `nilai`, `keterangan`) VALUES
 ('kontak_bendahara', '081231256129', 'Nomor WA resmi Bendahara Komplek Tuban'),
+('nomor_dana_bendahara', '085335219903', 'Nomor DANA resmi tujuan transfer pembayaran Komplek Tuban'),
 ('sandi_bendahara', '@Deja1590', 'Sandi resmi login Bendahara Komplek Tuban'),
 ('link_grup_wa', 'https://chat.whatsapp.com/LgVFDhgRgHmDTuC3tCly7c', 'Tautan undangan grup WhatsApp Santri Komplek Tuban'),
 ('nama_komplek', 'Komplek Tuban (Rumah Wakaf)', 'Nama komplek pondok pesantren'),

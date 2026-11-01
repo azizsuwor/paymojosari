@@ -7,7 +7,7 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-Admin-Key');
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     exit(0);
@@ -15,7 +15,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
 
 require_once __DIR__ . '/config.php';
 
-// Pastikan skema tabel santri mutakhir (tanpa_makan, pin_sandi, dan avatar LONGTEXT)
+// Pastikan skema tabel santri, jurnal_kas_umum, dan konfirmasi_bayar mutakhir
 try {
     $colCheck = $pdo->query("SHOW COLUMNS FROM santri LIKE 'tanpa_makan'")->fetch();
     if (!$colCheck) {
@@ -28,6 +28,40 @@ try {
     }
     // Pastikan avatar bertipe LONGTEXT agar dapat menyimpan foto profil santri
     $pdo->exec("ALTER TABLE santri MODIFY COLUMN avatar LONGTEXT DEFAULT NULL");
+
+    // Pastikan tabel jurnal_kas_umum tersedia
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `jurnal_kas_umum` (
+      `id` VARCHAR(50) NOT NULL PRIMARY KEY,
+      `tanggal` DATE NOT NULL,
+      `tipe` ENUM('pemasukan', 'pengeluaran') NOT NULL DEFAULT 'pengeluaran',
+      `kategori` VARCHAR(100) NOT NULL DEFAULT 'Token Listrik',
+      `keterangan` VARCHAR(255) NOT NULL,
+      `nominal` INT NOT NULL,
+      `petugas` VARCHAR(100) NOT NULL DEFAULT 'Bendahara Komplek',
+      `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // Pastikan tabel konfirmasi_bayar tersedia untuk upload bukti transfer santri
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `konfirmasi_bayar` (
+      `id` VARCHAR(50) NOT NULL PRIMARY KEY,
+      `santri_id` VARCHAR(50) NOT NULL,
+      `periode` VARCHAR(10) NOT NULL,
+      `bayar_makan` TINYINT(1) NOT NULL DEFAULT 0,
+      `bayar_wifi` TINYINT(1) NOT NULL DEFAULT 0,
+      `bayar_listrik` TINYINT(1) NOT NULL DEFAULT 0,
+      `bayar_air` TINYINT(1) NOT NULL DEFAULT 0,
+      `nominal` INT NOT NULL DEFAULT 0,
+      `bukti_foto` LONGTEXT NOT NULL,
+      `catatan` VARCHAR(255) DEFAULT NULL,
+      `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+      `tanggal` VARCHAR(30) NOT NULL,
+      `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // Pastikan nomor_dana_bendahara terdaftar
+    $pdo->exec("INSERT IGNORE INTO `pengaturan_sistem` (`kunci`, `nilai`, `keterangan`)
+      VALUES ('nomor_dana_bendahara', '085335219903', 'Nomor DANA resmi tujuan transfer pembayaran Komplek Tuban')");
 } catch (Exception $e) {
     // Abaikan jika tabel belum ada
 }
@@ -265,6 +299,97 @@ if ($action === 'update_santri_photo') {
     }
 }
 
+// 0e. Kirim Bukti Transfer Pembayaran oleh Santri (POST ?action=submit_payment_proof)
+if ($action === 'submit_payment_proof') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $id = isset($input['id']) && $input['id'] ? trim($input['id']) : ('KB' . time() . rand(10, 99));
+    $santriId = isset($input['santriId']) ? trim($input['santriId']) : '';
+    $periode = isset($input['periode']) ? trim($input['periode']) : '';
+    $makan = !empty($input['makan']) ? 1 : 0;
+    $wifi = !empty($input['wifi']) ? 1 : 0;
+    $listrik = !empty($input['listrik']) ? 1 : 0;
+    $air = !empty($input['air']) ? 1 : 0;
+    $nominal = isset($input['nominal']) ? (int)$input['nominal'] : 0;
+    $buktiFoto = isset($input['buktiFoto']) ? $input['buktiFoto'] : '';
+    $catatan = isset($input['catatan']) ? trim($input['catatan']) : 'Transfer DANA 085335219903';
+    $tanggal = isset($input['tanggal']) && $input['tanggal'] ? trim($input['tanggal']) : date('Y-m-d H:i');
+
+    if (!$santriId || !$periode || !$buktiFoto) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Data bukti transfer belum lengkap.']);
+        exit;
+    }
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO konfirmasi_bayar
+            (id, santri_id, periode, bayar_makan, bayar_wifi, bayar_listrik, bayar_air, nominal, bukti_foto, catatan, status, tanggal)
+            VALUES (:id, :santri_id, :periode, :makan, :wifi, :listrik, :air, :nominal, :bukti_foto, :catatan, 'pending', :tanggal)
+            ON DUPLICATE KEY UPDATE
+            bayar_makan = VALUES(bayar_makan),
+            bayar_wifi = VALUES(bayar_wifi),
+            bayar_listrik = VALUES(bayar_listrik),
+            bayar_air = VALUES(bayar_air),
+            nominal = VALUES(nominal),
+            bukti_foto = VALUES(bukti_foto),
+            catatan = VALUES(catatan),
+            status = 'pending',
+            tanggal = VALUES(tanggal)");
+        $stmt->execute([
+            ':id' => $id,
+            ':santri_id' => $santriId,
+            ':periode' => $periode,
+            ':makan' => $makan,
+            ':wifi' => $wifi,
+            ':listrik' => $listrik,
+            ':air' => $air,
+            ':nominal' => $nominal,
+            ':bukti_foto' => $buktiFoto,
+            ':catatan' => $catatan,
+            ':tanggal' => $tanggal
+        ]);
+
+        echo json_encode([
+            'status' => 'success',
+            'id' => $id,
+            'message' => 'Bukti transfer berhasil dikirim! Menunggu verifikasi Bendahara.'
+        ]);
+        exit;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// 0f. Verifikasi / Tolak Bukti Transfer Santri oleh Bendahara (POST ?action=verify_payment_proof)
+if ($action === 'verify_payment_proof') {
+    check_admin_auth();
+    $input = json_decode(file_get_contents('php://input'), true);
+    $id = isset($input['id']) ? trim($input['id']) : '';
+    $status = isset($input['status']) && in_array($input['status'], ['approved', 'rejected']) ? $input['status'] : 'approved';
+
+    if (!$id) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'ID bukti transfer tidak ditemukan.']);
+        exit;
+    }
+
+    try {
+        $stmt = $pdo->prepare("UPDATE konfirmasi_bayar SET status = :status WHERE id = :id");
+        $stmt->execute([':status' => $status, ':id' => $id]);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => $status === 'approved' ? 'Bukti pembayaran diverifikasi!' : 'Bukti pembayaran ditolak.'
+        ]);
+        exit;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
 // -------------------------------------------------------------------------
 // 1. Ambil Semua Data State Lengkap dari Database (GET ?action=get_all)
 // -------------------------------------------------------------------------
@@ -351,7 +476,46 @@ if ($action === 'get_all') {
             ];
         }
 
-        // Ambil Pengaturan (Grup WA & Kontak)
+        // Ambil Jurnal Kas Umum Komplek
+        $kasUmum = [];
+        try {
+            $stmt = $pdo->query("SELECT * FROM jurnal_kas_umum ORDER BY tanggal DESC, created_at DESC");
+            while ($row = $stmt->fetch()) {
+                $kasUmum[] = [
+                    'id' => $row['id'],
+                    'tanggal' => $row['tanggal'],
+                    'tipe' => $row['tipe'],
+                    'kategori' => $row['kategori'] ?: 'Token Listrik',
+                    'keterangan' => $row['keterangan'],
+                    'nominal' => (int)$row['nominal'],
+                    'petugas' => $row['petugas'] ?: 'Bendahara Komplek'
+                ];
+            }
+        } catch (Exception $e) {}
+
+        // Ambil Konfirmasi Bukti Transfer Santri
+        $konfirmasiBayar = [];
+        try {
+            $stmt = $pdo->query("SELECT * FROM konfirmasi_bayar ORDER BY created_at DESC");
+            while ($row = $stmt->fetch()) {
+                $konfirmasiBayar[] = [
+                    'id' => $row['id'],
+                    'santriId' => $row['santri_id'],
+                    'periode' => $row['periode'],
+                    'makan' => (bool)$row['bayar_makan'],
+                    'wifi' => (bool)$row['bayar_wifi'],
+                    'listrik' => (bool)$row['bayar_listrik'],
+                    'air' => (bool)$row['bayar_air'],
+                    'nominal' => (int)$row['nominal'],
+                    'buktiFoto' => $row['bukti_foto'],
+                    'catatan' => $row['catatan'] ?: '',
+                    'status' => $row['status'] ?: 'pending',
+                    'tanggal' => $row['tanggal'] ?: ''
+                ];
+            }
+        } catch (Exception $e) {}
+
+        // Ambil Pengaturan (Grup WA, Kontak & Nomor DANA)
         $stmt = $pdo->query("SELECT * FROM pengaturan_sistem");
         $pengaturan = [];
         while ($row = $stmt->fetch()) {
@@ -366,7 +530,10 @@ if ($action === 'get_all') {
                 'pembayaran' => $pembayaran,
                 'setoranWifiBendahara' => $setoranWifi,
                 'masakLogs' => $masak,
+                'kasUmumLogs' => $kasUmum,
+                'konfirmasiBayar' => $konfirmasiBayar,
                 'utangKas' => $utang,
+                'nomorDanaBendahara' => isset($pengaturan['nomor_dana_bendahara']) ? $pengaturan['nomor_dana_bendahara'] : '085335219903',
                 'linkGrupWa' => isset($pengaturan['link_grup_wa']) ? $pengaturan['link_grup_wa'] : 'https://chat.whatsapp.com/LgVFDhgRgHmDTuC3tCly7c'
             ]
         ]);
@@ -620,6 +787,49 @@ if ($action === 'sync_all') {
             }
         }
 
+        // Sinkronisasi Jurnal Kas Umum Komplek
+        if (isset($input['kasUmumLogs']) && is_array($input['kasUmumLogs'])) {
+            $pdo->exec("DELETE FROM jurnal_kas_umum");
+            $stmtKasUmum = $pdo->prepare("INSERT INTO jurnal_kas_umum (id, tanggal, tipe, kategori, keterangan, nominal, petugas)
+                VALUES (:id, :tanggal, :tipe, :kategori, :keterangan, :nominal, :petugas)");
+            foreach ($input['kasUmumLogs'] as $k) {
+                $stmtKasUmum->execute([
+                    ':id' => $k['id'],
+                    ':tanggal' => $k['tanggal'],
+                    ':tipe' => isset($k['tipe']) ? $k['tipe'] : 'pengeluaran',
+                    ':kategori' => isset($k['kategori']) ? $k['kategori'] : 'Token Listrik',
+                    ':keterangan' => $k['keterangan'],
+                    ':nominal' => (int)$k['nominal'],
+                    ':petugas' => isset($k['petugas']) ? $k['petugas'] : 'Bendahara Komplek'
+                ]);
+            }
+        }
+
+        // Sinkronisasi Konfirmasi Bukti Transfer Santri
+        if (isset($input['konfirmasiBayar']) && is_array($input['konfirmasiBayar'])) {
+            $pdo->exec("DELETE FROM konfirmasi_bayar");
+            $stmtKonf = $pdo->prepare("INSERT INTO konfirmasi_bayar
+                (id, santri_id, periode, bayar_makan, bayar_wifi, bayar_listrik, bayar_air, nominal, bukti_foto, catatan, status, tanggal)
+                VALUES (:id, :santri_id, :periode, :makan, :wifi, :listrik, :air, :nominal, :bukti_foto, :catatan, :status, :tanggal)");
+            foreach ($input['konfirmasiBayar'] as $kb) {
+                if (empty($kb['id']) || empty($kb['santriId'])) continue;
+                $stmtKonf->execute([
+                    ':id' => $kb['id'],
+                    ':santri_id' => $kb['santriId'],
+                    ':periode' => $kb['periode'] ?? '2026-10',
+                    ':makan' => !empty($kb['makan']) ? 1 : 0,
+                    ':wifi' => !empty($kb['wifi']) ? 1 : 0,
+                    ':listrik' => !empty($kb['listrik']) ? 1 : 0,
+                    ':air' => !empty($kb['air']) ? 1 : 0,
+                    ':nominal' => (int)($kb['nominal'] ?? 0),
+                    ':bukti_foto' => $kb['buktiFoto'] ?? '',
+                    ':catatan' => $kb['catatan'] ?? '',
+                    ':status' => $kb['status'] ?? 'pending',
+                    ':tanggal' => $kb['tanggal'] ?? date('Y-m-d H:i')
+                ]);
+            }
+        }
+
         // Sinkronisasi Utang Kas
         if (isset($input['utangKas']) && is_array($input['utangKas'])) {
             $pdo->exec("DELETE FROM utang_kas");
@@ -638,12 +848,18 @@ if ($action === 'sync_all') {
             }
         }
 
-        // Sinkronisasi Link Grup WA
+        // Sinkronisasi Link Grup WA & Nomor DANA
         if (!empty($input['linkGrupWa'])) {
             $stmtCfg = $pdo->prepare("INSERT INTO pengaturan_sistem (kunci, nilai, keterangan)
                 VALUES ('link_grup_wa', :nilai, 'Tautan undangan grup WhatsApp Santri Komplek Tuban')
                 ON DUPLICATE KEY UPDATE nilai = VALUES(nilai)");
             $stmtCfg->execute([':nilai' => $input['linkGrupWa']]);
+        }
+        if (!empty($input['nomorDanaBendahara'])) {
+            $stmtDana = $pdo->prepare("INSERT INTO pengaturan_sistem (kunci, nilai, keterangan)
+                VALUES ('nomor_dana_bendahara', :nilai, 'Nomor DANA resmi tujuan transfer pembayaran Komplek Tuban')
+                ON DUPLICATE KEY UPDATE nilai = VALUES(nilai)");
+            $stmtDana->execute([':nilai' => $input['nomorDanaBendahara']]);
         }
 
         $pdo->commit();
