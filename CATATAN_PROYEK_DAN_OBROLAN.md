@@ -6,10 +6,11 @@ File ini merangkum seluruh instruksi, hasil kesepakatan, konfigurasi sistem, dan
 ---
 
 ## 1. Informasi Sesi Obrolan
-- **ID Percakapan (Conversation ID):** `16659194-bfda-4845-a877-73369415817e` & `3a20c728-fbf2-4003-9c48-42f0d9c25b70`
+- **ID Percakapan (Conversation ID):** `16659194-bfda-4845-a877-73369415817e`, `3a20c728-fbf2-4003-9c48-42f0d9c25b70`, & `fa9551da-e071-4a70-a8eb-27957b2ed148`
 - **Lokasi Log Asli Transkrip Sistem:**
   - `C:\Users\ThinkPad\.gemini\antigravity-cli\brain\16659194-bfda-4845-a877-73369415817e\.system_generated\logs\transcript.jsonl`
   - `C:\Users\ThinkPad\.gemini\antigravity-cli\brain\3a20c728-fbf2-4003-9c48-42f0d9c25b70\.system_generated\logs\transcript.jsonl`
+  - `C:\Users\ThinkPad\.gemini\antigravity-cli\brain\fa9551da-e071-4a70-a8eb-27957b2ed148\.system_generated\logs\transcript.jsonl`
 - **Lokasi Proyek:** `C:\laragon\www\sistem-kas-mojosari\`
 - **Database MySQL (Laragon):** `db_kas_mojosari` (User: `root`, Password: kosong, Host: `127.0.0.1`)
 
@@ -125,10 +126,13 @@ AI baru akan langsung memahami seluruh aturan, santri tanpa makan, struktur data
      - `ns1.byet.org`
      - `ns2.byet.org`
 2. **Akun Hosting InfinityFree:**
-   - **Username Akun:** `if0_43321488`
+   - **URL Dashboard / Login Utama:** `https://dash.infinityfree.com`
+   - **Email Akun:** `azizsuwor@gmail.com` *(Gunakan email ini saat login di dash.infinityfree.com, JANGAN gunakan username website)*
+   - **Username Akun Hosting:** `if0_43321488`
    - **Password cPanel/FTP:** `Mojosari2026`
    - **FTP Host:** `ftpupload.net`
    - **MySQL Host:** `sql101.infinityfree.com`
+   - **Akses cPanel:** Buka `https://dash.infinityfree.com` ➜ klik akun `if0_43321488` ➜ klik tombol **"Control Panel"** *(PENTING: Jangan buka `cpanel.infinityfree.com` karena alamat tersebut tidak ada/NXDOMAIN)*.
 3. **Status Upload Berkas ke Server:**
    - **SELESAI (100% SUKSES)**: Seluruh file website (`index.html`, `app.js`, `api.php`, `config.php`, `logo-mojosari.png`, `logo-mojosari-white.png`, `database.sql`) telah di-upload langsung ke folder `/htdocs/` maupun `/paymojosari.my.id/htdocs/` via FTP.
    - File default `index2.html` sudah dihapus.
@@ -223,4 +227,24 @@ Sesuai instruksi lanjutan untuk mengimplementasikan seluruh 5 saran pengembangan
 5. **Jurnal Pengeluaran & Pemasukan Kas Umum Komplek (`jurnal_kas_umum`):**
    - Penambahan menu tab **Kas Umum** (`view-kasumum`) untuk mencatat pengeluaran fasilitas komplek di luar dapur (*Token Listrik, Air & Pompa, Alat Kebersihan, Lampu & Fasilitas, Perlengkapan Komplek, Lain-lain*).
    - Saldo Kas Komplek Tersedia kini dihitung secara akurat: `(Total Kas WiFi + Listrik + Air + Pemasukan Kas Umum) - Setoran WiFi Induk - Pengeluaran Kas Umum - Pinjaman/Utang Kas Aktif`.
+
+---
+
+## 10. Catatan Penanganan Server & Troubleshooting (Update 2 November 2026)
+
+### A. Masalah Server Lokal (Laragon di Laptop)
+- **Gejala:** Membuka `http://localhost/sistem-kas-mojosari` atau `http://sistem-kas-mojosari.test` memunculkan `ERR_CONNECTION_REFUSED` / *Situs tidak dapat dijangkau*.
+- **Penyebab:** Laragon berjalan di latar belakang (`laragon.exe`), tetapi layanan **Apache** dan **MySQL** belum di-start.
+- **Solusi:** Buka jendela Laragon, lalu klik tombol **"Start All"** hingga Apache dan MySQL berstatus hijau / aktif.
+
+### B. Masalah Server Online & Login InfinityFree
+- **Error Login ("These credentials do not match our records"):**
+  - Terjadi karena di kolom *Email Address* diisi teks `paymojosari`.
+  - Kolom tersebut **wajib** diisi email lengkap terdaftar: **`azizsuwor@gmail.com`**.
+- **Error cPanel ("This site can't be reached / DNS_PROBE_FINISHED_NXDOMAIN"):**
+  - Terjadi karena membuka `cpanel.infinityfree.com` (domain ini memang tidak ada di internet).
+  - Cara benar membuka cPanel: Buka `https://dash.infinityfree.com` ➜ Login dengan `azizsuwor@gmail.com` ➜ Klik akun `if0_43321488` ➜ Klik tombol **Control Panel**.
+- **Error Domain `paymojosari.my.id`:**
+  - Domain belum aktif online karena langkah **Addon Domains** di cPanel belum diselesaikan atau propagasi nameserver dari `indo.domains` masih menunggu verifikasi di hosting.
+
 
