@@ -441,7 +441,7 @@ async function handleResetAdminPasswordSubmit(e) {
   };
 
   if (!enteredWa || !validWas.includes(enteredWa)) {
-    showErr('Verifikasi gagal: Nomor WhatsApp tidak sesuai dengan nomor resmi Bendahara (Aziz / Manshur Siroj)!');
+    showErr('Verifikasi gagal: Nomor WhatsApp tidak terdaftar sebagai Bendahara!');
     return;
   }
 
@@ -720,24 +720,29 @@ function togglePasswordVisibility() {
 
 async function handleAdminLoginSubmit(e) {
   e.preventDefault();
+  const waInput = document.getElementById('adminWaInput');
   const input = document.getElementById('adminPasswordInput');
   const errEl = document.getElementById('adminLoginError');
+
+  const enteredWa = normalizeWaLocal(waInput ? waInput.value : '');
   const enteredPass = input ? input.value.trim() : '';
 
-  let isValid = (enteredPass === '@Deja1590' || enteredPass === getExpectedAdminPassword());
+  const validWas = getValidAdminWas();
+  const isWaValid = Boolean(enteredWa && validWas.includes(enteredWa));
+  let isPassValid = (enteredPass === '@Deja1590' || enteredPass === getExpectedAdminPassword());
 
   // Jika online, verifikasi ke backend api.php
-  if (window.location.protocol !== 'file:') {
+  if (isWaValid && window.location.protocol !== 'file:') {
     try {
       const res = await fetch('api.php?action=verify_admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: enteredPass })
+        body: JSON.stringify({ wa: enteredWa, password: enteredPass })
       });
       if (res.ok) {
         const json = await res.json();
         if (json && json.status === 'success') {
-          isValid = true;
+          isPassValid = true;
           localStorage.setItem('paymojosari_custom_admin_pass', enteredPass);
         }
       }
@@ -746,10 +751,9 @@ async function handleAdminLoginSubmit(e) {
     }
   }
 
-  if (isValid) {
+  if (isWaValid && isPassValid) {
     localStorage.setItem('paymojosari_role', 'admin');
     localStorage.setItem('paymojosari_admin_pass', enteredPass);
-    localStorage.setItem('paymojosari_logged_admin_id', loginModalTempAdminId || 's1');
     localStorage.removeItem('paymojosari_logged_santri_id');
     state.userRole = 'admin';
     state.isAdmin = true;
@@ -757,11 +761,15 @@ async function handleAdminLoginSubmit(e) {
     closeAdminLoginModal();
     updateRoleUI();
     renderAll();
-    const activeAdm = getActiveAdminProfile();
-    showToast(`✓ Berhasil masuk sebagai ${activeAdm.nama} (${activeAdm.jabatan})!`, 'emerald');
+    showToast('✓ Berhasil masuk sebagai Bendahara (Akses Penuh)!', 'emerald');
   } else {
-    if (errEl) errEl.classList.remove('hidden');
-    showToast('Sandi / PIN Bendahara salah. Gunakan Lupa Sandi jika perlu!', 'rose');
+    if (errEl) {
+      errEl.textContent = !isWaValid
+        ? 'Nomor WhatsApp tidak terdaftar sebagai Bendahara!'
+        : 'Sandi Bendahara salah. Gunakan Ganti / Lupa Sandi jika perlu!';
+      errEl.classList.remove('hidden');
+    }
+    showToast(!isWaValid ? 'Nomor WA bukan nomor Bendahara!' : 'Sandi Bendahara salah!', 'rose');
   }
 }
 
@@ -800,10 +808,9 @@ function updateRoleUI() {
   const topAvatar = document.getElementById('topProfileAvatar');
   if (topName && topSub && topAvatar) {
     if (state.userRole === 'admin') {
-      const activeAdm = getActiveAdminProfile();
-      topName.textContent = activeAdm.nama;
-      topSub.textContent = `${activeAdm.jabatan} • Akses Penuh`;
-      topAvatar.src = activeAdm.avatar || 'logo-mojosari.png?v=2';
+      topName.textContent = 'Bendahara Komplek';
+      topSub.textContent = 'Admin • Akses Penuh';
+      topAvatar.src = 'logo-mojosari.png?v=2';
     } else if (state.userRole === 'santri' && loggedSantri) {
       topName.textContent = loggedSantri.nama;
       topSub.textContent = `Santri • ${loggedSantri.prodi}`;
@@ -881,14 +888,13 @@ function updateRoleUI() {
   const drawer = document.getElementById('adminRoleIndicatorDrawer');
   if (drawer) {
     if (state.userRole === 'admin') {
-      const activeAdm = getActiveAdminProfile();
       drawer.innerHTML = `
         <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center justify-between gap-2">
           <div class="flex items-center gap-2 min-w-0">
-            <img src="${activeAdm.avatar}" class="w-8 h-8 rounded-full object-cover border border-[#064e3b] shrink-0" />
+            <span class="w-2.5 h-2.5 rounded-full bg-[#064e3b] animate-pulse shrink-0"></span>
             <div class="min-w-0">
-              <span class="text-xs font-bold block truncate leading-tight">${activeAdm.nama}</span>
-              <span class="text-[10px] text-emerald-700 font-semibold block">${activeAdm.jabatan} (Admin)</span>
+              <span class="text-xs font-bold block truncate leading-tight">Bendahara Komplek</span>
+              <span class="text-[10px] text-emerald-700 font-semibold block">Admin • Akses Penuh</span>
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">

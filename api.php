@@ -81,10 +81,24 @@ function check_admin_auth() {
     }
 }
 
-// 0. Verifikasi Password Admin (POST ?action=verify_admin)
+// 0. Verifikasi Nomor WA & Password Admin (POST ?action=verify_admin)
 if ($action === 'verify_admin') {
     $input = json_decode(file_get_contents('php://input'), true);
     $pass = isset($input['password']) ? trim($input['password']) : '';
+    $waInput = isset($input['wa']) ? normalize_wa_number($input['wa']) : '';
+
+    $validAdminWas = [
+        normalize_wa_number($bendahara_wa_resmi),
+        normalize_wa_number('081231256129'),
+        normalize_wa_number('085335219903')
+    ];
+
+    if ($waInput !== '' && !in_array($waInput, $validAdminWas)) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Nomor WhatsApp tidak terdaftar sebagai Bendahara.']);
+        exit;
+    }
+
     if (in_array($pass, $admin_passwords)) {
         echo json_encode(['status' => 'success', 'message' => 'Login Admin Berhasil']);
     } else {
