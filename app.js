@@ -3231,18 +3231,14 @@ function openKartuSantriModal(santriId) {
   `;
 
   const waLines = [
-    `*KARTU IDENTITAS SANTRI KOMPLEK TUBAN*`,
-    `*PONDOK PESANTREN MOJOSARI LOCERET NGANJUK*`,
-    `====================================`,
-    `No. Induk    : *${nis}*`,
-    `Nama Santri  : *${s.nama}*`,
-    `Program Studi: ${s.prodi}`,
-    `Alamat Asal  : ${s.alamat}`,
-    `No. WhatsApp : ${s.wa}`,
-    `Komplek      : Komplek Tuban (Rumah Wakaf)`,
-    `Status       : *SANTRI MUKIM AKTIF*`,
-    `====================================`,
-    `Kartu ini merupakan tanda identitas resmi santri mukim Komplek Tuban (Rumah Wakaf) PP. Mojosari.`
+    `*KARTU IDENTITAS SANTRI*`,
+    `*PP. Mojosari — Komplek Tuban*`,
+    ``,
+    `NIS   : *${nis}*`,
+    `Nama  : *${s.nama}*`,
+    `Prodi : ${s.prodi}`,
+    `Asal  : ${s.alamat}`,
+    `WA    : ${s.wa}`
   ].join('\n');
 
   document.getElementById('notaWaTextPreview').value = waLines;
@@ -3278,16 +3274,14 @@ function openWaKonfirmasiKeBendahara(santriId, monthKeyParam) {
   const sum = calculateRecordSummary(rec, mKey, s);
   const monthLabel = getMonthLabel(mKey);
   const unpaidText = sum.unpaidItems.length > 0
-    ? sum.unpaidItems.map(i => `${i.nama} (${formatRp(i.nominal)})`).join(', ')
-    : 'Sudah Lunas 100%';
+    ? sum.unpaidItems.map(i => i.nama).join(', ')
+    : 'Lunas';
 
   const msg = [
-    `Assalamu'alaikum Wr. Wb. Kang Bendahara,`,
-    `Saya *${s.nama}* (${s.prodi}) izin konfirmasi terkait pembayaran Syahriyah & Kas Komplek Tuban periode *${monthLabel}*:`,
-    `• Total Terbayar : ${formatRp(sum.totalPaid)}`,
-    `• Sisa Kekurangan: *${formatRp(sum.totalUnpaid)}* (${unpaidText})`,
-    ``,
-    `Mohon dicek / arahannya nggih Kang. Jazakumullah khairan katsiran.`
+    `Assalamu'alaikum, konfirmasi syahriyah *${monthLabel}*:`,
+    `• Nama : *${s.nama}*`,
+    `• Dibayar : ${formatRp(sum.totalPaid)}`,
+    `• Kurang : *${formatRp(sum.totalUnpaid)}* (${unpaidText})`
   ].join('\n');
 
   const url = `https://wa.me/${formatPhoneToWa(BENDAHARA_WA)}?text=${encodeURIComponent(msg)}`;
@@ -3304,9 +3298,9 @@ function openSemuaKartuSantriModal() {
     showToast('Cetak kolektif 17 kartu hanya untuk Bendahara (Admin)', 'amber');
     return;
   }
-  document.getElementById('modalNotaHeaderTitle').textContent = `Cetak Kolektif Kartu Identitas Santri (${state.santri.length} Santri)`;
+  document.getElementById('modalNotaHeaderTitle').textContent = `Kartu Identitas Santri (${state.santri.length})`;
   const badge = document.getElementById('notaBadgeStatus');
-  badge.textContent = `${state.santri.length} KARTU IDENTITAS`;
+  badge.textContent = `${state.santri.length} SANTRI`;
   badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200';
   document.getElementById('notaTimestamp').textContent = 'Komplek Tuban • PP. Mojosari';
 
@@ -3317,16 +3311,12 @@ function openSemuaKartuSantriModal() {
   `;
 
   const listLines = state.santri.map((s, idx) => {
-    return `${idx + 1}. [${getNomorIndukSantri(s, idx)}] *${s.nama}* — ${s.prodi} (${s.alamat})`;
+    return `${idx + 1}. *${s.nama}* (${s.prodi})`;
   });
 
   const waLines = [
-    `*DAFTAR KARTU IDENTITAS SANTRI KOMPLEK TUBAN (RUMAH WAKAF)*`,
-    `*PONDOK PESANTREN MOJOSARI LOCERET NGANJUK*`,
-    `====================================`,
-    ...listLines,
-    `====================================`,
-    `Total: *${state.santri.length} Santri Mukim Aktif*`
+    `*DATA SANTRI KOMPLEK TUBAN*`,
+    ...listLines
   ].join('\n');
 
   document.getElementById('notaWaTextPreview').value = waLines;
@@ -3577,30 +3567,18 @@ function openNotaPembayaranModal(santriId, monthKey) {
     </div>
   `;
 
-  const padCol = (str, len) => String(str).padEnd(len, ' ');
   const waLines = [
-    `*NOTA PEMBAYARAN SYAHRIYAH*`,
-    `*PP. MOJOSARI — KOMPLEK TUBAN (RUMAH WAKAF)*`,
-    `====================================`,
-    `Nama Santri : *${s.nama}*${sum.tanpaMakan ? ' _(Tanpa Uang Makan)_' : ''}`,
-    `Prodi       : ${s.prodi}`,
-    `Periode     : *${monthLabel}*`,
-    `====================================`,
-    `*TABEL RINCIAN KOMPONEN IURAN:*`,
-    '```',
-    `${padCol('No Komponen', 15)} | ${padCol('Status', 7)} | Nominal`,
-    `-------------------------------------`,
-    `${padCol('1. Uang Makan', 15)} | ${padCol(sum.tanpaMakan ? 'BEBAS' : (rec.makan ? 'LUNAS' : 'BELUM'), 7)} | ${sum.tanpaMakan ? 'Rp 0 (Tanpa Makan)' : formatRp(curTarif.makan)}`,
-    `${padCol('2. Kas WiFi', 15)} | ${padCol(rec.wifi ? 'LUNAS' : 'BELUM', 7)} | ${formatRp(curTarif.wifi)}`,
-    `${padCol('3. Kas Listrik', 15)} | ${padCol(rec.listrik ? 'LUNAS' : 'BELUM', 7)} | ${formatRp(curTarif.listrik)}`,
-    `${padCol('4. Kas Air', 15)} | ${padCol(rec.air ? 'LUNAS' : 'BELUM', 7)} | ${formatRp(curTarif.air)}`,
-    `-------------------------------------`,
-    `${padCol('TOTAL DIBAYAR', 25)} : ${formatRp(sum.totalPaid)}`,
-    `${padCol('SISA KURANG', 25)} : ${formatRp(sum.totalUnpaid)}`,
-    '```',
-    `Status Akhir : *${sum.isFullLunas ? 'LUNAS 100% ✓' : 'BELUM LUNAS'}*`,
-    `Bendahara    : 081231256129`,
-    `Jazakumullah khairan katsiran.`
+    `*NOTA PEMBAYARAN — ${monthLabel.toUpperCase()}*`,
+    `Nama : *${s.nama}*`,
+    ``,
+    `• Makan   : ${sum.tanpaMakan ? 'Bebas' : (rec.makan ? 'Lunas' : 'Belum')} (${sum.tanpaMakan ? 'Rp 0' : formatRp(curTarif.makan)})`,
+    `• WiFi    : ${rec.wifi ? 'Lunas' : 'Belum'} (${formatRp(curTarif.wifi)})`,
+    `• Listrik : ${rec.listrik ? 'Lunas' : 'Belum'} (${formatRp(curTarif.listrik)})`,
+    `• Air     : ${rec.air ? 'Lunas' : 'Belum'} (${formatRp(curTarif.air)})`,
+    ``,
+    `Total Dibayar : *${formatRp(sum.totalPaid)}*`,
+    `Kekurangan    : *${formatRp(sum.totalUnpaid)}*`,
+    `Status        : *${sum.isFullLunas ? 'LUNAS ✓' : 'BELUM LUNAS'}*`
   ].join('\n');
 
   document.getElementById('notaWaTextPreview').value = waLines;
@@ -3712,29 +3690,22 @@ function openNotaTunggakanSantriModal(santriId) {
     </div>
   `;
 
-  const padT = (str, len) => String(str).padEnd(len, ' ');
   const tableRowsWa = [];
-  arrearsPerMonth.forEach((a, i) => {
-    tableRowsWa.push(`${padT((i + 1) + '. ' + a.monthLabel, 16)} | ${padT(formatRp(a.unpaid), 11)} | ${a.items.map(x => x.nama).join(', ')}`);
+  arrearsPerMonth.forEach((a) => {
+    tableRowsWa.push(`• ${a.monthLabel}: *${formatRp(a.unpaid)}* (${a.items.map(x => x.nama).join(', ')})`);
   });
-  activeLoans.forEach((u, i) => {
-    tableRowsWa.push(`${padT((arrearsPerMonth.length + i + 1) + '. Utang Kas', 16)} | ${padT(formatRp(u.nominal), 11)} | ${u.keterangan}`);
+  activeLoans.forEach((u) => {
+    tableRowsWa.push(`• Pinjaman Kas: *${formatRp(u.nominal)}* (${u.keterangan})`);
   });
 
   const waLines = [
-    `Assalamu'alaikum Wr. Wb.`,
-    `Yth. Kang *${s.nama}* (${s.prodi})`,
+    `*TAGIHAN SYAHRIYAH & KAS*`,
+    `Nama : *${s.nama}*`,
     ``,
-    `Berikut *Tabel Rincian Tunggakan Syahriyah & Kas Komplek Tuban (Rumah Wakaf)*:`,
-    '```',
-    `${padT('Periode/Jenis', 16)} | ${padT('Nominal', 11)} | Rincian`,
-    `--------------------------------------------------`,
-    tableRowsWa.length > 0 ? tableRowsWa.join('\n') : 'Alhamdulillah Nihil / Lunas Semua Bulan',
-    `--------------------------------------------------`,
-    `TOTAL TAGIHAN : ${formatRp(grandTotal)}`,
-    '```',
-    `Mohon segera konfirmasi pembayaran ke Bendahara Komplek (081231256129).`,
-    `Wassalamu'alaikum Wr. Wb.`
+    tableRowsWa.length > 0 ? tableRowsWa.join('\n') : '• Lunas semua bulan ✓',
+    ``,
+    `Total Tagihan : *${formatRp(grandTotal)}*`,
+    `Cek detail: https://paymojosari.my.id`
   ].filter(Boolean).join('\n');
 
   document.getElementById('notaWaTextPreview').value = waLines;
@@ -3764,12 +3735,12 @@ function openNotaWifiIndukModal(monthKeyParam) {
   });
 
   const statusText = wifiRec.status === 'paid'
-    ? 'LUNAS DISETOR'
+    ? 'LUNAS'
     : wifiRec.status === 'pending_confirm'
-      ? 'PENDING KONFIRMASI'
+      ? 'PENDING'
       : 'BELUM DISETOR';
 
-  document.getElementById('modalNotaHeaderTitle').textContent = `Laporan Pembayaran WiFi Induk — ${monthLabel}`;
+  document.getElementById('modalNotaHeaderTitle').textContent = `Laporan WiFi Induk — ${monthLabel}`;
   const badge = document.getElementById('notaBadgeStatus');
   badge.textContent = statusText;
   badge.className = wifiRec.status === 'paid'
@@ -3789,14 +3760,14 @@ function openNotaWifiIndukModal(monthKeyParam) {
       <table class="w-full text-[11px] border-collapse">
         <tbody class="divide-y divide-slate-200">
           <tr class="bg-slate-50/70">
-            <td class="py-1.5 px-3 text-slate-500 font-semibold w-36">Jenis Laporan</td>
-            <td class="py-1.5 px-3 font-bold text-slate-900">Setoran WiFi Induk Komplek Tuban</td>
+            <td class="py-1.5 px-3 text-slate-500 font-semibold w-36">Laporan</td>
+            <td class="py-1.5 px-3 font-bold text-slate-900">Setoran WiFi Induk</td>
             <td class="py-1.5 px-3 text-slate-500 font-semibold w-24">Periode</td>
             <td class="py-1.5 px-3 font-bold text-emerald-800">${monthLabel}</td>
           </tr>
           <tr>
             <td class="py-1.5 px-3 text-slate-500 font-semibold">Penyetor</td>
-            <td class="py-1.5 px-3 font-semibold text-slate-800">Bendahara Komplek (${BENDAHARA_WA})</td>
+            <td class="py-1.5 px-3 font-semibold text-slate-800">Bendahara Komplek</td>
             <td class="py-1.5 px-3 text-slate-500 font-semibold">Tgl Bayar</td>
             <td class="py-1.5 px-3 font-mono text-slate-700">${wifiRec.tanggalBayar || '-'}</td>
           </tr>
@@ -3809,27 +3780,27 @@ function openNotaWifiIndukModal(monthKeyParam) {
         <thead class="bg-slate-900 text-white text-[10px] uppercase font-bold tracking-wider">
           <tr>
             <th class="py-2 px-2.5 text-center w-8">No</th>
-            <th class="py-2 px-3 text-left">Keterangan Laporan WiFi</th>
-            <th class="py-2 px-3 text-center">Detail / Status</th>
+            <th class="py-2 px-3 text-left">Keterangan</th>
+            <th class="py-2 px-3 text-center">Status</th>
             <th class="py-2 px-3 text-right">Nominal</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200">
           <tr>
             <td class="py-2 px-2.5 text-center text-slate-400 font-mono">1</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">Iuran WiFi per Santri (17 Santri)</td>
-            <td class="py-2 px-3 text-center text-slate-500">Target Maksimal: ${formatRp(targetWifiSantri)}</td>
+            <td class="py-2 px-3 font-semibold text-slate-800">Tarif WiFi Santri</td>
+            <td class="py-2 px-3 text-center text-slate-500">Target: ${formatRp(targetWifiSantri)}</td>
             <td class="py-2 px-3 text-right font-mono font-bold text-slate-800">${formatRp(curTarif.wifi)} / santri</td>
           </tr>
           <tr class="bg-slate-50/50">
             <td class="py-2 px-2.5 text-center text-slate-400 font-mono">2</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">Dana Kas WiFi Terkumpul dari Santri</td>
-            <td class="py-2 px-3 text-center font-bold text-emerald-800">${wifiPaidSantriCount}/${state.santri.length} Santri Lunas</td>
+            <td class="py-2 px-3 font-semibold text-slate-800">Iuran Terkumpul</td>
+            <td class="py-2 px-3 text-center font-bold text-emerald-800">${wifiPaidSantriCount}/${state.santri.length} Santri</td>
             <td class="py-2 px-3 text-right font-mono font-bold text-emerald-800">${formatRp(wifiCollectedMonth)}</td>
           </tr>
           <tr>
             <td class="py-2 px-2.5 text-center text-slate-400 font-mono">3</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">Setoran ke WiFi Induk (Dibayar Bendahara)</td>
+            <td class="py-2 px-3 font-semibold text-slate-800">Setoran WiFi Induk</td>
             <td class="py-2 px-3 text-center">
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${wifiRec.status === 'paid' ? 'bg-emerald-50 text-emerald-800' : wifiRec.status === 'pending_confirm' ? 'bg-amber-50 text-amber-800' : 'bg-rose-50 text-rose-600'}">${statusText}</span>
             </td>
@@ -3837,14 +3808,14 @@ function openNotaWifiIndukModal(monthKeyParam) {
           </tr>
           <tr class="bg-emerald-50/40">
             <td class="py-2 px-2.5 text-center text-slate-400 font-mono">4</td>
-            <td class="py-2 px-3 font-semibold text-emerald-950">Sisa / Surplus Uang WiFi (Disimpan di Kas)</td>
-            <td class="py-2 px-3 text-center text-[11px] font-semibold text-emerald-800">Aktual saat ini: ${formatRp(aktualSisaKasWifi)}</td>
+            <td class="py-2 px-3 font-semibold text-emerald-950">Surplus Kas WiFi</td>
+            <td class="py-2 px-3 text-center text-[11px] font-semibold text-emerald-800">Aktual: ${formatRp(aktualSisaKasWifi)}</td>
             <td class="py-2 px-3 text-right font-mono font-bold text-emerald-800">${formatRp(potensiSisaKasWifi)} / bln</td>
           </tr>
           <tr class="bg-slate-50/50">
             <td class="py-2 px-2.5 text-center text-slate-400 font-mono">5</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">Catatan Bendahara</td>
-            <td colspan="2" class="py-2 px-3 text-right text-slate-700">${wifiRec.proofNote || 'Setoran WiFi Induk Rp 200.000/bulan, sisa disimpan di kas komplek'}</td>
+            <td class="py-2 px-3 font-semibold text-slate-800">Catatan</td>
+            <td colspan="2" class="py-2 px-3 text-right text-slate-700">${wifiRec.proofNote || 'Setoran bulanan WiFi induk'}</td>
           </tr>
         </tbody>
       </table>
@@ -3852,40 +3823,25 @@ function openNotaWifiIndukModal(monthKeyParam) {
 
     ${wifiRec.proofImg ? `
       <div class="border border-slate-200 rounded-xl p-3 bg-slate-50 text-center space-y-1.5">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">Lampiran Bukti Chat / Transfer Pembayaran WiFi Induk:</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">Bukti Pembayaran:</span>
         <img src="${wifiRec.proofImg}" alt="Bukti Pembayaran WiFi Induk" class="max-h-56 mx-auto rounded-lg border border-slate-200 bg-white object-contain" />
       </div>
     ` : `
       <div class="border border-dashed border-slate-200 rounded-xl p-3 bg-slate-50 text-center text-[11px] text-slate-400">
-        Belum ada foto bukti chat/transfer yang diunggah oleh Bendahara.
+        Belum ada bukti foto.
       </div>
     `}
   `;
 
-  const padW = (str, len) => String(str).padEnd(len, ' ');
   const waLines = [
-    `*LAPORAN PEMBAYARAN WIFI INDUK KOMPLEK TUBAN*`,
-    `*PAYMOJOSARI — PP. MOJOSARI LOCERET NGANJUK*`,
-    `====================================`,
-    `Periode Bulan : *${monthLabel}*`,
-    `Tanggal Setor : ${wifiRec.tanggalBayar || '-'}`,
-    `Status Setor  : *${statusText}*`,
-    `====================================`,
-    `*TABEL RINCIAN PEMBAYARAN WIFI INDUK:*`,
-    '```',
-    `${padW('Keterangan', 22)} | Nominal / Detail`,
-    `------------------------------------------`,
-    `${padW('1. Tarif WiFi/Santri', 22)} | ${formatRp(curTarif.wifi)} (Target ${formatRp(targetWifiSantri)})`,
-    `${padW('2. Santri Lunas WiFi', 22)} | ${wifiPaidSantriCount}/${state.santri.length} Santri`,
-    `${padW('3. Dana WiFi Masuk', 22)} | ${formatRp(wifiCollectedMonth)}`,
-    `${padW('4. Setor WiFi Induk', 22)} | ${formatRp(nominalInduk)}`,
-    `${padW('5. Sisa Masuk Kas', 22)} | ${formatRp(potensiSisaKasWifi)}/bln (Aktual: ${formatRp(aktualSisaKasWifi)})`,
-    `${padW('6. Bukti Foto Chat/TF', 22)} | ${wifiRec.proofImg ? 'Ada / Terlampir ✓' : 'Belum Diupload'}`,
-    '```',
-    `Catatan Bendahara : _${wifiRec.proofNote || 'Setoran ke induk Rp 200.000, sisa disimpan di kas komplek'}_`,
-    `Kontak Bendahara  : ${BENDAHARA_WA}`,
-    `Jazakumullah khairan katsiran.`
-  ].join('\n');
+    `*LAPORAN WIFI INDUK — ${monthLabel.toUpperCase()}*`,
+    `• Status        : *${statusText}*`,
+    `• Tanggal Bayar : ${wifiRec.tanggalBayar || '-'}`,
+    `• Dana Masuk    : ${formatRp(wifiCollectedMonth)} (${wifiPaidSantriCount}/${state.santri.length} Santri)`,
+    `• Setor Induk   : *${formatRp(nominalInduk)}*`,
+    `• Sisa Kas WiFi : ${formatRp(aktualSisaKasWifi)}`,
+    wifiRec.proofNote ? `• Catatan       : ${wifiRec.proofNote}` : ''
+  ].filter(Boolean).join('\n');
 
   document.getElementById('notaWaTextPreview').value = waLines;
   document.getElementById('btnSendWaDirect').href = `https://wa.me/${formatPhoneToWa(BENDAHARA_WA)}?text=${encodeURIComponent(waLines)}`;
@@ -3905,7 +3861,7 @@ function copyWaText() {
   const el = document.getElementById('notaWaTextPreview');
   el.select();
   navigator.clipboard.writeText(el.value);
-  showToast('Teks pesan WhatsApp disalin!');
+  showToast('Pesan disalin');
 }
 
 // =========================================================================
@@ -3925,14 +3881,14 @@ function setRekapGrupMode(mode) {
     if (btnLengkap) btnLengkap.className = 'py-2 px-3 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5';
     if (hintEl) {
       hintEl.className = 'text-[11px] text-emerald-800 bg-emerald-50/80 border border-emerald-100 rounded-xl px-3 py-2';
-      hintEl.innerHTML = '<strong>Format Santun (Direkomendasikan):</strong> Menampilkan ringkasan kas, laporan WiFi induk, dan daftar santri yang <strong>Sudah Lunas</strong>. Rincian nama & nominal tunggakan/utang disembunyikan agar tetap menjaga privasi santri di grup.';
+      hintEl.textContent = 'Menampilkan ringkasan kas dan daftar santri lunas (detail tunggakan disembunyikan).';
     }
   } else {
     if (btnLengkap) btnLengkap.className = 'py-2 px-3 rounded-lg bg-white text-slate-900 font-bold shadow-xs cursor-pointer transition flex items-center justify-center gap-1.5';
     if (btnSantun) btnSantun.className = 'py-2 px-3 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5';
     if (hintEl) {
       hintEl.className = 'text-[11px] text-amber-800 bg-amber-50/80 border border-amber-200 rounded-xl px-3 py-2';
-      hintEl.innerHTML = '<strong>Format Lengkap (Detail 17 Nama):</strong> Menampilkan seluruh daftar nama santri yang sudah lunas maupun yang masih memiliki tunggakan & utang kas beserta rincian nominalnya.';
+      hintEl.textContent = 'Menampilkan daftar lengkap santri lunas dan rincian tunggakan.';
     }
   }
 
@@ -3947,7 +3903,6 @@ function setRekapGrupMode(mode) {
 function generateRekapGrupText(modeParam) {
   const mode = modeParam || currentRekapGrupMode || 'santun';
   const fin = calculateGlobalFinancials();
-  const curTarif = getTarif(state.activeMonth);
   const monthLabel = getMonthLabel(state.activeMonth);
 
   const lunasList = [];
@@ -3956,95 +3911,69 @@ function generateRekapGrupText(modeParam) {
   state.santri.forEach(s => {
     const rec = getPaymentRecord(s.id, state.activeMonth);
     const sum = calculateRecordSummary(rec, state.activeMonth, s);
-    const labelKet = sum.tanpaMakan ? ' [Tanpa Uang Makan]' : '';
     if (sum.isFullLunas) {
-      lunasList.push(`• *${s.nama}* (${s.prodi.split(' ')[0]})${labelKet} - Lunas (${formatRp(sum.totalPaid)})`);
+      lunasList.push(`• ${s.nama} ✓`);
     } else {
       const itemsText = sum.unpaidItems.map(i => i.nama).join(', ');
-      nunggakList.push(`• *${s.nama}* (${s.prodi.split(' ')[0]})${labelKet} - Kurang ${formatRp(sum.totalUnpaid)} [${itemsText}]`);
+      nunggakList.push(`• ${s.nama}: ${formatRp(sum.totalUnpaid)} (${itemsText})`);
     }
   });
 
   const activeLoans = state.utangKas.filter(u => u.status === 'belum_lunas');
-  const loanTextLengkap = activeLoans.length > 0
-    ? `\n*PINJAMAN / UTANG KAS SANTRI:*\n` + activeLoans.map(u => {
+  const loanTextLengkap = (mode === 'lengkap' && activeLoans.length > 0)
+    ? `\n*Pinjaman Kas*\n` + activeLoans.map(u => {
         const s = state.santri.find(x => x.id === u.santriId);
-        return `• ${s ? s.nama : 'Santri'} : ${formatRp(u.nominal)} (${u.keterangan})`;
-      }).join('\n') + `\n*Total Utang Kas : ${formatRp(fin.totalUtangAktif)}*\n`
+        return `• ${s ? s.nama : 'Santri'}: ${formatRp(u.nominal)}`;
+      }).join('\n')
     : '';
-
-  const pctSent = fin.activeMonthTarget > 0 ? Math.round((fin.activeMonthTotalSent / fin.activeMonthTarget) * 100) : 0;
-  const pctPending = fin.activeMonthTarget > 0 ? Math.round((fin.activeMonthTunggakan / fin.activeMonthTarget) * 100) : 0;
-  const activeLoanCount = state.utangKas.filter(u => u.status === 'belum_lunas').length;
 
   const wifiRec = getBendaharaWifiRecord(state.activeMonth);
   const wifiStatusLabel = wifiRec.status === 'paid'
-    ? 'LUNAS DISETOR ✓'
+    ? 'Lunas ✓'
     : wifiRec.status === 'pending_confirm'
-      ? 'PENDING KONFIRMASI'
-      : 'BELUM DISETOR';
+      ? 'Pending'
+      : 'Belum Setor';
 
   const sectionNunggak = mode === 'santun'
     ? (nunggakList.length > 0
-        ? [
-            `• Terdapat *${nunggakList.length} Santri* yang belum lunas pada periode ${monthLabel}.`,
-            `• _(Demi menjaga privasi, rincian kekurangan & utang kas masing-masing santri dikirim via Japri WA oleh Bendahara atau dapat dicek mandiri melalui login akun di *http://paymojosari.my.id*)_`
-          ].join('\n')
-        : '• Alhamdulillah semua santri (17/17) sudah lunas ✓')
-    : (nunggakList.length > 0 ? nunggakList.join('\n') : '• Alhamdulillah semua sudah lunas');
+        ? `• ${nunggakList.length} santri belum lunas (cek rincian di web)`
+        : '• Semua lunas ✓')
+    : (nunggakList.length > 0 ? nunggakList.join('\n') : '• Semua lunas ✓');
 
-  const text = [
-    `*LAPORAN SYAHRIYAH & KAS KOMPLEK TUBAN (RUMAH WAKAF)*`,
-    `*PAYMOJOSARI — PP. MOJOSARI LOCERET NGANJUK*`,
-    `Periode Bulan: *${monthLabel}*`,
-    `================================`,
-    `*RINGKASAN KAS & PEMBAYARAN (${monthLabel}):*`,
-    `• Total Terkumpul Bulan Ini : *${formatRp(fin.activeMonthTotalSent)}* (${pctSent}%)`,
-    `• Tunggakan (Pending)       : *${formatRp(fin.activeMonthTunggakan)}* (${pctPending}%)`,
-    `• Saldo Uang Kas Komplek    : *${formatRp(fin.saldoKasTersedia)}* (Kas Aktif)`,
-    `• Utang Kas Santri          : *${formatRp(fin.totalUtangAktif)}* (${activeLoanCount} Santri)`,
-    `• Saldo Dapur / Uang Makan  : *${formatRp(fin.saldoMasakTersedia)}*`,
-    `--------------------------------`,
-    `*LAPORAN PEMBAYARAN WIFI INDUK (BENDAHARA):*`,
-    `• Status Setoran WiFi       : *${wifiStatusLabel}*`,
-    `• Setor ke WiFi Induk       : *${formatRp(wifiRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT)}* / bulan`,
-    `• Sisa WiFi Masuk Kas       : *${formatRp(Math.max(0, (state.santri.length * curTarif.wifi) - Number(wifiRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT)))}* (Disimpan di Kas Bendahara)`,
-    `• Tanggal Pembayaran        : ${wifiRec.tanggalBayar || '-'}`,
-    `• Bukti Chat / Transfer     : ${wifiRec.proofImg ? 'Ada / Terlampir ✓' : 'Belum Diupload'}`,
-    `• Catatan Bendahara         : _${wifiRec.proofNote || '-'}_`,
-    `--------------------------------`,
-    `*RINCIAN IURAN PER SANTRI (Total ${formatRp(curTarif.totalBulanan)}):*`,
-    `1. Uang Makan : ${formatRp(curTarif.makan)}`,
-    `2. Kas WiFi (Manual/Aktif) : ${formatRp(curTarif.wifi)}`,
-    `3. Kas Listrik : ${formatRp(curTarif.listrik)}`,
-    `4. Kas Air : ${formatRp(curTarif.air)}`,
-    `--------------------------------`,
-    `*REKAP STATUS SANTRI (${monthLabel}):*`,
-    `*A. SUDAH LUNAS (${lunasList.length} Santri):*`,
-    lunasList.length > 0 ? lunasList.join('\n') : '• (Belum ada yang tercatat lunas penuh)',
+  const lines = [
+    `*REKAP KAS KOMPLEK TUBAN*`,
+    `Periode: *${monthLabel}*`,
     ``,
-    `*B. BELUM LUNAS / TUNGGAKAN (${nunggakList.length} Santri):*`,
-    sectionNunggak,
-    mode === 'lengkap' ? loanTextLengkap : '',
-    `================================`,
-    `Bagi kang santri yang masih ada kekurangan, mohon segera konfirmasi pembayaran ke Bendahara Komplek.`,
-    `Jazakumullah khairan katsiran.`,
-    `_Bendahara Komplek Tuban (Rumah Wakaf)_`,
-    `_Kontak Bendahara: 081231256129_`
-  ].filter(line => line !== '').join('\n');
+    `• Terkumpul : *${formatRp(fin.activeMonthTotalSent)}*`,
+    `• Tunggakan : *${formatRp(fin.activeMonthTunggakan)}*`,
+    `• Saldo Kas : *${formatRp(fin.saldoKasTersedia)}*`,
+    `• Saldo Dapur : *${formatRp(fin.saldoMasakTersedia)}*`,
+    `• WiFi Induk : *${wifiStatusLabel}* (${formatRp(wifiRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT)})`,
+    ``,
+    `*Sudah Lunas (${lunasList.length}/${state.santri.length})*`,
+    lunasList.length > 0 ? lunasList.join('\n') : '• Belum ada',
+    ``,
+    `*Belum Lunas (${nunggakList.length})*`,
+    sectionNunggak
+  ];
 
-  return text;
+  if (loanTextLengkap) {
+    lines.push(loanTextLengkap);
+  }
+
+  lines.push('', `Cek & konfirmasi: https://paymojosari.my.id`);
+
+  return lines.join('\n');
 }
 
 function openRekapGrupModal() {
   if (!state.isAdmin) {
     openAdminLoginModal('admin');
-    showToast('Fitur Siaran Rekap Grup WA hanya dapat diakses oleh Bendahara (Admin)', 'amber');
+    showToast('Khusus Bendahara', 'amber');
     return;
   }
-  document.getElementById('modalRekapGrupSubtitle').textContent = `Periode: ${getMonthLabel(state.activeMonth)}`;
+  document.getElementById('modalRekapGrupSubtitle').textContent = getMonthLabel(state.activeMonth);
 
-  // Tampilkan link grup yang ditautkan
   const inputLink = document.getElementById('inputLinkGrupWa');
   if (inputLink) inputLink.value = state.linkGrupWa || DEFAULT_GRUP_LINK;
 
