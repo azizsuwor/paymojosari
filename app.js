@@ -276,11 +276,7 @@ function maskPhoneNumber(wa) {
 }
 
 function handleTopProfileClick() {
-  if (state.userRole === 'admin' || state.userRole === 'santri') {
-    openAdminLoginModal(state.userRole === 'admin' ? 'admin' : 'santri');
-  } else {
-    openAdminLoginModal('santri');
-  }
+  openAdminLoginModal('santri');
 }
 
 function openAdminLoginModal(defaultTab = 'santri') {
@@ -295,7 +291,6 @@ function openAdminLoginModal(defaultTab = 'santri') {
   }
 
   renderLoginModalSantriPicker();
-  renderAdminProfilePicker();
   switchLoginModalTab(defaultTab);
 
   const errAdmin = document.getElementById('adminLoginError');
@@ -322,14 +317,20 @@ function switchLoginModalTab(tab) {
   if (formResetSantri) formResetSantri.classList.add('hidden');
   if (formResetAdmin) formResetAdmin.classList.add('hidden');
 
+  // Pastikan daftar avatar & dropdown santri selalu ter-render
+  renderLoginModalSantriPicker();
+
   if (tab === 'admin') {
     if (formSantri) formSantri.classList.add('hidden');
     if (formAdmin) formAdmin.classList.remove('hidden');
     if (btnAdmin) btnAdmin.className = 'py-2.5 rounded-lg bg-white text-slate-900 font-bold shadow-xs cursor-pointer transition flex items-center justify-center gap-1.5';
     if (btnSantri) btnSantri.className = 'py-2.5 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5';
+    const waInput = document.getElementById('adminWaInput');
     const passInput = document.getElementById('adminPasswordInput');
-    if (passInput) {
-      passInput.value = '';
+    if (passInput) passInput.value = '';
+    if (waInput && !waInput.value) {
+      setTimeout(() => waInput.focus(), 100);
+    } else if (passInput) {
       setTimeout(() => passInput.focus(), 100);
     }
   } else {
@@ -797,6 +798,8 @@ function logoutAdmin() {
 }
 
 function updateRoleUI() {
+  renderLoginModalSantriPicker();
+
   const loggedSantri = state.userRole === 'santri'
     ? (state.santri.find(s => s.id === state.loggedSantriId) || state.santri[0])
     : null;
@@ -830,7 +833,9 @@ function updateRoleUI() {
         <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200/90 rounded-full px-3 py-1.5 text-xs shadow-2xs select-none">
           <span class="w-2 h-2 rounded-full bg-[#064e3b] animate-pulse"></span>
           <span class="font-bold text-emerald-950">Bendahara</span>
-          <button onclick="openResetAdminPasswordForm()" class="text-[10px] text-emerald-800 font-bold hover:underline ml-1 cursor-pointer">Ganti Sandi</button>
+          <button onclick="openAdminLoginModal('santri')" class="text-[10px] text-slate-700 font-bold hover:underline ml-1 cursor-pointer">Akun Santri</button>
+          <span class="text-emerald-300">•</span>
+          <button onclick="openResetAdminPasswordForm()" class="text-[10px] text-emerald-800 font-bold hover:underline cursor-pointer">Ganti Sandi</button>
           <span class="text-emerald-300">•</span>
           <button onclick="logoutAdmin()" class="text-[10px] text-rose-600 font-bold hover:underline cursor-pointer">Keluar</button>
         </div>
@@ -862,7 +867,7 @@ function updateRoleUI() {
   if (mob) {
     if (state.userRole === 'admin') {
       mob.innerHTML = `
-        <button onclick="logoutAdmin()" class="px-2.5 py-1 bg-emerald-50 text-emerald-900 text-[10px] font-bold rounded-full border border-emerald-200 cursor-pointer flex items-center gap-1">
+        <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 bg-emerald-50 text-emerald-900 text-[10px] font-bold rounded-full border border-emerald-200 cursor-pointer flex items-center gap-1">
           <span class="w-1.5 h-1.5 rounded-full bg-[#064e3b]"></span>
           <span>Bendahara</span>
         </button>
@@ -898,8 +903,9 @@ function updateRoleUI() {
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
-            <button onclick="toggleMobileDrawer(false); openResetAdminPasswordForm();" class="px-2.5 py-1 rounded-lg bg-white text-emerald-900 text-[10px] font-bold border border-emerald-200 cursor-pointer">Sandi</button>
-            <button onclick="logoutAdmin()" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 text-[10px] font-bold hover:bg-rose-100 border border-rose-200 cursor-pointer">Keluar</button>
+            <button onclick="toggleMobileDrawer(false); openAdminLoginModal('santri');" class="px-2 py-1 rounded-lg bg-white text-slate-800 text-[10px] font-bold border border-emerald-200 cursor-pointer">Santri</button>
+            <button onclick="toggleMobileDrawer(false); openResetAdminPasswordForm();" class="px-2 py-1 rounded-lg bg-white text-emerald-900 text-[10px] font-bold border border-emerald-200 cursor-pointer">Sandi</button>
+            <button onclick="logoutAdmin()" class="px-2 py-1 rounded-lg bg-rose-50 text-rose-700 text-[10px] font-bold hover:bg-rose-100 border border-rose-200 cursor-pointer">Keluar</button>
           </div>
         </div>
       `;
