@@ -811,16 +811,16 @@ function updateRoleUI() {
   const topAvatar = document.getElementById('topProfileAvatar');
   if (topName && topSub && topAvatar) {
     if (state.userRole === 'admin') {
-      topName.textContent = 'Bendahara Komplek';
-      topSub.textContent = 'Admin • Akses Penuh';
+      topName.textContent = 'Bendahara';
+      topSub.textContent = 'Admin';
       topAvatar.src = 'logo-mojosari.png?v=2';
     } else if (state.userRole === 'santri' && loggedSantri) {
       topName.textContent = loggedSantri.nama;
-      topSub.textContent = `Santri • ${loggedSantri.prodi}`;
+      topSub.textContent = loggedSantri.prodi;
       topAvatar.src = loggedSantri.avatar || AVATAR_IMAGES[loggedIdx % AVATAR_IMAGES.length];
     } else {
-      topName.textContent = 'Tamu Umum';
-      topSub.textContent = 'Klik untuk Masuk Akun';
+      topName.textContent = 'Tamu';
+      topSub.textContent = 'Masuk Akun';
       topAvatar.src = 'logo-mojosari.png?v=2';
     }
   }
@@ -833,9 +833,9 @@ function updateRoleUI() {
         <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200/90 rounded-full px-3 py-1.5 text-xs shadow-2xs select-none">
           <span class="w-2 h-2 rounded-full bg-[#064e3b] animate-pulse"></span>
           <span class="font-bold text-emerald-950">Bendahara</span>
-          <button onclick="openAdminLoginModal('santri')" class="text-[10px] text-slate-700 font-bold hover:underline ml-1 cursor-pointer">Akun Santri</button>
+          <button onclick="openAdminLoginModal('santri')" class="text-[10px] text-slate-700 font-bold hover:underline ml-1 cursor-pointer">Santri</button>
           <span class="text-emerald-300">•</span>
-          <button onclick="openResetAdminPasswordForm()" class="text-[10px] text-emerald-800 font-bold hover:underline cursor-pointer">Ganti Sandi</button>
+          <button onclick="openResetAdminPasswordForm()" class="text-[10px] text-emerald-800 font-bold hover:underline cursor-pointer">Sandi</button>
           <span class="text-emerald-300">•</span>
           <button onclick="logoutAdmin()" class="text-[10px] text-rose-600 font-bold hover:underline cursor-pointer">Keluar</button>
         </div>
@@ -844,7 +844,7 @@ function updateRoleUI() {
       desk.innerHTML = `
         <div class="flex items-center gap-2 bg-white border border-slate-200/90 rounded-full px-3 py-1.5 text-xs shadow-2xs select-none">
           <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
-          <span class="font-bold text-slate-800">Akun Santri</span>
+          <span class="font-bold text-slate-800">Santri</span>
           <button onclick="openResetSantriPasswordForm()" class="text-[10px] text-emerald-800 font-bold hover:underline ml-1 cursor-pointer">Sandi</button>
           <span class="text-slate-300">•</span>
           <button onclick="openAdminLoginModal('santri')" class="text-[10px] text-slate-600 font-bold hover:underline cursor-pointer">Ganti</button>
@@ -856,7 +856,7 @@ function updateRoleUI() {
       desk.innerHTML = `
         <button onclick="openAdminLoginModal('santri')" class="flex items-center gap-1.5 bg-[#064e3b] hover:bg-[#065f46] text-white rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer shadow-xs select-none">
           <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-          <span>Masuk Akun</span>
+          <span>Masuk</span>
         </button>
       `;
     }
@@ -883,7 +883,7 @@ function updateRoleUI() {
       mob.innerHTML = `
         <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 bg-[#064e3b] text-white text-[10px] font-bold rounded-full cursor-pointer flex items-center gap-1 shadow-2xs">
           <i data-lucide="log-in" class="w-3 h-3"></i>
-          <span>Login</span>
+          <span>Masuk</span>
         </button>
       `;
     }
@@ -898,8 +898,8 @@ function updateRoleUI() {
           <div class="flex items-center gap-2 min-w-0">
             <span class="w-2.5 h-2.5 rounded-full bg-[#064e3b] animate-pulse shrink-0"></span>
             <div class="min-w-0">
-              <span class="text-xs font-bold block truncate leading-tight">Bendahara Komplek</span>
-              <span class="text-[10px] text-emerald-700 font-semibold block">Admin • Akses Penuh</span>
+              <span class="text-xs font-bold block truncate leading-tight">Bendahara</span>
+              <span class="text-[10px] text-emerald-700 font-semibold block">Admin</span>
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
@@ -916,7 +916,7 @@ function updateRoleUI() {
             <img src="${loggedSantri.avatar || AVATAR_IMAGES[loggedIdx % AVATAR_IMAGES.length]}" class="w-8 h-8 rounded-full object-cover border border-emerald-600 shrink-0" />
             <div class="min-w-0">
               <span class="text-xs font-bold block truncate">${loggedSantri.nama}</span>
-              <span class="text-[10px] text-emerald-700 font-semibold block">Akun Santri Pribadi</span>
+              <span class="text-[10px] text-emerald-700 font-semibold block">Santri</span>
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
@@ -931,11 +931,11 @@ function updateRoleUI() {
           <div class="flex items-center gap-2">
             <i data-lucide="user" class="w-4 h-4 text-slate-500"></i>
             <div>
-              <span class="text-xs font-bold text-slate-800 block leading-tight">Mode Tamu Umum</span>
-              <span class="text-[10px] text-slate-500">Login untuk akses fitur</span>
+              <span class="text-xs font-bold text-slate-800 block leading-tight">Mode Tamu</span>
+              <span class="text-[10px] text-slate-500">Akses publik</span>
             </div>
           </div>
-          <button onclick="toggleMobileDrawer(false); openAdminLoginModal('santri');" class="px-3 py-1.5 rounded-xl bg-[#064e3b] text-white text-[10px] font-bold hover:bg-[#065f46] shadow-2xs cursor-pointer">Login</button>
+          <button onclick="toggleMobileDrawer(false); openAdminLoginModal('santri');" class="px-3 py-1.5 rounded-xl bg-[#064e3b] text-white text-[10px] font-bold hover:bg-[#065f46] shadow-2xs cursor-pointer">Masuk</button>
         </div>
       `;
     }
@@ -951,10 +951,10 @@ function updateRoleUI() {
     if (qNotice) qNotice.classList.add('hidden');
     if (qAdmin) qAdmin.classList.remove('hidden');
     if (qBadge) {
-      qBadge.textContent = 'Bendahara Aktif';
+      qBadge.textContent = 'Admin';
       qBadge.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200';
     }
-    if (qHint) qHint.textContent = 'Klik avatar santri untuk catat bayar';
+    if (qHint) qHint.textContent = 'Pilih santri';
   } else if (state.userRole === 'santri' && loggedSantri) {
     if (qAdmin) qAdmin.classList.add('hidden');
     if (qNotice) {
@@ -971,14 +971,14 @@ function updateRoleUI() {
               <div class="flex items-center gap-2 flex-wrap">
                 <h4 class="text-sm font-extrabold text-slate-900 font-display">${loggedSantri.nama}</h4>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${sum.isFullLunas ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}">
-                  ${sum.isFullLunas ? '✓ Lunas Bulan Ini' : `Kurang ${formatRp(sum.totalUnpaid)}`}
+                  ${sum.isFullLunas ? '✓ Lunas' : `Kurang ${formatRp(sum.totalUnpaid)}`}
                 </span>
               </div>
               <p class="text-[11px] text-slate-400 font-mono mt-0.5">${nis} • ${loggedSantri.prodi}</p>
             </div>
           </div>
           <div class="text-left sm:text-right">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Terbayar (${getMonthLabel(state.activeMonth)})</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">${getMonthLabel(state.activeMonth)}</span>
             <span class="text-lg font-extrabold font-display text-[#064e3b]">${formatRp(sum.totalPaid)} <span class="text-xs font-normal text-slate-400">/ ${formatRp(sum.targetSantri)}</span></span>
           </div>
         </div>
@@ -1000,23 +1000,20 @@ function updateRoleUI() {
             <span class="font-bold ${rec.air ? 'text-emerald-700' : 'text-rose-600'}">${rec.air ? '✓ Lunas' : 'Belum'}</span>
           </div>
         </div>
-        <div class="flex items-center justify-between gap-2 flex-wrap pt-1">
-          <span class="text-[11px] text-slate-400">Pencatatan bayar & penerbitan nota dilakukan oleh Bendahara.</span>
-          <div class="flex items-center gap-2 flex-wrap">
-            <button type="button" onclick="openWaKonfirmasiKeBendahara('${loggedSantri.id}', '${state.activeMonth}')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
-              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-[#064e3b]"></i>
-              <span>Konfirmasi ke WA Bendahara</span>
-            </button>
-            <button type="button" onclick="openKartuSantriModal('${loggedSantri.id}')" class="px-3.5 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
-              <i data-lucide="id-card" class="w-3.5 h-3.5"></i>
-              <span>Kartu KTA Saya</span>
-            </button>
-          </div>
+        <div class="flex items-center justify-end gap-2 flex-wrap pt-1">
+          <button type="button" onclick="openWaKonfirmasiKeBendahara('${loggedSantri.id}', '${state.activeMonth}')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-[#064e3b]"></i>
+            <span>Konfirmasi WA</span>
+          </button>
+          <button type="button" onclick="openKartuSantriModal('${loggedSantri.id}')" class="px-3.5 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="id-card" class="w-3.5 h-3.5"></i>
+            <span>Kartu KTA</span>
+          </button>
         </div>
       `;
     }
     if (qBadge) {
-      qBadge.textContent = 'Data Pribadi Santri';
+      qBadge.textContent = 'Santri';
       qBadge.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200';
     }
     if (qHint) qHint.textContent = loggedSantri.nama;
@@ -1024,34 +1021,34 @@ function updateRoleUI() {
     if (qAdmin) qAdmin.classList.add('hidden');
     if (qNotice) {
       qNotice.classList.remove('hidden');
-      qNotice.className = 'p-6 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-slate-800 space-y-3.5';
+      qNotice.className = 'p-5 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-slate-800 space-y-3';
       qNotice.innerHTML = `
         <div class="flex items-center gap-2.5 text-sm font-bold text-slate-900">
           <div class="w-8 h-8 rounded-xl bg-emerald-50 text-[#064e3b] flex items-center justify-center shrink-0">
             <i data-lucide="lock" class="w-4 h-4"></i>
           </div>
-          <span>Akses Fitur & Data Pribadi Terkunci (Mode Tamu)</span>
+          <span>Akses Data Pribadi</span>
         </div>
-        <p class="text-xs text-slate-500 leading-relaxed">
-          Anda sedang melihat halaman sebagai <strong>Tamu Umum</strong>. Untuk melihat rincian tunggakan pribadi, pinjaman utang kas, atau mencetak Kartu Identitas Santri (KTA), silakan login terlebih dahulu.
+        <p class="text-xs text-slate-500">
+          Masuk akun untuk melihat tagihan, riwayat bayar, dan Kartu Identitas Santri.
         </p>
-        <div class="pt-1 flex items-center gap-2.5 flex-wrap">
-          <button type="button" onclick="openAdminLoginModal('santri')" class="px-4 py-2.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+        <div class="pt-1 flex items-center gap-2 flex-wrap">
+          <button type="button" onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer">
             <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
-            <span>Masuk sebagai Santri</span>
+            <span>Masuk Santri</span>
           </button>
-          <button type="button" onclick="openAdminLoginModal('admin')" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
+          <button type="button" onclick="openAdminLoginModal('admin')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
             <i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-500"></i>
-            <span>Login Bendahara</span>
+            <span>Bendahara</span>
           </button>
         </div>
       `;
     }
     if (qBadge) {
-      qBadge.textContent = 'Mode Tamu Umum';
+      qBadge.textContent = 'Tamu';
       qBadge.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600';
     }
-    if (qHint) qHint.textContent = 'Login Diperlukan';
+    if (qHint) qHint.textContent = 'Akses Publik';
   }
 
   // 5. Sembunyikan / nonaktifkan form input & tombol mutasi khusus Admin jika bukan Bendahara
@@ -1548,14 +1545,14 @@ function switchTab(tabName) {
 
   // Update Page Header Titles
   const titles = {
-    pembayaran: 'Payments',
+    pembayaran: 'Pembayaran',
     dashboard: 'Dashboard',
-    tunggakan: 'Arrears & Invoices',
-    masak: 'Kitchen Expenses',
-    utang: 'Student Cash Loans',
-    santri: 'Students Directory'
+    tunggakan: 'Tunggakan',
+    masak: 'Kas Masak',
+    utang: 'Pinjaman Kas',
+    santri: 'Data Santri'
   };
-  const titleText = titles[tabName] || 'Payments';
+  const titleText = titles[tabName] || 'Pembayaran';
   const titleEl = document.getElementById('pageHeadingTitle');
   if (titleEl) titleEl.textContent = titleText;
   const mobileTitleEl = document.getElementById('mobilePageHeadingTitle');
@@ -1623,8 +1620,8 @@ function setQuickMode(mode) {
   const btnFull = document.getElementById('qtab-full');
   if (btnFull) {
     btnFull.textContent = tanpaMakan
-      ? `Full Kas (${curTarif.totalKas / 1000}rb)`
-      : `Full (${curTarif.totalBulanan / 1000}rb)`;
+      ? `Kas (${curTarif.totalKas / 1000}k)`
+      : `Lunas (${curTarif.totalBulanan / 1000}k)`;
   }
 
   // Update tabs appearance
@@ -1732,7 +1729,7 @@ function renderAll() {
   };
 
   if (state.userRole === 'admin') {
-    setMetricLabels('Total Terkumpul', 'Tunggakan (17 Santri)', 'Saldo Kas', 'Utang Kas');
+    setMetricLabels('Terkumpul', 'Tunggakan', 'Saldo Kas', 'Utang Kas');
     const pctSent = fin.activeMonthTarget > 0 ? Math.round((fin.activeMonthTotalSent / fin.activeMonthTarget) * 100) : 0;
     const pctPending = fin.activeMonthTarget > 0 ? Math.round((fin.activeMonthTunggakan / fin.activeMonthTarget) * 100) : 0;
     const activeLoanCount = state.utangKas.filter(u => u.status === 'belum_lunas').length;
@@ -1744,7 +1741,7 @@ function renderAll() {
     document.getElementById('mScheduled').textContent = formatRp(fin.saldoKasTersedia);
     if (document.getElementById('mScheduledSub')) document.getElementById('mScheduledSub').textContent = 'Aktif';
     document.getElementById('mFailed').textContent = formatRp(fin.totalUtangAktif);
-    document.getElementById('mFailedSub').textContent = `${activeLoanCount} Santri Utang`;
+    document.getElementById('mFailedSub').textContent = `${activeLoanCount} Santri`;
 
     if (document.getElementById('dashTotalSent')) {
       document.getElementById('dashTotalSent').textContent = formatRp(fin.activeMonthTotalSent);
@@ -1754,22 +1751,22 @@ function renderAll() {
       document.getElementById('dashScheduled').textContent = formatRp(fin.saldoKasTersedia);
       if (document.getElementById('dashScheduledSub')) document.getElementById('dashScheduledSub').textContent = 'Aktif';
       document.getElementById('dashFailed').textContent = formatRp(fin.totalUtangAktif);
-      document.getElementById('dashFailedSub').textContent = `${activeLoanCount} Santri Utang`;
+      document.getElementById('dashFailedSub').textContent = `${activeLoanCount} Santri`;
     }
 
-    if (document.getElementById('limitBar1Label')) document.getElementById('limitBar1Label').textContent = 'Iuran Terkumpul (17 Santri)';
+    if (document.getElementById('limitBar1Label')) document.getElementById('limitBar1Label').textContent = 'Iuran Terkumpul';
     document.getElementById('limitDailyRatio').textContent = `${formatRp(fin.activeMonthTotalSent)} / ${formatRp(fin.activeMonthTarget)}`;
     document.getElementById('limitDailyBar').style.width = `${Math.min(100, pctSent)}%`;
 
     const wifiRecAct = getBendaharaWifiRecord(state.activeMonth);
     const wifiTarget = Number(wifiRecAct.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT);
     const wifiPct = wifiTarget > 0 ? Math.round((fin.activeMonthWifi / wifiTarget) * 100) : 0;
-    if (document.getElementById('limitBar2Label')) document.getElementById('limitBar2Label').textContent = 'WiFi Masuk vs Setor Induk (200k)';
+    if (document.getElementById('limitBar2Label')) document.getElementById('limitBar2Label').textContent = 'Kas WiFi vs Setoran Induk';
     document.getElementById('limitMonthlyRatio').textContent = `${formatRp(fin.activeMonthWifi)} / ${formatRp(wifiTarget)}`;
     document.getElementById('limitMonthlyBar').style.width = `${Math.min(100, wifiPct)}%`;
 
   } else if (state.userRole === 'santri') {
-    setMetricLabels('Terbayar (Saya)', 'Tunggakan Saya', 'Utang Kas Saya', 'Status Syahriyah');
+    setMetricLabels('Terbayar', 'Tunggakan', 'Utang Kas', 'Status');
     const mySantri = state.santri.find(s => s.id === state.loggedSantriId) || state.santri[0];
     const myRec = getPaymentRecord(mySantri.id, state.activeMonth);
     const mySum = calculateRecordSummary(myRec, state.activeMonth, mySantri);
@@ -1798,17 +1795,17 @@ function renderAll() {
       document.getElementById('dashFailedSub').textContent = `Target ${formatRp(mySum.targetSantri)}`;
     }
 
-    if (document.getElementById('limitBar1Label')) document.getElementById('limitBar1Label').textContent = 'Progress Iuran Saya Bulan Ini';
+    if (document.getElementById('limitBar1Label')) document.getElementById('limitBar1Label').textContent = 'Progres Iuran Saya';
     document.getElementById('limitDailyRatio').textContent = `${formatRp(mySum.totalPaid)} / ${formatRp(mySum.targetSantri)}`;
     document.getElementById('limitDailyBar').style.width = `${Math.min(100, myPctPaid)}%`;
 
     const myWifiPct = myRec.wifi ? 100 : 0;
-    if (document.getElementById('limitBar2Label')) document.getElementById('limitBar2Label').textContent = 'Iuran Kas WiFi Saya';
+    if (document.getElementById('limitBar2Label')) document.getElementById('limitBar2Label').textContent = 'Iuran WiFi Saya';
     document.getElementById('limitMonthlyRatio').textContent = `${formatRp(mySum.paidWifi)} / ${formatRp(curTarif.wifi)}`;
     document.getElementById('limitMonthlyBar').style.width = `${myWifiPct}%`;
 
   } else {
-    setMetricLabels('Santri Mukim', 'Syahriyah / Bln', 'Iuran Kas Komplek', 'Uang Makan');
+    setMetricLabels('Santri Mukim', 'Syahriyah / Bln', 'Kas Komplek', 'Uang Makan');
     document.getElementById('mTotalSent').textContent = `${state.santri.length} Santri`;
     document.getElementById('mTotalSentPct').innerHTML = `Aktif`;
     document.getElementById('mPending').textContent = formatRp(curTarif.totalBulanan);
@@ -1829,11 +1826,11 @@ function renderAll() {
       document.getElementById('dashFailedSub').textContent = 'Dapur';
     }
 
-    if (document.getElementById('limitBar1Label')) document.getElementById('limitBar1Label').textContent = 'Komponen Uang Makan';
+    if (document.getElementById('limitBar1Label')) document.getElementById('limitBar1Label').textContent = 'Uang Makan';
     document.getElementById('limitDailyRatio').textContent = `${formatRp(curTarif.makan)} / bln`;
     document.getElementById('limitDailyBar').style.width = `50%`;
 
-    if (document.getElementById('limitBar2Label')) document.getElementById('limitBar2Label').textContent = 'Komponen Kas (WiFi, Listrik, Air)';
+    if (document.getElementById('limitBar2Label')) document.getElementById('limitBar2Label').textContent = 'Kas (WiFi, Listrik, Air)';
     document.getElementById('limitMonthlyRatio').textContent = `${formatRp(curTarif.totalKas)} / bln`;
     document.getElementById('limitMonthlyBar').style.width = `50%`;
   }
@@ -1846,7 +1843,7 @@ function renderAll() {
       widgetWifiBadge.textContent = `✓ Lunas (${formatRp(wifiRecActive.nominalBayar)})`;
       widgetWifiBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200';
     } else if (wifiRecActive.status === 'pending_confirm') {
-      widgetWifiBadge.textContent = `Menunggu Konfirmasi (${formatRp(wifiRecActive.nominalBayar)})`;
+      widgetWifiBadge.textContent = `Pending (${formatRp(wifiRecActive.nominalBayar)})`;
       widgetWifiBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200';
     } else {
       widgetWifiBadge.textContent = 'Belum Disetor';
@@ -1897,7 +1894,7 @@ function renderQuickTransfer() {
       <div class="w-11 h-11 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:border-slate-400 transition">
         <i data-lucide="plus" class="w-4 h-4"></i>
       </div>
-      <span class="text-[11px] font-semibold text-slate-400">Add New</span>
+      <span class="text-[11px] font-semibold text-slate-400">Tambah</span>
     </div>
   `;
 
@@ -1981,10 +1978,7 @@ function renderActiveKartuSantriWidget() {
   if (state.userRole === 'guest') {
     widget.innerHTML = `
       <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-sm font-bold text-slate-900 font-display">Kartu Identitas Santri</h3>
-          <p class="text-[11px] text-slate-400">Privasi data identitas & KTA santri</p>
-        </div>
+        <h3 class="text-sm font-bold text-slate-900 font-display">Kartu Identitas Santri</h3>
         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">Privat</span>
       </div>
       <div class="p-5 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-2.5">
@@ -1992,12 +1986,12 @@ function renderActiveKartuSantriWidget() {
           <i data-lucide="id-card" class="w-5 h-5"></i>
         </div>
         <div>
-          <h4 class="text-xs font-bold text-slate-900">Kartu Identitas Bersifat Pribadi</h4>
-          <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">Masuk menggunakan akun santri Anda untuk melihat & mencetak Kartu Identitas Santri (KTA) milik Anda sendiri.</p>
+          <h4 class="text-xs font-bold text-slate-900">Kartu Identitas Santri</h4>
+          <p class="text-[11px] text-slate-500 mt-0.5">Masuk akun untuk melihat dan mencetak KTA.</p>
         </div>
         <button type="button" onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer shadow-xs inline-flex items-center gap-1.5">
           <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-          <span>Masuk Akun untuk Lihat KTA</span>
+          <span>Masuk Akun</span>
         </button>
       </div>
     `;
@@ -2014,20 +2008,17 @@ function renderActiveKartuSantriWidget() {
 
   widget.innerHTML = `
     <div class="flex items-center justify-between">
-      <div>
-        <h3 class="text-sm font-bold text-slate-900 font-display">${state.userRole === 'santri' ? 'Kartu Identitas Saya' : 'Kartu Identitas Santri'}</h3>
-        <p class="text-[11px] text-slate-400">${state.userRole === 'santri' ? 'KTA resmi milik akun Anda' : 'Identitas santri mukim Komplek Tuban'}</p>
-      </div>
+      <h3 class="text-sm font-bold text-slate-900 font-display">${state.userRole === 'santri' ? 'Kartu Identitas Saya' : 'Kartu Identitas Santri'}</h3>
       <div class="flex items-center gap-1.5">
         <button type="button" onclick="openGantiFotoSantriMandiri('${s.id}')" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer transition">
           Ganti Foto
         </button>
         <button type="button" onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold cursor-pointer transition">
-          Cetak Kartu
+          Cetak
         </button>
         ${state.isAdmin ? `
           <button type="button" onclick="openSemuaKartuSantriModal()" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold cursor-pointer transition">
-            Semua (17)
+            Semua
           </button>
         ` : ''}
       </div>
@@ -2043,21 +2034,21 @@ function renderScheduledPayments(searchFilter = '') {
 
   if (state.userRole === 'guest') {
     container.innerHTML = `
-      <div class="p-6 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-3">
-        <div class="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#064e3b] flex items-center justify-center mx-auto">
+      <div class="p-6 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#064e3b] flex items-center justify-center mx-auto">
           <i data-lucide="lock" class="w-5 h-5"></i>
         </div>
-        <div class="max-w-md mx-auto">
-          <h4 class="text-xs font-bold text-slate-900">Rincian Tagihan & Pembayaran Bersifat Pribadi</h4>
-          <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Sebagai <strong>Tamu Umum</strong>, Anda dapat melihat ringkasan kas komplek secara umum di atas. Untuk melihat rincian pembayaran syahriyah, tunggakan, atau kartu santri, silakan login terlebih dahulu.</p>
+        <div>
+          <h4 class="text-xs font-bold text-slate-900">Tagihan & Status Pembayaran</h4>
+          <p class="text-[11px] text-slate-500 mt-0.5">Masuk akun untuk melihat rincian tagihan syahriyah.</p>
         </div>
         <div class="flex items-center justify-center gap-2 pt-1">
           <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer shadow-xs inline-flex items-center gap-1.5">
             <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
-            <span>Login Akun Santri</span>
+            <span>Masuk Santri</span>
           </button>
           <button onclick="switchTab('santri')" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold transition cursor-pointer">
-            Lihat Daftar 17 Santri
+            Data Santri
           </button>
         </div>
       </div>
@@ -2249,10 +2240,10 @@ function renderDashboardTab(fin) {
     const wifiRec = getBendaharaWifiRecord(state.activeMonth);
     const curTarif = getTarif(state.activeMonth);
     const statusLabel = wifiRec.status === 'paid'
-      ? '✓ LUNAS DISETOR KE PEMILIK WIFI'
+      ? '✓ LUNAS'
       : wifiRec.status === 'pending_confirm'
-        ? 'MENUNGGU KONFIRMASI (BUKTI DIUPLOAD)'
-        : 'BELUM DISETOR KE PEMILIK WIFI';
+        ? 'MENUNGGU KONFIRMASI'
+        : 'BELUM DISETOR';
     const statusClass = wifiRec.status === 'paid'
       ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
       : wifiRec.status === 'pending_confirm'
@@ -2270,35 +2261,35 @@ function renderDashboardTab(fin) {
           <table class="w-full text-xs border-collapse">
             <tbody class="divide-y divide-slate-200/70">
               <tr>
-                <td class="py-1.5 text-slate-500 font-semibold w-48">Status Setoran WiFi Induk</td>
+                <td class="py-1.5 text-slate-500 font-semibold w-44">Status Setoran</td>
                 <td class="py-1.5">
                   <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${statusClass}">${statusLabel}</span>
                 </td>
               </tr>
               <tr>
-                <td class="py-1.5 text-slate-500 font-semibold">Setoran ke WiFi Induk (Bendahara)</td>
-                <td class="py-1.5 font-mono font-bold text-slate-900">${formatRp(nominalInduk)} <span class="text-[10px] font-normal text-slate-500">(Dibayar Bendahara ke WiFi Induk / bln)</span></td>
+                <td class="py-1.5 text-slate-500 font-semibold">Setoran Induk</td>
+                <td class="py-1.5 font-mono font-bold text-slate-900">${formatRp(nominalInduk)} / bln</td>
               </tr>
               <tr>
-                <td class="py-1.5 text-slate-500 font-semibold">Kas WiFi Terkumpul (Santri)</td>
-                <td class="py-1.5 font-mono font-bold text-emerald-800">${formatRp(fin.activeMonthWifi)} <span class="text-[10px] font-normal text-slate-500">dari ${formatRp(targetWifiSantri)} (${fin.activeMonthWifiSantriCount}/${state.santri.length} Santri @ ${formatRp(curTarif.wifi)})</span></td>
+                <td class="py-1.5 text-slate-500 font-semibold">Iuran Terkumpul</td>
+                <td class="py-1.5 font-mono font-bold text-emerald-800">${formatRp(fin.activeMonthWifi)} <span class="text-[10px] font-normal text-slate-500">/ ${formatRp(targetWifiSantri)} (${fin.activeMonthWifiSantriCount}/${state.santri.length} Santri)</span></td>
               </tr>
               <tr>
-                <td class="py-1.5 text-slate-500 font-semibold">Sisa WiFi (Disimpan di Kas)</td>
-                <td class="py-1.5 font-mono font-bold text-emerald-900">${formatRp(potensiSisaKasWifi)}/bln <span class="text-[10px] font-normal text-slate-500">(Sisa dari ${formatRp(targetWifiSantri)} - ${formatRp(nominalInduk)} disimpan Bendahara • Aktual saat ini: ${formatRp(aktualSisaKasWifi)})</span></td>
+                <td class="py-1.5 text-slate-500 font-semibold">Surplus Kas WiFi</td>
+                <td class="py-1.5 font-mono font-bold text-emerald-900">${formatRp(potensiSisaKasWifi)}/bln <span class="text-[10px] font-normal text-slate-500">(Aktual: ${formatRp(aktualSisaKasWifi)})</span></td>
               </tr>
               <tr>
-                <td class="py-1.5 text-slate-500 font-semibold">Tanggal Bayar & Catatan</td>
-                <td class="py-1.5 text-slate-700"><span class="font-mono font-semibold">${wifiRec.tanggalBayar || '-'}</span> • ${wifiRec.proofNote || 'Setoran bulanan Rp 200.000 ke pemilik WiFi induk, sisa disimpan di kas komplek'}</td>
+                <td class="py-1.5 text-slate-500 font-semibold">Tanggal & Catatan</td>
+                <td class="py-1.5 text-slate-700"><span class="font-mono font-semibold">${wifiRec.tanggalBayar || '-'}</span> • ${wifiRec.proofNote || 'Setoran bulanan WiFi induk'}</td>
               </tr>
             </tbody>
           </table>
         </div>
         <div class="lg:col-span-4 flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl p-3 bg-white text-center">
           ${wifiRec.proofImg
-            ? `<img src="${wifiRec.proofImg}" alt="Bukti Setoran WiFi Induk" onclick="openNotaWifiIndukModal('${state.activeMonth}')" class="max-h-28 rounded-lg object-contain border border-slate-200 cursor-pointer hover:opacity-90 transition" title="Klik untuk perbesar di Nota Laporan WiFi" />
-               <span class="text-[10px] font-bold text-emerald-800 mt-1.5">✓ Bukti Chat/Transfer Terlampir</span>`
-            : `<div class="py-4 text-[11px] text-slate-400">Belum ada foto bukti chat/transfer WiFi induk</div>`
+            ? `<img src="${wifiRec.proofImg}" alt="Bukti Setoran WiFi Induk" onclick="openNotaWifiIndukModal('${state.activeMonth}')" class="max-h-28 rounded-lg object-contain border border-slate-200 cursor-pointer hover:opacity-90 transition" title="Lihat Bukti" />
+               <span class="text-[10px] font-bold text-emerald-800 mt-1.5">✓ Bukti Terlampir</span>`
+            : `<div class="py-4 text-[11px] text-slate-400">Belum ada bukti</div>`
           }
         </div>
       </div>
@@ -2340,7 +2331,7 @@ function renderDashboardTab(fin) {
             <td class="py-2.5 px-3 text-center">${wifiStatusBadge}</td>
             <td class="py-2.5 px-3 text-center">
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${mySum.isFullLunas ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-50 text-rose-600'}">
-                ${mySum.isFullLunas ? '✓ Lunas (Saya)' : 'Belum Lunas'}
+                ${mySum.isFullLunas ? '✓ Lunas' : 'Belum'}
               </span>
             </td>
             <td class="py-2.5 px-3 text-right">
@@ -2364,7 +2355,7 @@ function renderDashboardTab(fin) {
               </div>
             </td>
             <td class="py-2.5 px-3 text-right font-mono text-slate-600">${formatRp(mTarif.totalBulanan)}/santri</td>
-            <td class="py-2.5 px-3 text-right text-slate-400 text-[11px]">Login untuk lihat</td>
+            <td class="py-2.5 px-3 text-right text-slate-400 text-[11px]">Privat</td>
             <td class="py-2.5 px-3 text-right text-slate-400 text-[11px]">Privat</td>
             <td class="py-2.5 px-3 text-right font-mono text-slate-600">${formatRp(mTarif.totalKas)}/santri</td>
             <td class="py-2.5 px-3 text-center">${wifiStatusBadge}</td>
@@ -2373,7 +2364,7 @@ function renderDashboardTab(fin) {
             </td>
             <td class="py-2.5 px-3 text-right">
               <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold cursor-pointer">
-                Login
+                Masuk
               </button>
             </td>
           </tr>
@@ -2441,18 +2432,18 @@ function renderDashboardTab(fin) {
     matrixBody.innerHTML = `
       <tr>
         <td colspan="7" class="py-8 px-4 text-center">
-          <div class="max-w-md mx-auto space-y-2.5">
+          <div class="max-w-md mx-auto space-y-2">
             <div class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#064e3b] flex items-center justify-center mx-auto">
               <i data-lucide="shield-check" class="w-5 h-5"></i>
             </div>
-            <h4 class="text-xs font-bold text-slate-900">Rincian Status Komponen per Santri Bersifat Pribadi</h4>
-            <p class="text-[11px] text-slate-500">Rekapitulasi kas bulanan & laporan WiFi induk di atas dapat dilihat umum. Untuk melihat status pembayaran pribadi Anda (Makan, WiFi, Listrik, Air), silakan login terlebih dahulu.</p>
+            <h4 class="text-xs font-bold text-slate-900">Status Komponen Syahriyah</h4>
+            <p class="text-[11px] text-slate-500">Masuk akun untuk melihat status Makan, WiFi, Listrik, dan Air.</p>
             <div class="pt-1 flex items-center justify-center gap-2">
               <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer shadow-xs">
-                Masuk Akun Santri / Bendahara
+                Masuk Akun
               </button>
               <button onclick="switchTab('santri')" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer">
-                Direktori 17 Santri
+                Data Santri
               </button>
             </div>
           </div>
@@ -2463,7 +2454,7 @@ function renderDashboardTab(fin) {
   }
 
   if (state.santri.length === 0) {
-    matrixBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400 text-xs">Belum ada data santri. Klik menu <button onclick="switchTab('santri')" class="font-bold text-emerald-800 hover:underline cursor-pointer">Data Santri</button> untuk menambahkan santri baru.</td></tr>`;
+    matrixBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400 text-xs">Belum ada data santri.</td></tr>`;
     return;
   }
 
@@ -2487,13 +2478,13 @@ function renderDashboardTab(fin) {
     };
 
     const makanBadge = sum.tanpaMakan
-      ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200" title="Santri ini tanpa Uang Makan (Hanya Kas Komplek)">Tanpa Makan</span>`
+      ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">Tanpa Makan</span>`
       : badge(rec.makan, 'makan');
 
     return `
       <tr class="hover:bg-slate-50/70 transition">
         <td class="py-3 px-3">
-          <div class="font-bold text-slate-900">${s.nama} ${sum.tanpaMakan ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Uang Makan</span>` : ''} ${state.userRole === 'santri' ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold">Data Saya</span>` : ''}</div>
+          <div class="font-bold text-slate-900">${s.nama} ${sum.tanpaMakan ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Makan</span>` : ''}</div>
           <div class="text-[10px] text-slate-400">${s.prodi} • ${s.alamat}</div>
         </td>
         <td class="py-3 px-3 text-center">${makanBadge}</td>
@@ -2533,14 +2524,14 @@ function renderTunggakanTab(finData) {
 
   if (state.userRole === 'guest') {
     listEl.innerHTML = `
-      <div class="p-8 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-3">
-        <div class="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#064e3b] flex items-center justify-center mx-auto">
+      <div class="p-8 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#064e3b] flex items-center justify-center mx-auto">
           <i data-lucide="lock" class="w-5 h-5"></i>
         </div>
-        <h4 class="text-xs font-bold text-slate-900">Data Tunggakan Santri Bersifat Pribadi</h4>
-        <p class="text-[11px] text-slate-500 max-w-md mx-auto">Silakan masuk menggunakan akun santri Anda untuk melihat rincian tunggakan pribadi Anda, atau login sebagai Bendahara.</p>
+        <h4 class="text-xs font-bold text-slate-900">Data Tunggakan Pribadi</h4>
+        <p class="text-[11px] text-slate-500 max-w-md mx-auto">Masuk akun untuk melihat rincian tunggakan.</p>
         <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer shadow-xs">
-          Masuk Akun Sekarang
+          Masuk Akun
         </button>
       </div>
     `;
@@ -3011,8 +3002,8 @@ function populateSantriFormForSelf(s) {
   const titleEl = document.getElementById('formSantriTitle');
   const btnTextEl = document.getElementById('btnSaveSantriText');
   const cancelBtn = document.getElementById('btnCancelEditSantri');
-  if (titleEl) titleEl.textContent = 'Ganti Foto & Edit Profil Saya';
-  if (btnTextEl) btnTextEl.textContent = 'Simpan Foto & Profil Saya';
+  if (titleEl) titleEl.textContent = 'Profil & Foto Saya';
+  if (btnTextEl) btnTextEl.textContent = 'Simpan Profil';
   if (cancelBtn) cancelBtn.classList.add('hidden');
 }
 
@@ -3047,8 +3038,8 @@ function editSantri(id) {
   const fileInput = document.getElementById('santriPhotoFile');
   if (fileInput) fileInput.value = '';
 
-  document.getElementById('formSantriTitle').textContent = state.isAdmin ? 'Edit Data Santri' : 'Ganti Foto & Edit Profil Saya';
-  document.getElementById('btnSaveSantriText').textContent = state.isAdmin ? 'Simpan Perubahan' : 'Simpan Foto & Profil Saya';
+  document.getElementById('formSantriTitle').textContent = state.isAdmin ? 'Edit Data Santri' : 'Profil & Foto Saya';
+  document.getElementById('btnSaveSantriText').textContent = state.isAdmin ? 'Simpan Perubahan' : 'Simpan Profil';
   const cancelBtn = document.getElementById('btnCancelEditSantri');
   if (cancelBtn) {
     if (state.isAdmin) cancelBtn.classList.remove('hidden');
@@ -3076,7 +3067,7 @@ function resetSantriForm() {
   const fileInput = document.getElementById('santriPhotoFile');
   if (fileInput) fileInput.value = '';
 
-  document.getElementById('formSantriTitle').textContent = 'Daftarkan Santri Baru';
+  document.getElementById('formSantriTitle').textContent = 'Form Data Santri';
   document.getElementById('btnSaveSantriText').textContent = 'Simpan Santri';
   document.getElementById('btnCancelEditSantri').classList.add('hidden');
 }
@@ -3106,7 +3097,7 @@ function renderSantriTab() {
   if (!tbody) return;
 
   if (state.santri.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs">Belum ada data santri. Silakan isi form di samping untuk mendaftarkan santri baru.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs">Belum ada data santri.</td></tr>`;
     if (cardsGrid) cardsGrid.innerHTML = `<div class="col-span-full py-6 text-center text-slate-400 text-xs">Belum ada kartu santri.</div>`;
     return;
   }
@@ -3126,14 +3117,14 @@ function renderSantriTab() {
       `;
     } else if (isMe) {
       actionHtml = `
-        <button onclick="editSantri('${s.id}')" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold mr-1 cursor-pointer">Ganti Foto</button>
-        <button onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer shadow-2xs">Kartu Saya</button>
+        <button onclick="editSantri('${s.id}')" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold mr-1 cursor-pointer">Foto</button>
+        <button onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer shadow-2xs">Kartu</button>
       `;
     } else if (state.userRole === 'santri') {
-      actionHtml = `<span class="text-[10px] font-semibold text-slate-400">Santri Mukim</span>`;
+      actionHtml = `<span class="text-[10px] font-semibold text-slate-400">Aktif</span>`;
     } else {
       actionHtml = `
-        <button onclick="openAdminLoginModal('santri')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold cursor-pointer">Login</button>
+        <button onclick="openAdminLoginModal('santri')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold cursor-pointer">Masuk</button>
       `;
     }
 
@@ -3169,10 +3160,10 @@ function renderSantriTab() {
         : '';
     } else {
       cardsGrid.innerHTML = `
-        <div class="col-span-full p-6 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-2.5">
-          <p class="text-xs font-bold text-slate-900">Kartu Identitas Santri (KTA) Bersifat Pribadi</p>
-          <p class="text-[11px] text-slate-500 max-w-md mx-auto">Daftar nama santri Komplek Tuban di atas bersifat umum, namun pencetakan Kartu Identitas Santri hanya dapat diakses oleh pemilik akun santri masing-masing atau Bendahara.</p>
-          <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] text-white text-xs font-bold cursor-pointer">Masuk Akun untuk Lihat KTA</button>
+        <div class="col-span-full p-6 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-2">
+          <p class="text-xs font-bold text-slate-900">Kartu Identitas Santri</p>
+          <p class="text-[11px] text-slate-500 max-w-md mx-auto">Masuk akun untuk melihat dan mencetak Kartu Identitas Santri.</p>
+          <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] text-white text-xs font-bold cursor-pointer">Masuk Akun</button>
         </div>
       `;
     }

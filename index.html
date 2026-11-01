@@ -148,19 +148,19 @@
           <nav class="space-y-1.5 text-[13px] font-medium text-slate-600">
             <button onclick="switchTab('pembayaran'); toggleMobileDrawer(false);" id="drawer-pembayaran" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all bg-[#064e3b] text-white font-semibold shadow-xs cursor-pointer">
               <i data-lucide="wallet" class="w-4 h-4"></i>
-              <span>Payments (Bayar)</span>
+              <span>Pembayaran</span>
             </button>
             <button onclick="switchTab('dashboard'); toggleMobileDrawer(false);" id="drawer-dashboard" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
               <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-              <span>Dashboard & Rekap</span>
+              <span>Dashboard</span>
             </button>
             <button onclick="switchTab('tunggakan'); toggleMobileDrawer(false);" id="drawer-tunggakan" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
               <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
-              <span>Tunggakan & WA</span>
+              <span>Tunggakan</span>
             </button>
             <button onclick="openRekapGrupModal(); toggleMobileDrawer(false);" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-emerald-800 hover:bg-emerald-50 cursor-pointer font-semibold">
               <i data-lucide="messages-square" class="w-4 h-4 text-emerald-800"></i>
-              <span>Siaran Grup WA</span>
+              <span>Siaran WA</span>
             </button>
             <button onclick="switchTab('masak'); toggleMobileDrawer(false);" id="drawer-masak" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
               <i data-lucide="utensils" class="w-4 h-4"></i>
@@ -172,7 +172,7 @@
             </button>
             <button onclick="switchTab('santri'); toggleMobileDrawer(false);" id="drawer-santri" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
               <i data-lucide="users" class="w-4 h-4"></i>
-              <span>Data Santri & KTA</span>
+              <span>Data Santri</span>
             </button>
           </nav>
         </div>
@@ -181,15 +181,15 @@
         <div class="space-y-1.5 text-[12px] font-medium text-slate-600 pt-5 border-t border-slate-100">
           <button onclick="ubahLinkGrupWa(); toggleMobileDrawer(false);" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-emerald-50 text-emerald-800 transition text-left cursor-pointer font-semibold">
             <i data-lucide="link" class="w-4 h-4 text-emerald-800"></i>
-            <span class="truncate">Tautkan Link Grup WA</span>
+            <span class="truncate">Link Grup WA</span>
           </button>
           <button onclick="openBendaharaWifiModal(); toggleMobileDrawer(false);" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
             <i data-lucide="wifi" class="w-4 h-4 text-emerald-800"></i>
-            <span class="truncate">Setor WiFi Induk</span>
+            <span class="truncate">Setor WiFi</span>
           </button>
           <button onclick="ubahTarifWifiManual(); toggleMobileDrawer(false);" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
             <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
-            <span>Atur Tarif Manual</span>
+            <span>Tarif WiFi</span>
           </button>
         </div>
       </div>
@@ -216,17 +216,17 @@
 
           <button onclick="switchTab('pembayaran')" id="nav-pembayaran" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all bg-[#064e3b] text-white font-semibold shadow-xs cursor-pointer">
             <i data-lucide="wallet" class="w-4 h-4"></i>
-            <span>Payments</span>
+            <span>Pembayaran</span>
           </button>
 
           <button onclick="switchTab('tunggakan')" id="nav-tunggakan" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
             <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
-            <span>Tunggakan & WA</span>
+            <span>Tunggakan</span>
           </button>
 
           <button onclick="openRekapGrupModal()" id="nav-grupwa" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-emerald-800 hover:bg-emerald-50 cursor-pointer font-semibold">
             <i data-lucide="messages-square" class="w-4 h-4 text-emerald-800"></i>
-            <span>Siaran Grup WA</span>
+            <span>Siaran WA</span>
           </button>
 
           <button onclick="switchTab('masak')" id="nav-masak" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
@@ -250,15 +250,15 @@
       <div class="space-y-1.5 text-[13px] font-medium text-slate-500 pt-6 border-t border-slate-100">
         <button onclick="ubahLinkGrupWa()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-emerald-50 text-emerald-800 transition text-left cursor-pointer font-semibold">
           <i data-lucide="link" class="w-4 h-4 text-emerald-800"></i>
-          <span class="truncate">Tautkan Link Grup WA</span>
+          <span class="truncate">Link Grup WA</span>
         </button>
         <button onclick="openBendaharaWifiModal()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
           <i data-lucide="wifi" class="w-4 h-4 text-emerald-800"></i>
-          <span class="truncate">Setor WiFi Induk</span>
+          <span class="truncate">Setor WiFi</span>
         </button>
         <button onclick="ubahTarifWifiManual()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
           <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
-          <span>Atur Tarif Manual</span>
+          <span>Tarif WiFi</span>
         </button>
       </div>
     </aside>
@@ -269,8 +269,8 @@
       <!-- TOP NAVBAR (MATCHING FINPILOT: TITLE, SEARCH, NOTIF, USER PROFILE) -->
       <header class="hidden lg:flex px-8 pt-7 pb-4 items-center justify-between gap-4 no-print select-none">
         <div>
-          <h1 id="pageHeadingTitle" class="text-2xl font-bold font-display text-slate-900 tracking-tight">Payments</h1>
-          <p id="pageHeadingSubtitle" class="text-xs text-slate-400 font-medium mt-0.5">PP. Mojosari Loceret Nganjuk • Komplek Tuban (Rumah Wakaf)</p>
+          <h1 id="pageHeadingTitle" class="text-2xl font-bold font-display text-slate-900 tracking-tight">Pembayaran</h1>
+          <p id="pageHeadingSubtitle" class="text-xs text-slate-400 font-medium mt-0.5">PP. Mojosari • Komplek Tuban</p>
         </div>
 
         <div class="flex items-center gap-4">
@@ -386,29 +386,33 @@
               <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <h3 class="text-sm font-bold text-slate-900 font-display">Quick Payment / Catat Bayar Santri</h3>
-                    <span id="quickPaymentRoleBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Mode Santri</span>
+                    <h3 class="text-sm font-bold text-slate-900 font-display">Catat Pembayaran</h3>
+                    <span id="quickPaymentRoleBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Tamu</span>
                   </div>
-                  <span id="quickPaymentSubHint" class="text-[11px] text-slate-400 font-medium">Khusus Bendahara</span>
+                  <span id="quickPaymentSubHint" class="text-[11px] text-slate-400 font-medium">Pilih Santri</span>
                 </div>
 
                 <!-- Santri Mode Notice (Visible for Santri / Read-Only Guests) -->
-                <div id="quickPaymentSantriNotice" class="p-5 rounded-2xl bg-amber-50/80 border border-amber-200/90 text-amber-950 space-y-3">
-                  <div class="flex items-center gap-2 text-sm font-bold text-amber-900">
-                    <i data-lucide="shield-alert" class="w-4 h-4 text-amber-700"></i>
-                    <span>Mode Santri: Akses Pembayaran Terkunci</span>
-                  </div>
-                  <p class="text-xs text-amber-800 leading-relaxed">
-                    Hanya <strong>Bendahara / Pengurus</strong> yang berwenang mencatat dan mengonfirmasi pembayaran kas. Santri dapat memantau status lunas/tunggakan, mengunduh KTA santri, dan memeriksa rekap kas secara bebas.
-                  </p>
-                  <div class="pt-1 flex items-center gap-2 flex-wrap">
-                    <button type="button" onclick="openAdminLoginModal()" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer">
-                      <i data-lucide="key-round" class="w-3.5 h-3.5"></i>
-                      <span>Masuk sebagai Bendahara</span>
-                    </button>
-                    <button type="button" onclick="switchTab('tunggakan')" class="px-3.5 py-2 rounded-xl bg-white border border-amber-300 text-amber-900 text-xs font-semibold hover:bg-amber-100 transition cursor-pointer">
-                      Lihat Rincian Tunggakan
-                    </button>
+                <div id="quickPaymentSantriNotice" class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-800 space-y-3">
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-8 h-8 rounded-xl bg-emerald-50 text-[#064e3b] flex items-center justify-center shrink-0">
+                        <i data-lucide="lock" class="w-4 h-4"></i>
+                      </div>
+                      <div>
+                        <span class="text-xs font-bold text-slate-900 block">Akses Akun</span>
+                        <span class="text-[11px] text-slate-500">Masuk untuk cek rincian tagihan & KTA.</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button type="button" onclick="openAdminLoginModal('santri')" class="px-3.5 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+                        <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                        <span>Santri</span>
+                      </button>
+                      <button type="button" onclick="openAdminLoginModal('admin')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition cursor-pointer">
+                        Bendahara
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -421,34 +425,34 @@
                   <!-- 3 Segmented Filter Tabs (Makan, WiFi Manual, Kas All) -->
                   <div class="bg-[#f1f5f9] p-1 rounded-xl grid grid-cols-3 gap-1 text-xs font-semibold text-slate-600 text-center select-none">
                     <button type="button" onclick="setQuickMode('full')" id="qtab-full" class="py-2 rounded-lg bg-white text-slate-900 shadow-xs cursor-pointer transition">
-                      Lunas Semua (100k)
+                      Lunas (100k)
                     </button>
                     <button type="button" onclick="setQuickMode('makan')" id="qtab-makan" class="py-2 rounded-lg hover:text-slate-900 cursor-pointer transition">
-                      Uang Makan (50k)
+                      Makan (50k)
                     </button>
                     <button type="button" onclick="setQuickMode('wifi')" id="qtab-wifi" class="py-2 rounded-lg hover:text-slate-900 cursor-pointer transition">
-                      Kas WiFi Manual
+                      WiFi Manual
                     </button>
                   </div>
 
                   <!-- Amount & Note Inputs -->
                   <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
                     <div class="sm:col-span-5 space-y-1.5">
-                      <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Amount</label>
+                      <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Nominal</label>
                       <div class="relative">
                         <input type="text" id="quickAmountInput" readonly value="Rp 100.000" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:outline-none" />
                       </div>
                     </div>
                     <div class="sm:col-span-7 space-y-1.5">
-                      <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Note (Optional)</label>
-                      <input type="text" id="quickNoteInput" placeholder="Cth: Iuran syahriyah lunas titip teman" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-800" />
+                      <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Catatan</label>
+                      <input type="text" id="quickNoteInput" placeholder="Opsional" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-800" />
                     </div>
                   </div>
 
                   <!-- Big Primary Button: Send Money (FinPilot Style #064E3B) -->
                   <button type="button" onclick="handleQuickSubmitPayment()" class="w-full py-3.5 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
                     <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-                    <span>Send Money & Update Status Lunas</span>
+                    <span>Simpan Pembayaran</span>
                   </button>
                 </div>
               </div>
@@ -456,14 +460,14 @@
           <!-- Card 2: SCHEDULED PAYMENTS / RINCIAN TAGIHAN SANTRI (FINPILOT EXACT MATCH) -->
           <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
             <div class="flex items-center justify-between">
-              <h3 class="text-sm font-bold text-slate-900 font-display">Scheduled Payments / Tagihan Bulanan</h3>
+              <h3 class="text-sm font-bold text-slate-900 font-display">Tagihan Bulanan</h3>
               <div class="flex items-center gap-3">
                 <button onclick="openRekapGrupModal()" class="text-xs font-bold text-[#064e3b] bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer transition">
                   <i data-lucide="messages-square" class="w-3.5 h-3.5"></i>
-                  <span>Kirim Rekap ke Grup WA</span>
+                  <span>Rekap WA</span>
                 </button>
                 <button onclick="switchTab('tunggakan')" class="text-xs font-semibold text-slate-500 hover:text-slate-900 cursor-pointer">
-                  View All
+                  Semua
                 </button>
               </div>
             </div>
@@ -485,7 +489,7 @@
               <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
                 <div>
                   <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-bold text-slate-900 font-display">Recent Payments</h3>
+                    <h3 class="text-sm font-bold text-slate-900 font-display">Transaksi Terbaru</h3>
                     <span class="text-[11px] text-slate-400 font-medium">Realtime</span>
                   </div>
 
@@ -497,20 +501,20 @@
                 <!-- Download History Dropdown Button (FinPilot Style) -->
                 <div class="pt-5 mt-4 border-t border-slate-100">
                   <button onclick="window.print()" class="w-full py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer">
-                    <span>Download History</span>
-                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                    <span>Cetak Riwayat</span>
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
               </div>
 
               <!-- CARD 4: PAYMENT LIMITS / SALDO & KAS TERPAKAI (FINPILOT EXACT MATCH) -->
               <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
-                <h3 class="text-sm font-bold text-slate-900 font-display">Payment Limits & Kas Progress</h3>
+                <h3 class="text-sm font-bold text-slate-900 font-display">Progres Kas & WiFi</h3>
 
                 <!-- Bar 1: Iuran Terkumpul vs Target -->
                 <div class="space-y-1.5">
                   <div class="flex items-center justify-between text-xs">
-                    <span id="limitBar1Label" class="text-slate-400 font-medium">Iuran Terkumpul</span>
+                    <span id="limitBar1Label" class="text-slate-400 font-medium">Iuran Bulanan</span>
                     <span id="limitDailyRatio" class="font-bold text-slate-900 font-mono">Rp 0 / Rp 0</span>
                   </div>
                   <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -521,7 +525,7 @@
                 <!-- Bar 2: Kas WiFi Terkumpul vs Bayar WiFi Manual -->
                 <div class="space-y-1.5 pt-1">
                   <div class="flex items-center justify-between text-xs">
-                    <span id="limitBar2Label" class="text-slate-400 font-medium">WiFi Terkumpul vs Tagihan</span>
+                    <span id="limitBar2Label" class="text-slate-400 font-medium">Kas WiFi</span>
                     <span id="limitMonthlyRatio" class="font-bold text-slate-900 font-mono">Rp 0 / Rp 0</span>
                   </div>
                   <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -532,8 +536,8 @@
                 <!-- Status & Laporan Pembayaran WiFi Induk -->
                 <div class="pt-3 border-t border-slate-100 space-y-2.5">
                   <div class="flex items-center justify-between text-xs">
-                    <span class="text-slate-500 font-semibold">Setoran WiFi Induk:</span>
-                    <span id="widgetWifiIndukBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600">Belum Disetor</span>
+                    <span class="text-slate-500 font-semibold">WiFi Induk:</span>
+                    <span id="widgetWifiIndukBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600">Belum Lunas</span>
                   </div>
                   <div class="grid grid-cols-2 gap-2">
                     <button onclick="openBendaharaWifiModal()" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer">
@@ -542,7 +546,7 @@
                     </button>
                     <button onclick="openNotaWifiIndukModal()" class="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[11px] font-bold text-emerald-800 flex items-center justify-center gap-1.5 transition cursor-pointer">
                       <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                      <span>Laporan WiFi</span>
+                      <span>Nota WiFi</span>
                     </button>
                   </div>
                 </div>
@@ -599,18 +603,17 @@
               <div>
                 <h3 class="text-base font-bold text-slate-900 font-display flex items-center gap-2">
                   <i data-lucide="wifi" class="w-4 h-4 text-emerald-800"></i>
-                  <span>Laporan Pembayaran WiFi Induk (<span id="dashWifiMonthTitle" class="text-emerald-800">Oktober 2026</span>)</span>
+                  <span>Setoran WiFi Induk (<span id="dashWifiMonthTitle" class="text-emerald-800">Oktober 2026</span>)</span>
                 </h3>
-                <p class="text-xs text-slate-500">Laporan setoran bulanan WiFi Komplek Tuban oleh Bendahara ke pemilik WiFi induk beserta bukti chat/transfer.</p>
               </div>
               <div class="flex items-center gap-2 flex-wrap">
                 <button onclick="openBendaharaWifiModal()" class="text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-                  <span>Input / Upload Bukti WiFi</span>
+                  <span>Upload Bukti</span>
                 </button>
                 <button onclick="openNotaWifiIndukModal()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-[#064e3b] text-white hover:bg-[#065f46] transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                  <span>Nota & Kirim Laporan WiFi ke WA</span>
+                  <span>Nota WiFi</span>
                 </button>
               </div>
             </div>
@@ -623,19 +626,18 @@
           <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h3 class="text-base font-bold text-slate-900 font-display">Rekapitulasi Keuangan Per Bulan (Oktober 2026 – Desember 2027)</h3>
-                <p class="text-xs text-slate-500">Klik baris bulan untuk beralih periode, lihat rincian terkumpul, tunggakan, kas, laporan WiFi induk, atau kirim ke WhatsApp.</p>
+                <h3 class="text-base font-bold text-slate-900 font-display">Rekapitulasi Bulanan</h3>
               </div>
               <div class="flex items-center gap-2 flex-wrap">
                 <button onclick="openRekapGrupModal()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-[#064e3b] text-white hover:bg-[#065f46] transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="messages-square" class="w-3.5 h-3.5"></i>
-                  <span>Kirim Rekap Bulan Ini ke WA</span>
+                  <span>Rekap WA</span>
                 </button>
                 <button onclick="resetBulanIni()" class="text-xs font-semibold px-3 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 transition cursor-pointer">
-                  Reset Bulan Ini (Rp 0)
+                  Reset Bulan
                 </button>
                 <button onclick="resetSemuaKeNol()" class="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer">
-                  Reset Semua Bulan (Rp 0)
+                  Reset Semua
                 </button>
               </div>
             </div>
@@ -644,14 +646,14 @@
               <table class="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
-                    <th class="py-2.5 px-3">Periode Bulan</th>
-                    <th class="py-2.5 px-3 text-right">Target Iuran</th>
-                    <th class="py-2.5 px-3 text-right">Total Terkumpul</th>
-                    <th class="py-2.5 px-3 text-right">Tunggakan (Pending)</th>
-                    <th class="py-2.5 px-3 text-right">Kas Komplek Masuk</th>
-                    <th class="py-2.5 px-3 text-center">Setoran WiFi Induk</th>
-                    <th class="py-2.5 px-3 text-center">Status Santri</th>
-                    <th class="py-2.5 px-3 text-right">Aksi Cepat</th>
+                    <th class="py-2.5 px-3">Bulan</th>
+                    <th class="py-2.5 px-3 text-right">Target</th>
+                    <th class="py-2.5 px-3 text-right">Terkumpul</th>
+                    <th class="py-2.5 px-3 text-right">Tunggakan</th>
+                    <th class="py-2.5 px-3 text-right">Kas Masuk</th>
+                    <th class="py-2.5 px-3 text-center">WiFi Induk</th>
+                    <th class="py-2.5 px-3 text-center">Status</th>
+                    <th class="py-2.5 px-3 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="dashboardMonthlyRecapBody" class="divide-y divide-slate-100">
@@ -663,15 +665,14 @@
           <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h3 class="text-base font-bold text-slate-900 font-display">Matriks Pembayaran Syahriyah Santri (<span id="dashActiveMonthTitle" class="text-emerald-800">Oktober 2026</span>)</h3>
-                <p class="text-xs text-slate-500">Klik tombol status pada komponen (Makan, WiFi, Listrik, Air) untuk mengubah status Lunas / Belum secara langsung.</p>
+                <h3 class="text-base font-bold text-slate-900 font-display">Status Syahriyah (<span id="dashActiveMonthTitle" class="text-emerald-800">Oktober 2026</span>)</h3>
               </div>
               <div class="flex items-center gap-2">
                 <button onclick="openRekapGrupModal()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition cursor-pointer">
-                  Kirim Tabel ke Grup WA
+                  Rekap Grup
                 </button>
                 <button onclick="switchTab('tunggakan')" class="text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 transition cursor-pointer">
-                  Kirim Tagihan Japri WA
+                  Tagih WA
                 </button>
               </div>
             </div>
@@ -680,12 +681,12 @@
               <table class="w-full text-left text-xs">
                 <thead>
                   <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
-                    <th class="pb-3 px-3">Santri & Prodi</th>
-                    <th class="pb-3 px-3 text-center">Uang Makan (50k)</th>
-                    <th class="pb-3 px-3 text-center">Kas WiFi</th>
-                    <th class="pb-3 px-3 text-center">Kas Listrik (20k)</th>
-                    <th class="pb-3 px-3 text-center">Kas Air (10k)</th>
-                    <th class="pb-3 px-3 text-right">Terbayar / Sisa</th>
+                    <th class="pb-3 px-3">Santri</th>
+                    <th class="pb-3 px-3 text-center">Makan</th>
+                    <th class="pb-3 px-3 text-center">WiFi</th>
+                    <th class="pb-3 px-3 text-center">Listrik</th>
+                    <th class="pb-3 px-3 text-center">Air</th>
+                    <th class="pb-3 px-3 text-right">Terbayar</th>
                     <th class="pb-3 px-3 text-right">Aksi</th>
                   </tr>
                 </thead>
@@ -701,14 +702,13 @@
           <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h3 class="text-base font-bold text-slate-900 font-display">Rekap Tunggakan Bulan per Bulan & Kirim WA</h3>
-                <p class="text-xs text-slate-500">Lihat santri yang masih memiliki tunggakan dan kirimkan nota resmi langsung ke nomor WhatsApp santri.</p>
+                <h3 class="text-base font-bold text-slate-900 font-display">Daftar Tunggakan</h3>
               </div>
               <div class="flex items-center gap-2">
                 <select id="filterTunggakanMode" onchange="renderTunggakanTab()" class="text-xs border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 font-medium cursor-pointer">
-                  <option value="nunggak">Santri Nunggak Saja</option>
+                  <option value="nunggak">Belum Lunas</option>
                   <option value="all">Semua Santri</option>
-                  <option value="lunas">Santri Lunas Saja</option>
+                  <option value="lunas">Sudah Lunas</option>
                 </select>
               </div>
             </div>
@@ -724,7 +724,7 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
             <!-- Form Input Masak -->
             <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-              <h3 class="text-sm font-bold text-slate-900 font-display">Catat Pemasukan / Belanja Masak</h3>
+              <h3 class="text-sm font-bold text-slate-900 font-display">Input Kas Masak</h3>
               <form id="formMasak" onsubmit="handleSaveMasak(event)" class="space-y-3.5">
                 <div>
                   <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Tanggal</label>
@@ -736,20 +736,20 @@
                     <label class="cursor-pointer">
                       <input type="radio" name="masakTipe" value="pengeluaran" checked class="peer sr-only" />
                       <div class="py-2 text-center rounded-xl border border-slate-200 peer-checked:bg-rose-50 peer-checked:border-rose-400 peer-checked:text-rose-700 transition">
-                        Pengeluaran Belanja
+                        Pengeluaran
                       </div>
                     </label>
                     <label class="cursor-pointer">
                       <input type="radio" name="masakTipe" value="pemasukan" class="peer sr-only" />
                       <div class="py-2 text-center rounded-xl border border-slate-200 peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 transition">
-                        Pemasukan Donasi
+                        Pemasukan
                       </div>
                     </label>
                   </div>
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Rincian Menu / Belanja</label>
-                  <input type="text" id="masakKeterangan" required placeholder="Cth: Beli sayur, ayam 2kg, bumbu, telur" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Keterangan</label>
+                  <input type="text" id="masakKeterangan" required placeholder="Cth: Belanja sayur & lauk" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                   <div>
@@ -757,12 +757,12 @@
                     <input type="number" id="masakNominal" required min="500" placeholder="50000" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-mono" />
                   </div>
                   <div>
-                    <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Petugas Piket</label>
+                    <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Piket</label>
                     <input type="text" id="masakPetugas" required placeholder="Piket A" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
                   </div>
                 </div>
                 <button type="submit" class="w-full py-3 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer">
-                  Simpan Catatan Masak
+                  Simpan
                 </button>
               </form>
             </div>
@@ -770,8 +770,8 @@
             <!-- Tabel Riwayat Masak (Tinggi Sama dengan Form di Samping & Scroll ke Bawah) -->
             <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col lg:h-0 lg:min-h-full max-h-[480px] lg:max-h-none overflow-hidden">
               <div class="flex items-center justify-between shrink-0 pb-3">
-                <h3 class="text-sm font-bold text-slate-900 font-display">Riwayat Belanja Masak Harian</h3>
-                <span id="rekapMasakSaldoBadge" class="text-xs font-bold font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">Saldo Dapur: Rp 0</span>
+                <h3 class="text-sm font-bold text-slate-900 font-display">Riwayat Kas Masak</h3>
+                <span id="rekapMasakSaldoBadge" class="text-xs font-bold font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">Saldo: Rp 0</span>
               </div>
               <div class="flex-1 min-h-0 overflow-y-auto overflow-x-auto custom-scroll pr-1">
                 <table class="w-full text-left text-xs">
@@ -796,11 +796,10 @@
         <div id="view-utang" class="view-panel hidden space-y-6">
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
             <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-              <h3 class="text-sm font-bold text-slate-900 font-display">Catat Utang Santri (Diambil dari Uang Kas)</h3>
-              <p class="text-xs text-slate-500">Nominal otomatis memotong saldo Kas Komplek Tuban.</p>
+              <h3 class="text-sm font-bold text-slate-900 font-display">Input Pinjaman Kas</h3>
               <form id="formUtangKas" onsubmit="handleSaveUtangKas(event)" class="space-y-3.5">
                 <div>
-                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Pilih Santri</label>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Santri</label>
                   <select id="utangSantriId" required class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 cursor-pointer">
                   </select>
                 </div>
@@ -809,23 +808,23 @@
                   <input type="date" id="utangTanggal" required class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Nominal Pinjaman (Rp)</label>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Nominal (Rp)</label>
                   <input type="number" id="utangNominal" required min="1000" placeholder="50000" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-mono" />
                 </div>
                 <div>
                   <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Keperluan</label>
-                  <input type="text" id="utangKeterangan" required placeholder="Cth: Talangan darurat beli modul praktikum" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                  <input type="text" id="utangKeterangan" required placeholder="Keterangan singkat" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
                 </div>
                 <button type="submit" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer">
-                  Cairkan Pinjaman dari Kas
+                  Simpan Pinjaman
                 </button>
               </form>
             </div>
 
             <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col lg:h-0 lg:min-h-full max-h-[480px] lg:max-h-none overflow-hidden">
               <div class="flex items-center justify-between shrink-0 pb-3">
-                <h3 class="text-sm font-bold text-slate-900 font-display">Daftar Utang Santri</h3>
-                <span id="rekapUtangAktifBadge" class="text-xs font-bold font-mono text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full">Total Utang: Rp 0</span>
+                <h3 class="text-sm font-bold text-slate-900 font-display">Daftar Pinjaman Kas</h3>
+                <span id="rekapUtangAktifBadge" class="text-xs font-bold font-mono text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full">Total: Rp 0</span>
               </div>
               <div class="flex-1 min-h-0 overflow-y-auto overflow-x-auto custom-scroll pr-1">
                 <table class="w-full text-left text-xs">
@@ -851,13 +850,13 @@
         <div id="view-santri" class="view-panel hidden space-y-6">
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
             <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-              <h3 id="formSantriTitle" class="text-sm font-bold text-slate-900 font-display">Daftarkan Santri Baru</h3>
+              <h3 id="formSantriTitle" class="text-sm font-bold text-slate-900 font-display">Form Data Santri</h3>
               <form id="formSantri" onsubmit="handleSaveSantri(event)" class="space-y-3.5">
                 <input type="hidden" id="editSantriId" value="" />
                 
                 <!-- Foto Profil Santri Input & Preview -->
                 <div>
-                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1.5">Foto Santri</label>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1.5">Pas Foto (3:4)</label>
                   <div class="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-50 border border-slate-200">
                     <div class="relative w-[54px] h-[72px] rounded-xl overflow-hidden border-2 border-emerald-600/30 bg-white shrink-0 shadow-2xs">
                       <img id="santriPhotoPreview" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80" alt="Preview Foto Santri" class="w-full h-full object-cover object-center" style="aspect-ratio: 3/4;" />
@@ -866,11 +865,11 @@
                       <input type="file" id="santriPhotoFile" accept="image/*" onchange="handleSantriPhotoUpload(event)" class="block w-full text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-emerald-50 file:text-emerald-800 hover:file:bg-emerald-100 cursor-pointer" />
                       <div class="flex items-center gap-2">
                         <button type="button" onclick="handlePilihAvatarAcak()" class="text-[10px] font-bold text-emerald-800 hover:underline cursor-pointer">
-                          Acak Avatar
+                          Avatar
                         </button>
                         <span class="text-slate-300">•</span>
                         <button type="button" id="btnHapusFotoSantri" onclick="handleResetFotoSantri()" class="text-[10px] font-bold text-slate-400 hover:text-rose-600 cursor-pointer">
-                          Reset Foto
+                          Reset
                         </button>
                       </div>
                     </div>
@@ -878,15 +877,15 @@
                 </div>
 
                 <div>
-                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Nama Lengkap Santri *</label>
-                  <input type="text" id="santriNama" required placeholder="Cth: Ahmad Ridwan" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Nama Lengkap *</label>
+                  <input type="text" id="santriNama" required placeholder="Nama lengkap" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Alamat Asal *</label>
-                  <input type="text" id="santriAlamat" required placeholder="Cth: Kec. Semanding, Kab. Tuban" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Alamat *</label>
+                  <input type="text" id="santriAlamat" required placeholder="Kota / Kabupaten" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Program Studi (Prodi) *</label>
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Program Studi *</label>
                   <select id="santriProdi" required class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 cursor-pointer">
                     <option value="Sistem Informasi">Sistem Informasi</option>
                     <option value="Pendidikan Teknologi Informasi">Pendidikan Teknologi Informasi</option>
@@ -895,18 +894,18 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Nomor WhatsApp Aktif *</label>
-                  <input type="text" id="santriWa" required placeholder="Cth: 081231256129" value="081231256129" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-mono" />
+                  <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">No. WhatsApp *</label>
+                  <input type="text" id="santriWa" required placeholder="08..." value="081231256129" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-mono" />
                 </div>
                 <div class="pt-1">
                   <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
                     <input type="checkbox" id="santriTanpaMakan" class="w-4 h-4 rounded accent-[#064e3b] cursor-pointer" />
-                    <span class="text-xs font-semibold text-slate-700">Tanpa Uang Makan <span class="text-[10px] font-normal text-slate-500">(Hanya bayar Kas WiFi, Listrik & Air)</span></span>
+                    <span class="text-xs font-semibold text-slate-700">Tanpa Uang Makan <span class="text-[10px] font-normal text-slate-500">(Hanya Kas)</span></span>
                   </label>
                 </div>
                 <div class="flex items-center gap-2 pt-1">
                   <button type="submit" class="flex-1 py-3 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer">
-                    <span id="btnSaveSantriText">Simpan Santri</span>
+                    <span id="btnSaveSantriText">Simpan</span>
                   </button>
                   <button type="button" id="btnCancelEditSantri" onclick="resetSantriForm()" class="hidden py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 cursor-pointer">
                     Batal
@@ -919,12 +918,12 @@
             <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col lg:h-0 lg:min-h-full max-h-[540px] lg:max-h-none overflow-hidden">
               <div class="flex items-center justify-between flex-wrap gap-2 shrink-0 pb-3">
                 <div class="flex items-center gap-2">
-                  <h3 class="text-sm font-bold text-slate-900 font-display">Daftar Santri Komplek Tuban</h3>
+                  <h3 class="text-sm font-bold text-slate-900 font-display">Daftar Santri</h3>
                   <span id="totalSantriBadge" class="text-xs font-bold font-mono text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full">0 Santri</span>
                 </div>
                 <button onclick="openSemuaKartuSantriModal()" class="px-3 py-1.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold flex items-center gap-1.5 cursor-pointer transition shadow-xs">
                   <i data-lucide="id-card" class="w-3.5 h-3.5"></i>
-                  <span>Cetak Semua Kartu Santri</span>
+                  <span>Cetak Semua</span>
                 </button>
               </div>
               <div class="flex-1 min-h-0 overflow-y-auto overflow-x-auto custom-scroll pr-1">
@@ -949,12 +948,11 @@
           <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h3 class="text-base font-bold text-slate-900 font-display">Galeri Kartu Identitas Santri (Komplek Tuban)</h3>
-                <p class="text-xs text-slate-500">Kartu resmi identitas santri mukim Komplek Tuban (Rumah Wakaf) PP. Mojosari Loceret Nganjuk.</p>
+                <h3 class="text-base font-bold text-slate-900 font-display">Kartu Identitas Santri</h3>
               </div>
               <button onclick="openSemuaKartuSantriModal()" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition">
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                <span>Cetak Kolektif (Semua Kartu)</span>
+                <span>Cetak Kolektif</span>
               </button>
             </div>
             <div id="santriCardsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1002,7 +1000,7 @@
         <div class="flex items-center gap-2.5">
           <i data-lucide="wifi" class="w-5 h-5 text-emerald-300"></i>
           <div>
-            <h3 class="text-sm font-bold font-display">Setoran WiFi Bulanan ke Pemilik WiFi</h3>
+            <h3 class="text-sm font-bold font-display">Setoran WiFi Induk</h3>
             <p id="modalWifiSubtitle" class="text-[11px] text-emerald-200"></p>
           </div>
         </div>
@@ -1012,52 +1010,44 @@
       </div>
 
       <div class="p-4 sm:p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scroll text-xs">
-        <div class="p-3.5 rounded-xl bg-sky-50 border border-sky-100 text-sky-900 space-y-1">
-          <p class="font-bold flex items-center gap-1.5">
-            <i data-lucide="shield-check" class="w-4 h-4 text-sky-700"></i>
-            Tugas Bendahara (Upload Bukti Chat ke Pemilik WiFi):
-          </p>
-          <p>Bendahara memasukkan harga/nominal bayar manual sesuai riil tagihan pemilik WiFi, lalu unggah foto bukti chat/struk transfer.</p>
-        </div>
-
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1">Tanggal Bayar</label>
             <input type="date" id="wifiProofDateInput" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs font-medium" />
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Nominal Manual (Rp) *</label>
+            <label class="block font-bold text-slate-700 mb-1">Nominal (Rp)</label>
             <input type="number" id="wifiProofNominalInput" step="1000" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs font-mono font-bold" />
           </div>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Upload Foto Bukti Chat / Transfer</label>
+          <label class="block font-bold text-slate-700 mb-1">Bukti Transfer / Chat</label>
           <input type="file" id="wifiProofFileInput" accept="image/*" onchange="handleWifiFilePreview(event)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-900 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded-xl p-1.5" />
           <div class="mt-2 flex justify-end">
             <button type="button" onclick="useSampleWifiChatProof()" class="text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer">
-              + Pakai Contoh Screenshot Chat WA Pemilik WiFi
+              + Gunakan Contoh Bukti
             </button>
           </div>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Catatan Bendahara</label>
-          <input type="text" id="wifiProofNoteInput" placeholder="Cth: Sudah TF ke Pak H. Mahmud pemilik WiFi" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs" />
+          <label class="block font-bold text-slate-700 mb-1">Catatan</label>
+          <input type="text" id="wifiProofNoteInput" placeholder="Cth: Transfer ke pemilik WiFi" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs" />
         </div>
 
         <!-- Preview Box -->
         <div class="border border-dashed border-slate-200 rounded-2xl p-3 bg-slate-50 text-center">
           <img id="wifiProofPreviewImg" src="" alt="Preview Bukti WiFi" class="max-h-52 mx-auto rounded-xl shadow-xs hidden object-contain border border-slate-200 bg-white" />
           <div id="wifiProofEmptyState" class="py-6 text-xs text-slate-400">
-            Belum ada foto bukti chat/transfer diunggah
+            Belum ada foto bukti
           </div>
         </div>
 
         <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100">
           <button type="button" onclick="closeWifiModal(); openNotaWifiIndukModal(currentWifiModalCtx.monthKey);" class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold cursor-pointer flex items-center justify-center gap-1.5">
             <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-            <span>Lihat Laporan / Nota WiFi</span>
+            <span>Nota WiFi</span>
           </button>
           <div class="flex items-center gap-2">
             <button type="button" onclick="saveWifiProofOnly()" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold cursor-pointer text-center">
@@ -1078,7 +1068,7 @@
       <div class="px-5 sm:px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print">
         <div class="flex items-center gap-2">
           <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i>
-          <h3 id="modalNotaHeaderTitle" class="text-sm font-bold font-display">Nota Resmi Komplek Tuban</h3>
+          <h3 id="modalNotaHeaderTitle" class="text-sm font-bold font-display">Nota Pembayaran</h3>
         </div>
         <button onclick="closeNotaModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -1114,9 +1104,9 @@
         <!-- WhatsApp Text Preview (Khusus Bendahara) -->
         <div id="notaAdminWaSection" class="no-print space-y-1.5">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-slate-700">Format Pesan WhatsApp:</span>
+            <span class="text-[11px] font-bold text-slate-700">Pesan WhatsApp:</span>
             <button onclick="copyWaText()" class="text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer">
-              Salin Teks
+              Salin
             </button>
           </div>
           <textarea id="notaWaTextPreview" rows="5" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 focus:outline-none"></textarea>
@@ -1126,13 +1116,13 @@
           <button onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold cursor-pointer text-center">
             Cetak / PDF
           </button>
-          <a id="btnSendWaGroup" href="https://wa.me/?text=" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer" title="Kirim ke Chat Grup WhatsApp Komplek Tuban">
+          <a id="btnSendWaGroup" href="https://wa.me/?text=" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
             <i data-lucide="messages-square" class="w-3.5 h-3.5"></i>
-            <span>Share ke Grup WA</span>
+            <span>Kirim Grup</span>
           </a>
-          <a id="btnSendWaDirect" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer" title="Kirim langsung ke kontak pribadi santri">
+          <a id="btnSendWaDirect" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
             <i data-lucide="send" class="w-3.5 h-3.5"></i>
-            <span>Kirim Japri Santri</span>
+            <span>Kirim Santri</span>
           </a>
         </div>
       </div>
@@ -1146,8 +1136,8 @@
         <div class="flex items-center gap-2.5">
           <i data-lucide="messages-square" class="w-5 h-5 text-emerald-300"></i>
           <div>
-            <h3 class="text-sm font-bold font-display">Siaran Rekap Kas & Tunggakan ke Grup WhatsApp</h3>
-            <p id="modalRekapGrupSubtitle" class="text-[11px] text-emerald-200">Grup Santri Komplek Tuban (Rumah Wakaf)</p>
+            <h3 class="text-sm font-bold font-display">Siaran Rekap Grup WA</h3>
+            <p id="modalRekapGrupSubtitle" class="text-[11px] text-emerald-200">Komplek Tuban</p>
           </div>
         </div>
         <button onclick="closeRekapGrupModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
@@ -1157,19 +1147,19 @@
 
       <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scroll text-xs">
         <div class="space-y-2">
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Pilih Mode Privasi Laporan Grup WhatsApp</label>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Mode Laporan</label>
           <div class="bg-[#f1f5f9] p-1 rounded-xl grid grid-cols-2 gap-1 text-xs font-semibold">
             <button type="button" id="btnRekapModeSantun" onclick="setRekapGrupMode('santun')" class="py-2 px-3 rounded-lg bg-white text-slate-900 font-bold shadow-xs cursor-pointer transition flex items-center justify-center gap-1.5">
               <i data-lucide="shield-check" class="w-3.5 h-3.5 text-[#064e3b]"></i>
-              <span>Format Santun (Privasi)</span>
+              <span>Ringkas (Privasi)</span>
             </button>
             <button type="button" id="btnRekapModeLengkap" onclick="setRekapGrupMode('lengkap')" class="py-2 px-3 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5">
               <i data-lucide="list-checks" class="w-3.5 h-3.5"></i>
-              <span>Format Lengkap (17 Nama)</span>
+              <span>Lengkap (17 Santri)</span>
             </button>
           </div>
           <p id="rekapModeHintText" class="text-[11px] text-emerald-800 bg-emerald-50/80 border border-emerald-100 rounded-xl px-3 py-2">
-            <strong>Format Santun (Direkomendasikan):</strong> Menampilkan ringkasan kas, laporan WiFi induk, dan daftar santri yang <strong>Sudah Lunas</strong>. Rincian nama & nominal tunggakan/utang disembunyikan agar tidak mempermalukan santri di grup.
+            Menampilkan ringkasan kas, WiFi induk, dan santri yang sudah lunas.
           </p>
         </div>
 
@@ -1178,27 +1168,26 @@
           <div class="flex items-center justify-between">
             <label class="font-bold text-slate-800 flex items-center gap-1.5">
               <i data-lucide="link" class="w-3.5 h-3.5 text-emerald-800"></i>
-              <span>Link Tautan Grup WhatsApp Komplek:</span>
+              <span>Link Grup WA:</span>
             </label>
             <button type="button" onclick="ubahLinkGrupWa()" class="text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer">
-              Ganti Link
+              Ubah
             </button>
           </div>
           <div class="flex items-center gap-2">
             <input type="text" id="inputLinkGrupWa" readonly value="https://chat.whatsapp.com/LgVFDhgRgHmDTuC3tCly7c" placeholder="https://chat.whatsapp.com/..." class="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-700 font-mono focus:outline-none" />
             <a id="btnBukaLinkGrupLangsung" href="https://chat.whatsapp.com/LgVFDhgRgHmDTuC3tCly7c" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs shrink-0 flex items-center gap-1">
-              <span>Buka Grup</span>
+              <span>Buka</span>
               <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
             </a>
           </div>
-          <p class="text-[10px] text-slate-400">💡 Cara dapat link grup: Di WhatsApp, buka <strong>Info Grup &gt; Undang via tautan / Invite via link &gt; Salin tautan</strong>.</p>
         </div>
 
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="font-bold text-slate-700">Teks Siaran Grup WhatsApp (Siap Dikirim):</label>
+            <label class="font-bold text-slate-700">Pesan Siaran:</label>
             <button onclick="copyGroupWaText()" class="text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer">
-              Salin Teks Grup
+              Salin Teks
             </button>
           </div>
           <textarea id="rekapGrupWaText" rows="12" class="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-800"></textarea>
@@ -1210,7 +1199,7 @@
           </button>
           <a id="btnSendGroupBroadcast" href="https://wa.me/?text=" target="_blank" rel="noopener noreferrer" class="px-5 py-2.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold flex items-center gap-2 shadow-sm cursor-pointer">
             <i data-lucide="messages-square" class="w-4 h-4"></i>
-            <span>Buka WhatsApp & Kirim ke Grup</span>
+            <span>Kirim ke Grup WA</span>
           </a>
         </div>
       </div>
@@ -1228,8 +1217,8 @@
             <img src="logo-mojosari.png?v=2" alt="PayMojosari" class="w-full h-full object-contain" />
           </div>
           <div>
-            <h3 class="text-lg font-extrabold font-display text-slate-900 tracking-tight leading-tight">Masuk ke PayMojosari</h3>
-            <p class="text-[11px] font-medium text-slate-400 mt-0.5">Komplek Tuban (Rumah Wakaf) • PP. Mojosari</p>
+            <h3 class="text-lg font-extrabold font-display text-slate-900 tracking-tight leading-tight">Masuk Akun</h3>
+            <p class="text-[11px] font-medium text-slate-400 mt-0.5">PayMojosari • Komplek Tuban</p>
           </div>
         </div>
         <button type="button" onclick="closeAdminLoginModal()" class="w-8 h-8 rounded-full bg-[#f8fafc] hover:bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-400 hover:text-slate-800 transition cursor-pointer">
@@ -1237,90 +1226,88 @@
         </button>
       </div>
 
-      <!-- Segmented Filter Tabs (Exact FinPilot "Bank Account | Credit Card" Pill Style) -->
+      <!-- Segmented Filter Tabs -->
       <div class="bg-[#f1f5f9] p-1 rounded-xl grid grid-cols-2 gap-1 text-xs font-semibold text-slate-500 text-center">
         <button type="button" onclick="switchLoginModalTab('santri')" id="tabBtnLoginSantri" class="py-2.5 rounded-lg bg-white text-slate-900 font-bold shadow-xs cursor-pointer transition flex items-center justify-center gap-1.5">
           <i data-lucide="user-check" class="w-3.5 h-3.5 text-[#064e3b]"></i>
-          <span>Akun Santri</span>
+          <span>Santri</span>
         </button>
         <button type="button" onclick="switchLoginModalTab('admin')" id="tabBtnLoginAdmin" class="py-2.5 rounded-lg hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1.5">
           <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-          <span>Bendahara (Admin)</span>
+          <span>Bendahara</span>
         </button>
       </div>
 
-      <!-- FORM 1: LOGIN SANTRI (LIHAT DATA PRIBADI SENDIRI) -->
+      <!-- FORM 1: LOGIN SANTRI -->
       <form id="formLoginSantri" onsubmit="handleSantriLoginSubmit(event)" class="space-y-4">
         <div class="space-y-2">
           <div class="flex items-center justify-between">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Pilih Profil Santri</label>
-            <span class="text-[10px] text-slate-400 font-medium">Geser & klik foto Anda</span>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Pilih Profil</label>
+            <span class="text-[10px] text-slate-400 font-medium">Klik foto</span>
           </div>
-          <!-- FinPilot Quick Transfer Style Avatar Carousel -->
           <div id="loginSantriAvatarList" class="flex items-center gap-3.5 overflow-x-auto py-1.5 px-1 custom-scroll touch-scroll">
           </div>
         </div>
 
         <div class="space-y-1.5">
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nama Lengkap Santri</label>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nama Santri</label>
           <select id="loginSantriSelect" onchange="selectLoginSantriAvatar(this.value)" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#064e3b] cursor-pointer">
           </select>
         </div>
 
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Kode Akses / Sandi Santri</label>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Sandi / PIN</label>
             <span id="loginSantriWaHint" class="text-[10px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md"></span>
           </div>
-          <input type="password" id="loginSantriPinInput" required placeholder="Ketik 4 angka terakhir WA / Sandi Anda" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#064e3b]/15 focus:border-[#064e3b]" />
-          <div class="flex items-center justify-between pt-0.5">
-            <span class="text-[10px] text-slate-400">🔒 Privasi data pribadi terjaga</span>
+          <input type="password" id="loginSantriPinInput" required placeholder="4 digit terakhir WA / Sandi" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#064e3b]/15 focus:border-[#064e3b]" />
+          <div class="flex items-center justify-end pt-0.5">
             <button type="button" onclick="openResetSantriPasswordForm()" class="text-[11px] font-bold text-[#064e3b] hover:underline cursor-pointer flex items-center gap-1">
               <i data-lucide="key-round" class="w-3 h-3"></i>
-              <span>Ganti / Lupa Sandi?</span>
+              <span>Lupa / Ganti Sandi?</span>
             </button>
           </div>
         </div>
 
         <div id="santriLoginError" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-600 font-semibold text-[11px]">
-          Kode akses / Sandi atau 4 digit WA tidak cocok dengan santri yang dipilih.
+          Sandi atau PIN tidak sesuai.
         </div>
 
         <button type="submit" class="w-full py-3.5 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
-          <span>Masuk ke Akun Santri Saya</span>
+          <span>Masuk</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
       </form>
 
-      <!-- FORM 1B: GANTI / LUPA SANDI SANTRI (VERIFIKASI NO. WA) -->
+      <!-- FORM 1B: GANTI / LUPA SANDI SANTRI -->
       <form id="formResetSantriPassword" onsubmit="handleResetSantriPasswordSubmit(event)" class="hidden space-y-3.5">
         <div class="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center justify-between gap-2">
           <div>
-            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Verifikasi WhatsApp Santri</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Ganti Sandi Santri</span>
             <span id="resetSantriTargetName" class="text-xs font-extrabold text-slate-900 block mt-0.5">-</span>
           </div>
           <span id="resetSantriWaMasked" class="text-[10px] font-mono font-bold bg-white text-emerald-900 px-2.5 py-1 rounded-lg border border-emerald-200"></span>
         </div>
 
         <div class="space-y-1">
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">1. Verifikasi Nomor WhatsApp Lengkap</label>
-          <input type="tel" id="resetSantriWaInput" required placeholder="Ketik nomor WA lengkap Anda (08...)" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nomor WhatsApp</label>
+          <input type="tel" id="resetSantriWaInput" required placeholder="08..." class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div class="space-y-1">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">2. Sandi / PIN Baru</label>
-            <input type="password" id="resetSantriNewPinInput" required minlength="4" placeholder="Minimal 4 karakter" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Sandi Baru</label>
+            <input type="password" id="resetSantriNewPinInput" required minlength="4" placeholder="Min. 4 karakter" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
           </div>
           <div class="space-y-1">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">3. Ulangi Sandi Baru</label>
-            <input type="password" id="resetSantriConfirmPinInput" required minlength="4" placeholder="Ketik ulang sandi" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Ulangi Sandi</label>
+            <input type="password" id="resetSantriConfirmPinInput" required minlength="4" placeholder="Ulangi sandi" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
           </div>
         </div>
 
         <label class="flex items-center gap-2 text-[11px] text-slate-600 cursor-pointer select-none">
           <input type="checkbox" id="resetSantriSendWaCheck" class="rounded border-slate-300 text-[#064e3b] focus:ring-[#064e3b]" />
-          <span>Kirim pengingat sandi baru ke WhatsApp saya</span>
+          <span>Kirim salinan sandi ke WA</span>
         </label>
 
         <div id="resetSantriError" class="hidden p-2.5 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-600 font-semibold text-[11px]"></div>
@@ -1331,12 +1318,12 @@
           </button>
           <button type="submit" class="flex-1 py-3 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
             <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-            <span>Verifikasi WA & Simpan Sandi</span>
+            <span>Simpan Sandi</span>
           </button>
         </div>
       </form>
 
-      <!-- FORM 2: LOGIN BENDAHARA / ADMIN (TANPA NAMA, PAKAI NO. WA & PASSWORD) -->
+      <!-- FORM 2: LOGIN BENDAHARA / ADMIN -->
       <form id="formLoginAdmin" onsubmit="handleAdminLoginSubmit(event)" class="hidden space-y-4">
         <div class="p-3.5 rounded-2xl bg-[#f8fafc] border border-slate-200/70 flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -1344,28 +1331,28 @@
               <i data-lucide="shield-check" class="w-5 h-5"></i>
             </div>
             <div>
-              <span class="text-xs font-bold text-slate-900 block leading-tight">Bendahara Komplek Tuban</span>
-              <span class="text-[11px] text-slate-400">Akses Penuh Pembayaran & Kas</span>
+              <span class="text-xs font-bold text-slate-900 block leading-tight">Bendahara Komplek</span>
+              <span class="text-[11px] text-slate-400">Akses Admin</span>
             </div>
           </div>
           <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/80">Admin</span>
         </div>
 
         <div class="space-y-1.5">
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nomor WhatsApp Bendahara</label>
-          <input type="tel" id="adminWaInput" required placeholder="Masukkan Nomor WA Bendahara (08...)" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#064e3b]/15 focus:border-[#064e3b]" />
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nomor WhatsApp</label>
+          <input type="tel" id="adminWaInput" required placeholder="08..." class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#064e3b]/15 focus:border-[#064e3b]" />
         </div>
 
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Sandi / Password Bendahara</label>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Sandi</label>
             <button type="button" onclick="openResetAdminPasswordForm()" class="text-[11px] font-bold text-[#064e3b] hover:underline cursor-pointer flex items-center gap-1">
               <i data-lucide="key-round" class="w-3 h-3"></i>
-              <span>Ganti / Lupa Sandi?</span>
+              <span>Lupa / Ganti Sandi?</span>
             </button>
           </div>
           <div class="relative">
-            <input type="password" id="adminPasswordInput" required placeholder="Masukkan Sandi Bendahara" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl pl-4 pr-10 py-2.5 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#064e3b]/15 focus:border-[#064e3b]" />
+            <input type="password" id="adminPasswordInput" required placeholder="Sandi Bendahara" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl pl-4 pr-10 py-2.5 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#064e3b]/15 focus:border-[#064e3b]" />
             <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer">
               <i data-lucide="eye" id="adminPasswordEyeIcon" class="w-4 h-4"></i>
             </button>
@@ -1373,44 +1360,44 @@
         </div>
 
         <div id="adminLoginError" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-600 font-semibold text-[11px]">
-          Nomor WhatsApp atau Sandi Bendahara tidak sesuai. Silakan periksa kembali!
+          Nomor WhatsApp atau sandi tidak sesuai.
         </div>
 
         <button type="submit" class="w-full py-3.5 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
           <i data-lucide="unlock" class="w-4 h-4"></i>
-          <span>Masuk Dashboard Bendahara</span>
+          <span>Masuk Bendahara</span>
         </button>
       </form>
 
-      <!-- FORM 2B: GANTI / LUPA SANDI BENDAHARA (VERIFIKASI NO. WA) -->
+      <!-- FORM 2B: GANTI / LUPA SANDI BENDAHARA -->
       <form id="formResetAdminPassword" onsubmit="handleResetAdminPasswordSubmit(event)" class="hidden space-y-3.5">
         <div class="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center justify-between gap-2">
           <div>
-            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Pemulihan & Ganti Sandi Admin</span>
-            <span class="text-xs font-extrabold text-slate-900 block mt-0.5">Verifikasi No. WhatsApp Bendahara</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Ganti Sandi Admin</span>
+            <span class="text-xs font-extrabold text-slate-900 block mt-0.5">Verifikasi WhatsApp</span>
           </div>
-          <span class="text-[10px] font-bold bg-white text-emerald-900 px-2.5 py-1 rounded-lg border border-emerald-200">WA Terdaftar</span>
+          <span class="text-[10px] font-bold bg-white text-emerald-900 px-2.5 py-1 rounded-lg border border-emerald-200">Admin</span>
         </div>
 
         <div class="space-y-1">
           <div class="flex items-center justify-between">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">1. Nomor WhatsApp Resmi Bendahara</label>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nomor WhatsApp</label>
             <button type="button" onclick="sendAdminOtpViaWa()" class="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer flex items-center gap-1">
               <i data-lucide="message-circle" class="w-3 h-3"></i>
-              <span>Kirim Kode OTP ke WA</span>
+              <span>Kirim OTP</span>
             </button>
           </div>
-          <input type="tel" id="resetAdminWaInput" required placeholder="Masukkan No. WA Bendahara (08...)" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+          <input type="tel" id="resetAdminWaInput" required placeholder="08..." class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
         </div>
 
         <div id="resetAdminOtpContainer" class="hidden space-y-1 p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80">
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-amber-800">Kode OTP WhatsApp (4 Digit)</label>
-          <input type="text" id="resetAdminOtpInput" maxlength="6" placeholder="Ketik 4 digit kode OTP dari WA" class="w-full bg-white border border-amber-300 rounded-lg px-3 py-2 text-xs font-extrabold text-slate-900 tracking-widest focus:outline-none focus:border-[#064e3b]" />
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-amber-800">Kode OTP (4 Digit)</label>
+          <input type="text" id="resetAdminOtpInput" maxlength="6" placeholder="4 digit OTP" class="w-full bg-white border border-amber-300 rounded-lg px-3 py-2 text-xs font-extrabold text-slate-900 tracking-widest focus:outline-none focus:border-[#064e3b]" />
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div class="space-y-1">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">2. Sandi Baru</label>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Sandi Baru</label>
             <div class="relative">
               <input type="password" id="resetAdminNewPassInput" required minlength="4" placeholder="Sandi baru" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl pl-3.5 pr-9 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
               <button type="button" onclick="toggleResetAdminPassVisibility()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer">
@@ -1419,14 +1406,14 @@
             </div>
           </div>
           <div class="space-y-1">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">3. Ulangi Sandi Baru</label>
-            <input type="password" id="resetAdminConfirmPassInput" required minlength="4" placeholder="Konfirmasi sandi" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Ulangi Sandi</label>
+            <input type="password" id="resetAdminConfirmPassInput" required minlength="4" placeholder="Ulangi sandi" class="w-full bg-[#f8fafc] border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#064e3b]" />
           </div>
         </div>
 
         <label class="flex items-center gap-2 text-[11px] text-slate-600 cursor-pointer select-none">
           <input type="checkbox" id="resetAdminSendWaCheck" class="rounded border-slate-300 text-[#064e3b] focus:ring-[#064e3b]" />
-          <span>Kirim catatan sandi baru ke WhatsApp Bendahara</span>
+          <span>Kirim salinan sandi ke WA</span>
         </label>
 
         <div id="resetAdminError" class="hidden p-2.5 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-600 font-semibold text-[11px]"></div>
@@ -1437,16 +1424,16 @@
           </button>
           <button type="submit" class="flex-1 py-3 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold tracking-wide transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
             <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-            <span>Verifikasi WA & Simpan Sandi</span>
+            <span>Simpan Sandi</span>
           </button>
         </div>
       </form>
 
       <!-- Footer: Guest Mode Option -->
       <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-        <span>Bukan pengurus / santri?</span>
+        <span>Akses publik</span>
         <button type="button" onclick="continueAsGuest()" class="font-bold text-slate-600 hover:text-[#064e3b] cursor-pointer transition">
-          Lihat Info Umum Saja (Tamu)
+          Lanjut sebagai Tamu
         </button>
       </div>
 
@@ -1456,6 +1443,6 @@
   <!-- Toast Notification -->
   <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-2 no-print"></div>
 
-  <script src="app.js?v=20261101m"></script>
+  <script src="app.js?v=20261101n"></script>
 </body>
 </html>
