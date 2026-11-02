@@ -1256,37 +1256,67 @@ function updateRoleUI() {
     else kasUmumNotice.classList.remove('hidden');
   }
 
-  // 6. Form Santri: Khusus Bendahara (Santri tidak bisa edit prodi & profil)
+  // 6. Form Santri: Santri BISA mengedit foto profil sendiri, namun data identitas/prodi dikunci khusus Bendahara
   const formSantriEl = document.getElementById('formSantri');
   if (formSantriEl) {
     const cardSantriEl = formSantriEl.closest('div.bg-white');
-    if (cardSantriEl) {
-      if (state.isAdmin) {
-        cardSantriEl.classList.remove('opacity-60');
-      } else {
-        cardSantriEl.classList.add('opacity-60');
-      }
-    }
-    formSantriEl.querySelectorAll('input, select, textarea, button').forEach(inp => {
-      inp.disabled = !state.isAdmin;
-    });
-
-    const santriNotice = document.getElementById('santriAdminNotice');
-    if (santriNotice) {
-      if (state.isAdmin) santriNotice.classList.add('hidden');
-      else santriNotice.classList.remove('hidden');
-    }
-
     const titleSantri = document.getElementById('formSantriTitle');
     const btnSaveText = document.getElementById('btnSaveSantriText');
     const cancelBtn = document.getElementById('btnCancelEditSantri');
+    const santriNotice = document.getElementById('santriAdminNotice');
 
     if (state.isAdmin) {
+      if (cardSantriEl) cardSantriEl.classList.remove('opacity-60');
+      formSantriEl.querySelectorAll('input, select, textarea, button').forEach(inp => {
+        inp.disabled = false;
+      });
+      if (santriNotice) {
+        santriNotice.classList.add('hidden');
+        santriNotice.innerHTML = '';
+      }
       const editIdInp = document.getElementById('editSantriId');
       if (titleSantri) titleSantri.textContent = editIdInp && editIdInp.value ? 'Edit Data Santri' : 'Tambah Santri';
       if (btnSaveText) btnSaveText.textContent = editIdInp && editIdInp.value ? 'Simpan Perubahan' : 'Simpan Santri';
       if (cancelBtn && editIdInp && editIdInp.value) cancelBtn.classList.remove('hidden');
+    } else if (state.userRole === 'santri' && loggedSantri) {
+      if (cardSantriEl) cardSantriEl.classList.remove('opacity-60');
+      // Kunci prodi, nama, alamat, no WA agar tidak dapat diubah oleh santri
+      formSantriEl.querySelectorAll('input, select, textarea').forEach(inp => {
+        if (inp.id === 'santriPhotoFile') {
+          inp.disabled = false;
+        } else {
+          inp.disabled = true;
+        }
+      });
+      // Tombol submit, upload, avatar, dan reset foto tetap aktif untuk santri
+      formSantriEl.querySelectorAll('button').forEach(btn => {
+        btn.disabled = false;
+      });
+
+      if (santriNotice) {
+        santriNotice.classList.remove('hidden');
+        santriNotice.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs leading-relaxed';
+        santriNotice.innerHTML = '<strong>📸 Ganti Pas Foto Profil:</strong> Anda dapat mengunggah atau mengganti pas foto (3:4) profil akun Anda sendiri di bawah. Data Nama, Alamat, dan Program Studi santri hanya dapat diubah oleh Bendahara Komplek.';
+      }
+      if (titleSantri) titleSantri.textContent = 'Ganti Foto Profil — ' + loggedSantri.nama;
+      if (btnSaveText) btnSaveText.textContent = 'Simpan Foto Profil';
+      if (cancelBtn) cancelBtn.classList.add('hidden');
+
+      const editIdInp = document.getElementById('editSantriId');
+      if (editIdInp && editIdInp.value !== loggedSantri.id) {
+        populateSantriFormForSelf(loggedSantri);
+      }
     } else {
+      // Tamu / Belum Login
+      if (cardSantriEl) cardSantriEl.classList.add('opacity-60');
+      formSantriEl.querySelectorAll('input, select, textarea, button').forEach(inp => {
+        inp.disabled = true;
+      });
+      if (santriNotice) {
+        santriNotice.classList.remove('hidden');
+        santriNotice.className = 'p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs leading-relaxed';
+        santriNotice.innerHTML = '🔒 <strong>Akses Khusus Bendahara:</strong> Data profil dan Program Studi santri hanya dapat diubah oleh Bendahara Komplek.';
+      }
       if (titleSantri) titleSantri.textContent = 'Data Profil Santri';
       if (btnSaveText) btnSaveText.textContent = 'Khusus Bendahara';
       if (cancelBtn) cancelBtn.classList.add('hidden');
@@ -2369,8 +2399,11 @@ function renderActiveKartuSantriWidget() {
             Semua
           </button>
         ` : `
+          <button type="button" onclick="openGantiFotoSantriMandiri('${s.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer transition">
+            Ganti Foto
+          </button>
           <button type="button" onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold cursor-pointer transition">
-            Lihat Kartu
+            Lihat KTA
           </button>
         `}
       </div>
@@ -3600,11 +3633,51 @@ function handleResetFotoSantri() {
 
 async function handleSaveSantri(event) {
   event.preventDefault();
+
+  if (state.userRole === 'guest') {
+    openAdminLoginModal('santri');
+    return;
+  }
+
+  // ALUR SANTRI: Santri BISA memperbarui pas foto profil miliknya sendiri
+  if (!state.isAdmin && state.userRole === 'santri' && state.loggedSantriId) {
+    const sIdx = state.santri.findIndex(s => s.id === state.loggedSantriId);
+    if (sIdx === -1) return;
+
+    const s = state.santri[sIdx];
+    const newAvatar = currentSantriPhotoUrl || '';
+    s.avatar = newAvatar;
+    state.santri[sIdx] = { ...s, avatar: newAvatar };
+
+    saveState(true);
+
+    if (window.location.protocol !== 'file:') {
+      try {
+        await fetch('api.php?action=update_santri_photo', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            santri_id: s.id,
+            avatar: newAvatar
+          })
+        });
+      } catch (err) {
+        console.warn('Gagal sinkronisasi foto santri ke server:', err);
+      }
+    }
+
+    renderAll();
+    showToast('✓ Foto profil Anda berhasil diperbarui & disimpan!', 'emerald');
+    return;
+  }
+
   if (!state.isAdmin) {
     showToast('Hanya Bendahara yang berwenang menambah atau mengedit profil & prodi santri.', true);
     return;
   }
 
+  // ALUR BENDAHARA: Tambah atau edit data santri lengkap (nama, alamat, prodi, wa, tanpaMakan, avatar)
   const editId = document.getElementById('editSantriId').value;
   const nama = document.getElementById('santriNama').value.trim();
   const alamat = document.getElementById('santriAlamat').value.trim();
@@ -3670,34 +3743,44 @@ function populateSantriFormForSelf(s) {
   const chkTanpaMakan = document.getElementById('santriTanpaMakan');
 
   if (idEl) idEl.value = s.id;
-  if (namaEl) namaEl.value = s.nama;
-  if (alamatEl) alamatEl.value = s.alamat;
-  if (prodiEl) prodiEl.value = s.prodi;
-  if (waEl) waEl.value = s.wa;
-  if (chkTanpaMakan) chkTanpaMakan.checked = isSantriTanpaMakan(s);
+  if (namaEl) { namaEl.value = s.nama; namaEl.disabled = true; }
+  if (alamatEl) { alamatEl.value = s.alamat; alamatEl.disabled = true; }
+  if (prodiEl) { prodiEl.value = s.prodi; prodiEl.disabled = true; }
+  if (waEl) { waEl.value = s.wa; waEl.disabled = true; }
+  if (chkTanpaMakan) { chkTanpaMakan.checked = isSantriTanpaMakan(s); chkTanpaMakan.disabled = true; }
 
   currentSantriPhotoUrl = (s.avatar && s.avatar.startsWith('data:image/')) ? s.avatar : '';
   const preview = document.getElementById('santriPhotoPreview');
   if (preview) preview.src = getSantriAvatar(s, idx >= 0 ? idx : 0);
   const fileInput = document.getElementById('santriPhotoFile');
-  if (fileInput) fileInput.value = '';
+  if (fileInput) { fileInput.value = ''; fileInput.disabled = false; }
 
   const titleEl = document.getElementById('formSantriTitle');
   const btnTextEl = document.getElementById('btnSaveSantriText');
   const cancelBtn = document.getElementById('btnCancelEditSantri');
-  if (titleEl) titleEl.textContent = 'Profil & Foto';
-  if (btnTextEl) btnTextEl.textContent = 'Simpan Profil';
+  if (titleEl) titleEl.textContent = 'Ganti Foto Profil — ' + s.nama;
+  if (btnTextEl) btnTextEl.textContent = 'Simpan Foto Profil';
   if (cancelBtn) cancelBtn.classList.add('hidden');
 }
 
 function openGantiFotoSantriMandiri(id) {
-  if (!state.isAdmin) {
-    showToast('Hanya Bendahara yang berwenang mengubah profil atau foto santri.', true);
+  const isSelf = (state.userRole === 'santri' && id === state.loggedSantriId);
+  if (!state.isAdmin && !isSelf) {
+    openAdminLoginModal('santri');
     return;
   }
   switchTab('santri');
   setTimeout(() => {
-    editSantri(id);
+    if (state.isAdmin) {
+      editSantri(id);
+    } else {
+      const s = state.santri.find(x => x.id === id);
+      if (s) {
+        populateSantriFormForSelf(s);
+        const formEl = document.getElementById('formSantri');
+        if (formEl) formEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
   }, 80);
 }
 
@@ -3800,6 +3883,7 @@ function renderSantriTab() {
       `;
     } else if (isMe) {
       actionHtml = `
+        <button onclick="openGantiFotoSantriMandiri('${s.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold mr-1 cursor-pointer transition">Ganti Foto</button>
         <button onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer shadow-2xs">Kartu Saya</button>
       `;
     } else if (state.userRole === 'santri') {

@@ -479,7 +479,10 @@ if ($action === 'update_santri_photo') {
     $wa = isset($input['wa']) ? trim($input['wa']) : '';
 
     $isAdmin = is_admin_session();
-    $isSelf = (isset($_SESSION['role']) && $_SESSION['role'] === 'santri' && ($_SESSION['santri_id'] ?? '') === $santriId);
+    $isSelf = (
+        (isset($_SESSION['role']) && $_SESSION['role'] === 'santri' && ($_SESSION['santri_id'] ?? '') === $santriId)
+        || (isset($_SESSION['santri_id']) && $_SESSION['santri_id'] === $santriId)
+    );
 
     if (!$isAdmin && !$isSelf) {
         http_response_code(403);
@@ -487,9 +490,9 @@ if ($action === 'update_santri_photo') {
         exit;
     }
 
-    if (!$santriId || !$avatar) {
+    if (!$santriId) {
         http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Data foto santri tidak lengkap.']);
+        echo json_encode(['status' => 'error', 'message' => 'Data santri tidak ditemukan.']);
         exit;
     }
 
@@ -508,7 +511,7 @@ if ($action === 'update_santri_photo') {
                 ':id' => $santriId
             ]);
         } else {
-            // Santri mandiri hanya boleh memperbarui avatar foto, tanpa mengubah data prodi/profil
+            // Santri mandiri memperbarui avatar foto profil miliknya sendiri
             $stmtUpd = $pdo->prepare("UPDATE santri SET avatar = :avatar WHERE id = :id");
             $stmtUpd->execute([':avatar' => $avatar, ':id' => $santriId]);
         }
