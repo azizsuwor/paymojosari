@@ -108,6 +108,27 @@ function verify_password_secure($plain, $hashedOrPlain) {
     return false;
 }
 
+// Daftar Nomor WhatsApp Pengurus Bendahara Resmi Komplek Tuban (Aziz s1, Taufik s2, Manshur s14)
+function get_valid_admin_was($pdo, $bendahara_wa_resmi) {
+    $list = [
+        normalize_wa_number($bendahara_wa_resmi),
+        normalize_wa_number('081231256129'), // Muhammad Abdul Aziz (s1)
+        normalize_wa_number('0891209269'),   // Rahmat Taufik (s2)
+        normalize_wa_number('085335219903')  // Manshur Siroj (s14)
+    ];
+    try {
+        $stmt = $pdo->query("SELECT wa FROM santri WHERE id IN ('s1', 's2', 's14')");
+        if ($stmt) {
+            while ($r = $stmt->fetch()) {
+                if (!empty($r['wa'])) {
+                    $list[] = normalize_wa_number($r['wa']);
+                }
+            }
+        }
+    } catch (Exception $e) {}
+    return array_values(array_unique(array_filter($list)));
+}
+
 // Ambil sandi resmi Admin / Bendahara dari database pengaturan_sistem
 $bendahara_wa_resmi = '081231256129';
 $storedAdminHash = '';
@@ -200,11 +221,7 @@ if ($action === 'verify_admin' || $action === 'login_admin') {
     $pass = isset($input['password']) ? trim($input['password']) : '';
     $waInput = isset($input['wa']) ? normalize_wa_number($input['wa']) : '';
 
-    $validAdminWas = [
-        normalize_wa_number($bendahara_wa_resmi),
-        normalize_wa_number('081231256129'),
-        normalize_wa_number('085335219903')
-    ];
+    $validAdminWas = get_valid_admin_was($pdo, $bendahara_wa_resmi);
 
     if ($waInput !== '' && !in_array($waInput, $validAdminWas)) {
         http_response_code(401);
@@ -306,11 +323,7 @@ if ($action === 'send_admin_otp') {
     $input = json_decode(file_get_contents('php://input'), true);
     $waInput = isset($input['wa']) ? normalize_wa_number($input['wa']) : '';
 
-    $validAdminWas = [
-        normalize_wa_number($bendahara_wa_resmi),
-        normalize_wa_number('081231256129'),
-        normalize_wa_number('085335219903')
-    ];
+    $validAdminWas = get_valid_admin_was($pdo, $bendahara_wa_resmi);
 
     if (!in_array($waInput, $validAdminWas)) {
         http_response_code(401);

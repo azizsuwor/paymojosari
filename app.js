@@ -234,12 +234,13 @@ let generatedAdminOtp = null;
 // Daftar Pengurus Bendahara Resmi Komplek Tuban
 const BENDAHARA_LIST = [
   { id: 's1', nama: 'Muhammad Abdul Aziz', jabatan: 'Bendahara Pusat', wa: '081231256129', inisial: 'AA' },
+  { id: 's2', nama: 'Rahmat Taufik', jabatan: 'Bendahara', wa: '0891209269', inisial: 'RT' },
   { id: 's14', nama: 'Manshur Siroj', jabatan: 'Bendahara', wa: '085335219903', inisial: 'MS' }
 ];
 
 function getValidAdminWas() {
-  const list = ['081231256129', '085335219903', normalizeWaLocal(BENDAHARA_WA)];
-  ['s1', 's14'].forEach(id => {
+  const list = ['081231256129', '0891209269', '085335219903', normalizeWaLocal(BENDAHARA_WA)];
+  ['s1', 's2', 's14'].forEach(id => {
     const s = state.santri.find(x => x.id === id);
     if (s && s.wa) list.push(normalizeWaLocal(s.wa));
   });
@@ -268,7 +269,7 @@ function renderAdminProfilePicker() {
     const idx = state.santri.findIndex(x => x.id === b.id);
     const avatarUrl = getSantriAvatar(s || b, idx >= 0 ? idx : 0);
     const isSel = b.id === loginModalTempAdminId;
-    const nis = s ? getNomorIndukSantri(s, idx >= 0 ? idx : 0) : (b.id === 's1' ? 'NIS-TBN-2026-001' : 'NIS-TBN-2026-014');
+    const nis = s ? getNomorIndukSantri(s, idx >= 0 ? idx : 0) : (b.id === 's1' ? 'NIS-TBN-2026-001' : (b.id === 's2' ? 'NIS-TBN-2026-002' : 'NIS-TBN-2026-014'));
 
     return `
       <div onclick="selectLoginAdminProfile('${b.id}')" class="p-2.5 rounded-xl border ${isSel ? 'bg-emerald-50/70 border-[#064e3b] ring-1 ring-[#064e3b]/20' : 'bg-[#f8fafc] border-slate-200/80 hover:bg-slate-50'} flex items-center gap-2.5 cursor-pointer transition">
