@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS `utang_kas` (
   `tanggal` DATE NOT NULL,
   `nominal` INT NOT NULL,
   `keterangan` VARCHAR(255) NOT NULL,
-  `status` ENUM('belum_lunas', 'lunas') NOT NULL DEFAULT 'belum_lunas',
+  `status` VARCHAR(30) NOT NULL DEFAULT 'belum_lunas',
   `tgl_lunas` DATE DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

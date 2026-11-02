@@ -851,7 +851,10 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
             <!-- Form Input Masak -->
             <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-              <h3 class="text-sm font-bold text-slate-900 font-display">Catat Kas Masak</h3>
+              <h3 id="formMasakTitle" class="text-sm font-bold text-slate-900 font-display">Catat Kas Masak</h3>
+              <div id="masakAdminNotice" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
+                🔒 <strong>Akses Khusus Bendahara:</strong> Pencatatan transaksi dan pengeluaran kas masak hanya dapat dilakukan oleh Bendahara Komplek.
+              </div>
               <form id="formMasak" onsubmit="handleSaveMasak(event)" class="space-y-3.5">
                 <div>
                   <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Tanggal</label>
@@ -925,8 +928,11 @@
             <!-- Form Input Kas Umum -->
             <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
               <div class="flex items-center justify-between">
-                <h3 class="text-sm font-bold text-slate-900 font-display">Catat Kas Umum</h3>
+                <h3 id="formKasUmumTitle" class="text-sm font-bold text-slate-900 font-display">Catat Kas Umum</h3>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800">Listrik • Air • Alat</span>
+              </div>
+              <div id="kasUmumAdminNotice" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
+                🔒 <strong>Akses Khusus Bendahara:</strong> Pencatatan pengeluaran dan mutasi Kas Umum hanya dapat dilakukan oleh Bendahara Komplek.
               </div>
               <form id="formKasUmum" onsubmit="handleSaveKasUmum(event)" class="space-y-3.5">
                 <div class="grid grid-cols-2 gap-3">
@@ -1015,7 +1021,8 @@
         <div id="view-utang" class="view-panel hidden space-y-6">
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
             <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-              <h3 class="text-sm font-bold text-slate-900 font-display">Catat Pinjaman</h3>
+              <h3 id="formUtangTitle" class="text-sm font-bold text-slate-900 font-display">Catat Pinjaman</h3>
+              <div id="utangNoticeContainer" class="hidden"></div>
               <form id="formUtangKas" onsubmit="handleSaveUtangKas(event)" class="space-y-3.5">
                 <div>
                   <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Santri</label>
@@ -1034,8 +1041,8 @@
                   <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Keperluan</label>
                   <input type="text" id="utangKeterangan" required placeholder="Keterangan singkat" class="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800" />
                 </div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer">
-                  Simpan
+                <button type="submit" id="btnSubmitUtang" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2">
+                  <span id="btnSubmitUtangText">Simpan</span>
                 </button>
               </form>
             </div>
@@ -1070,6 +1077,9 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
             <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
               <h3 id="formSantriTitle" class="text-sm font-bold text-slate-900 font-display">Data Santri</h3>
+              <div id="santriAdminNotice" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
+                🔒 <strong>Akses Khusus Bendahara:</strong> Data profil dan Program Studi santri hanya dapat diubah oleh Bendahara Komplek.
+              </div>
               <form id="formSantri" onsubmit="handleSaveSantri(event)" class="space-y-3.5">
                 <input type="hidden" id="editSantriId" value="" />
                 
@@ -1785,6 +1795,6 @@
   <!-- Toast Notification -->
   <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-2 no-print"></div>
 
-  <script src="app.js?v=20261102f"></script>
+  <script src="app.js?v=20261102h"></script>
 </body>
 </html>

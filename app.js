@@ -1227,9 +1227,9 @@ function updateRoleUI() {
     if (qHint) qHint.textContent = 'Akses Publik';
   }
 
-  // 5. Sembunyikan / nonaktifkan form input & tombol mutasi khusus Admin jika bukan Bendahara
-  const adminForms = ['formMasak', 'formKasUmum', 'formUtangKas'];
-  adminForms.forEach(fId => {
+  // 5. Kas Masak & Kas Umum: Khusus Bendahara (Santri tidak dapat mencatat pengeluaran)
+  const bendaharaForms = ['formMasak', 'formKasUmum'];
+  bendaharaForms.forEach(fId => {
     const formEl = document.getElementById(fId);
     if (!formEl) return;
     const cardEl = formEl.closest('div.bg-white');
@@ -1245,31 +1245,112 @@ function updateRoleUI() {
     });
   });
 
-  // Form Santri: Aktif untuk Admin (Tambah/Edit Semua) & Santri Login (Edit Foto & Profil Sendiri)
+  const masakNotice = document.getElementById('masakAdminNotice');
+  if (masakNotice) {
+    if (state.isAdmin) masakNotice.classList.add('hidden');
+    else masakNotice.classList.remove('hidden');
+  }
+  const kasUmumNotice = document.getElementById('kasUmumAdminNotice');
+  if (kasUmumNotice) {
+    if (state.isAdmin) kasUmumNotice.classList.add('hidden');
+    else kasUmumNotice.classList.remove('hidden');
+  }
+
+  // 6. Form Santri: Khusus Bendahara (Santri tidak bisa edit prodi & profil)
   const formSantriEl = document.getElementById('formSantri');
   if (formSantriEl) {
-    const canEditOwnSantri = state.isAdmin || (state.userRole === 'santri' && Boolean(loggedSantri));
     const cardSantriEl = formSantriEl.closest('div.bg-white');
     if (cardSantriEl) {
-      if (canEditOwnSantri) {
+      if (state.isAdmin) {
         cardSantriEl.classList.remove('opacity-60');
       } else {
         cardSantriEl.classList.add('opacity-60');
       }
     }
     formSantriEl.querySelectorAll('input, select, textarea, button').forEach(inp => {
-      if (inp.id === 'santriTanpaMakan') {
-        inp.disabled = !state.isAdmin;
-      } else {
-        inp.disabled = !canEditOwnSantri;
-      }
+      inp.disabled = !state.isAdmin;
     });
 
-    if (state.userRole === 'santri' && loggedSantri) {
+    const santriNotice = document.getElementById('santriAdminNotice');
+    if (santriNotice) {
+      if (state.isAdmin) santriNotice.classList.add('hidden');
+      else santriNotice.classList.remove('hidden');
+    }
+
+    const titleSantri = document.getElementById('formSantriTitle');
+    const btnSaveText = document.getElementById('btnSaveSantriText');
+    const cancelBtn = document.getElementById('btnCancelEditSantri');
+
+    if (state.isAdmin) {
       const editIdInp = document.getElementById('editSantriId');
-      if (editIdInp && editIdInp.value !== loggedSantri.id) {
-        populateSantriFormForSelf(loggedSantri);
+      if (titleSantri) titleSantri.textContent = editIdInp && editIdInp.value ? 'Edit Data Santri' : 'Tambah Santri';
+      if (btnSaveText) btnSaveText.textContent = editIdInp && editIdInp.value ? 'Simpan Perubahan' : 'Simpan Santri';
+      if (cancelBtn && editIdInp && editIdInp.value) cancelBtn.classList.remove('hidden');
+    } else {
+      if (titleSantri) titleSantri.textContent = 'Data Profil Santri';
+      if (btnSaveText) btnSaveText.textContent = 'Khusus Bendahara';
+      if (cancelBtn) cancelBtn.classList.add('hidden');
+    }
+  }
+
+  // 7. Form Utang Kas: Santri BISA mengajukan pinjaman, Bendahara mencatat & menyetujui pencairan
+  const formUtangEl = document.getElementById('formUtangKas');
+  if (formUtangEl) {
+    const cardUtangEl = formUtangEl.closest('div.bg-white');
+    const titleUtang = document.getElementById('formUtangTitle');
+    const btnSubmitUtangText = document.getElementById('btnSubmitUtangText');
+    const noticeUtang = document.getElementById('utangNoticeContainer');
+    const selSantri = document.getElementById('utangSantriId');
+
+    if (state.isAdmin) {
+      if (cardUtangEl) cardUtangEl.classList.remove('opacity-60');
+      if (titleUtang) titleUtang.textContent = 'Catat Pinjaman Kas (Bendahara)';
+      if (btnSubmitUtangText) btnSubmitUtangText.textContent = 'Simpan & Cairkan Langsung';
+      if (noticeUtang) {
+        noticeUtang.classList.add('hidden');
+        noticeUtang.innerHTML = '';
       }
+      formUtangEl.querySelectorAll('input, select, textarea, button[type="submit"]').forEach(inp => {
+        inp.disabled = false;
+      });
+    } else if (state.userRole === 'santri' && loggedSantri) {
+      if (cardUtangEl) cardUtangEl.classList.remove('opacity-60');
+      if (titleUtang) titleUtang.textContent = 'Ajukan Pinjaman Kas';
+      if (btnSubmitUtangText) btnSubmitUtangText.textContent = 'Ajukan Pinjaman & Hubungi WA Bendahara';
+      if (noticeUtang) {
+        noticeUtang.classList.remove('hidden');
+        noticeUtang.innerHTML = `
+          <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs space-y-1">
+            <p class="font-bold">💡 Alur Pengajuan Pinjaman:</p>
+            <p>1. Isi nominal dan keperluan Anda pada formulir di bawah.</p>
+            <p>2. Saat formulir dikirim, Anda akan diarahkan ke WhatsApp Bendahara untuk konfirmasi persetujuan.</p>
+            <p>3. Status pinjaman akan tercatat <em>Menunggu Persetujuan</em>. Dana kas baru akan <strong>cair</strong> setelah disetujui oleh Bendahara Komplek.</p>
+          </div>
+        `;
+      }
+      formUtangEl.querySelectorAll('input, textarea, button[type="submit"]').forEach(inp => {
+        inp.disabled = false;
+      });
+      if (selSantri) {
+        selSantri.value = loggedSantri.id;
+        selSantri.disabled = true; // santri terkunci hanya untuk dirinya sendiri
+      }
+    } else {
+      // Tamu / Belum Login
+      if (cardUtangEl) cardUtangEl.classList.add('opacity-60');
+      if (titleUtang) titleUtang.textContent = 'Ajukan Pinjaman Kas';
+      if (btnSubmitUtangText) btnSubmitUtangText.textContent = 'Masuk Santri untuk Mengajukan';
+      if (noticeUtang) {
+        noticeUtang.classList.remove('hidden');
+        noticeUtang.innerHTML = `
+          <div class="p-3 bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs">
+            Silakan login dengan akun santri Anda untuk mengajukan pinjaman kas.
+          </div>
+        `;
+      }
+      formUtangEl.querySelectorAll('input, select, textarea, button[type="submit"]').forEach(inp => {
+        inp.disabled = true;
+      });
     }
   }
 
@@ -2280,14 +2361,18 @@ function renderActiveKartuSantriWidget() {
     <div class="flex items-center justify-between mb-2.5">
       <h3 class="text-sm font-bold text-slate-900 font-display">${state.userRole === 'santri' ? 'Kartu Identitas Saya' : 'Identitas Santri Terpilih'}</h3>
       <div class="flex items-center gap-1.5">
-        <button type="button" onclick="openGantiFotoSantriMandiri('${s.id}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold cursor-pointer transition">
-          Foto
-        </button>
         ${state.isAdmin ? `
+          <button type="button" onclick="openGantiFotoSantriMandiri('${s.id}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold cursor-pointer transition">
+            Edit
+          </button>
           <button type="button" onclick="openSemuaKartuSantriModal()" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold cursor-pointer transition">
             Semua
           </button>
-        ` : ''}
+        ` : `
+          <button type="button" onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold cursor-pointer transition">
+            Lihat Kartu
+          </button>
+        `}
       </div>
     </div>
     ${buildKartuSantriBannerHtml(s, idx >= 0 ? idx : 0)}
@@ -2907,7 +2992,7 @@ function renderTunggakanTab(finData) {
 function handleSaveMasak(event) {
   event.preventDefault();
   if (!state.isAdmin) {
-    openAdminLoginModal();
+    showToast('Hanya Bendahara yang berwenang mencatat transaksi atau pengeluaran kas masak.', true);
     return;
   }
   const tanggal = document.getElementById('masakTanggal').value;
@@ -2973,7 +3058,7 @@ function renderMasakTab(finData) {
 function handleSaveKasUmum(event) {
   event.preventDefault();
   if (!state.isAdmin) {
-    openAdminLoginModal();
+    showToast('Hanya Bendahara yang berwenang mencatat transaksi atau pengeluaran Kas Umum.', true);
     return;
   }
   const tanggal = document.getElementById('kasUmumTanggal').value;
@@ -3072,49 +3157,206 @@ function renderKasUmumTab(finData) {
 }
 
 // 7. Render Utang Kas
-function handleSaveUtangKas(event) {
+async function handleSaveUtangKas(event) {
   event.preventDefault();
+  
+  if (state.userRole === 'guest') {
+    openAdminLoginModal('santri');
+    return;
+  }
+
+  const santriId = state.isAdmin ? document.getElementById('utangSantriId').value : state.loggedSantriId;
+  const tanggal = document.getElementById('utangTanggal').value || new Date().toISOString().slice(0, 10);
+  const nominal = Number(document.getElementById('utangNominal').value);
+  const keterangan = document.getElementById('utangKeterangan').value.trim();
+
+  if (!santriId || !nominal || !keterangan) {
+    showToast('Harap lengkapi semua data pinjaman!', true);
+    return;
+  }
+
+  const s = state.santri.find(x => x.id === santriId);
+  const santriNama = s ? s.nama : 'Santri';
+  const santriProdi = s ? s.prodi : '-';
+
+  if (!state.isAdmin) {
+    // ALUR SANTRI: Ajukan Pinjaman Kas (Status: menunggu_persetujuan)
+    const newUtangId = 'U' + Date.now();
+    const utangObj = {
+      id: newUtangId,
+      santriId,
+      tanggal,
+      nominal,
+      keterangan,
+      status: 'menunggu_persetujuan',
+      tanggalLunas: null,
+      tanggalPengajuan: tanggal
+    };
+
+    state.utangKas.unshift(utangObj);
+    saveState(true);
+
+    if (window.location.protocol !== 'file:') {
+      try {
+        const resp = await fetch('api.php?action=ajukan_utang', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            santriId,
+            tanggal,
+            nominal,
+            keterangan
+          })
+        });
+        const resData = await resp.json();
+        if (resData && resData.id) {
+          utangObj.id = resData.id;
+        }
+      } catch (err) {
+        console.warn('Gagal mencatat pengajuan ke server:', err);
+      }
+    }
+
+    document.getElementById('utangNominal').value = '';
+    document.getElementById('utangKeterangan').value = '';
+    renderAll();
+
+    // Otomatis arahkan ke WhatsApp Bendahara
+    bukaWaPersetujuanUtang(santriNama, santriProdi, tanggal, nominal, keterangan);
+    showToast('Pengajuan pinjaman dibuat! Silakan hubungi Bendahara via WhatsApp.');
+  } else {
+    // ALUR BENDAHARA: Catat Pinjaman Langsung (Status: belum_lunas / langsung cair)
+    const newUtangId = 'U' + Date.now();
+    state.utangKas.unshift({
+      id: newUtangId,
+      santriId,
+      tanggal,
+      nominal,
+      keterangan,
+      status: 'belum_lunas',
+      tanggalLunas: null
+    });
+
+    state.recentTransactions.unshift({
+      id: 'T' + Date.now(),
+      title: `Utang Kas: ${santriNama}`,
+      subtitle: keterangan,
+      type: 'expense',
+      amount: nominal,
+      date: 'Hari ini',
+      status: 'Failed',
+      icon: 'hand-coins'
+    });
+
+    saveState();
+    document.getElementById('utangNominal').value = '';
+    document.getElementById('utangKeterangan').value = '';
+    renderAll();
+    showToast('Utang kas santri berhasil dicatat & dicairkan');
+  }
+}
+
+function bukaWaPersetujuanUtang(nama, prodi, tanggal, nominal, keterangan) {
+  const bendaharaWa = (typeof BENDAHARA_LIST !== 'undefined' && BENDAHARA_LIST[0]) ? BENDAHARA_LIST[0].wa : '081231256129';
+  const pesanWa = `*PENGAJUAN PINJAMAN KAS SANTRI*\n` +
+    `Assalamu'alaikum Warahmatullahi Wabarakatuh,\n` +
+    `Halo Bendahara Komplek Tuban,\n\n` +
+    `Saya mengajukan permohonan pinjaman kas santri dengan rincian berikut:\n` +
+    `• *Nama:* ${nama}\n` +
+    `• *Program Studi:* ${prodi}\n` +
+    `• *Tanggal Pengajuan:* ${tanggal}\n` +
+    `• *Nominal:* ${formatRp(nominal)}\n` +
+    `• *Keperluan:* ${keterangan}\n` +
+    `• *Status:* Menunggu Persetujuan\n\n` +
+    `Mohon kiranya Bendahara berkenan meninjau dan memberikan persetujuan agar pinjaman dapat diverifikasi dan dana kas dicairkan. Terima kasih.`;
+
+  const waUrl = `https://wa.me/${formatPhoneToWa(bendaharaWa)}?text=${encodeURIComponent(pesanWa)}`;
+  window.open(waUrl, '_blank');
+}
+
+function bukaUlangWaUtang(id) {
+  const item = state.utangKas.find(u => u.id === id);
+  if (!item) return;
+  const s = state.santri.find(x => x.id === item.santriId);
+  const santriNama = s ? s.nama : 'Santri';
+  const santriProdi = s ? s.prodi : '-';
+  bukaWaPersetujuanUtang(santriNama, santriProdi, item.tanggal, item.nominal, item.keterangan);
+}
+
+async function approveUtangSantri(id) {
   if (!state.isAdmin) {
     openAdminLoginModal();
     return;
   }
-  const santriId = document.getElementById('utangSantriId').value;
-  const tanggal = document.getElementById('utangTanggal').value;
-  const nominal = Number(document.getElementById('utangNominal').value);
-  const keterangan = document.getElementById('utangKeterangan').value.trim();
+  const item = state.utangKas.find(u => u.id === id);
+  if (!item) return;
 
-  if (!santriId || !nominal || !keterangan) return;
+  item.status = 'belum_lunas';
+  item.tanggalCair = new Date().toISOString().slice(0, 10);
 
-  state.utangKas.unshift({
-    id: 'U' + Date.now(),
-    santriId,
-    tanggal,
-    nominal,
-    keterangan,
-    status: 'belum_lunas',
-    tanggalLunas: null
-  });
+  const s = state.santri.find(x => x.id === item.santriId);
+  const santriNama = s ? s.nama : 'Santri';
 
-  const s = state.santri.find(x => x.id === santriId);
   state.recentTransactions.unshift({
     id: 'T' + Date.now(),
-    title: `Utang Kas: ${s ? s.nama : 'Santri'}`,
-    subtitle: keterangan,
+    title: `Pencairan Utang: ${santriNama}`,
+    subtitle: item.keterangan || 'Pinjaman disetujui',
     type: 'expense',
-    amount: nominal,
+    amount: item.nominal,
     date: 'Hari ini',
-    status: 'Failed',
+    status: 'Completed',
     icon: 'hand-coins'
   });
 
   saveState();
-  document.getElementById('utangNominal').value = '';
-  document.getElementById('utangKeterangan').value = '';
+
+  if (window.location.protocol !== 'file:') {
+    try {
+      await fetch('api.php?action=review_utang', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: getAdminHeaders(),
+        body: JSON.stringify({ id, decision: 'approve' })
+      });
+    } catch (e) {
+      console.warn('Gagal review utang di server:', e);
+    }
+  }
+
   renderAll();
-  showToast('Utang kas santri berhasil dicatat');
+  showToast(`Pengajuan pinjaman ${santriNama} disetujui & dana kas dicairkan.`);
 }
 
-function markUtangLunas(id) {
+async function rejectUtangSantri(id) {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
+  const item = state.utangKas.find(u => u.id === id);
+  if (!item) return;
+
+  item.status = 'ditolak';
+  saveState();
+
+  if (window.location.protocol !== 'file:') {
+    try {
+      await fetch('api.php?action=review_utang', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: getAdminHeaders(),
+        body: JSON.stringify({ id, decision: 'reject' })
+      });
+    } catch (e) {
+      console.warn('Gagal tolak utang di server:', e);
+    }
+  }
+
+  renderAll();
+  showToast('Pengajuan pinjaman santri telah ditolak.', 'amber');
+}
+
+async function markUtangLunas(id) {
   if (!state.isAdmin) {
     openAdminLoginModal();
     return;
@@ -3124,6 +3366,20 @@ function markUtangLunas(id) {
   item.status = 'lunas';
   item.tanggalLunas = new Date().toISOString().slice(0, 10);
   saveState();
+
+  if (window.location.protocol !== 'file:') {
+    try {
+      await fetch('api.php?action=review_utang', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: getAdminHeaders(),
+        body: JSON.stringify({ id, decision: 'lunas' })
+      });
+    } catch (e) {
+      console.warn('Gagal lunasi utang di server:', e);
+    }
+  }
+
   renderAll();
   showToast('Utang santri lunas & kas telah kembali');
 }
@@ -3138,6 +3394,9 @@ function renderUtangTab(finData) {
     sel.innerHTML = state.santri.map(s =>
       `<option value="${s.id}" ${s.id === cur ? 'selected' : ''}>${s.nama} (${s.prodi})</option>`
     ).join('');
+    if (state.userRole === 'santri' && state.loggedSantriId) {
+      sel.value = state.loggedSantriId;
+    }
   }
 
   const tbody = document.getElementById('utangTableBody');
@@ -3150,7 +3409,7 @@ function renderUtangTab(finData) {
         <td colspan="6" class="py-8 px-4 text-center">
           <div class="max-w-md mx-auto space-y-2.5">
             <p class="text-xs font-bold text-slate-900">Data Pinjaman / Utang Kas Bersifat Pribadi</p>
-            <p class="text-[11px] text-slate-500">Silakan login menggunakan akun santri Anda untuk memeriksa riwayat pinjaman kas pribadi Anda.</p>
+            <p class="text-[11px] text-slate-500">Silakan login menggunakan akun santri Anda untuk memeriksa riwayat pinjaman kas atau mengajukan pinjaman.</p>
             <button onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] text-white text-xs font-bold cursor-pointer">Masuk Akun</button>
           </div>
         </td>
@@ -3163,12 +3422,14 @@ function renderUtangTab(finData) {
     ? state.utangKas.filter(u => u.santriId === state.loggedSantriId)
     : state.utangKas;
 
+  const pendingCount = visibleLoans.filter(u => u.status === 'menunggu_persetujuan').length;
+
   if (badge) {
     if (state.userRole === 'santri') {
       const myActiveTotal = visibleLoans.filter(u => u.status === 'belum_lunas').reduce((acc, u) => acc + Number(u.nominal), 0);
-      badge.textContent = `Utang Saya: ${formatRp(myActiveTotal)}`;
+      badge.textContent = `Utang Aktif: ${formatRp(myActiveTotal)}${pendingCount > 0 ? ` • ${pendingCount} Menunggu` : ''}`;
     } else {
-      badge.textContent = `Total Utang: ${formatRp(fin.totalUtangAktif)}`;
+      badge.textContent = `Total Utang Aktif: ${formatRp(fin.totalUtangAktif)}${pendingCount > 0 ? ` • ${pendingCount} Menunggu Persetujuan` : ''}`;
     }
   }
 
@@ -3176,7 +3437,7 @@ function renderUtangTab(finData) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" class="py-6 text-center text-slate-400 text-xs">
-          ${state.userRole === 'santri' ? '✓ Alhamdulillah, Anda tidak memiliki catatan pinjaman / utang kas.' : 'Belum ada catatan pinjaman / utang kas santri.'}
+          ${state.userRole === 'santri' ? '✓ Alhamdulillah, belum ada catatan pengajuan atau pinjaman kas santri.' : 'Belum ada catatan pinjaman / utang kas santri.'}
         </td>
       </tr>
     `;
@@ -3185,6 +3446,65 @@ function renderUtangTab(finData) {
 
   tbody.innerHTML = visibleLoans.map(u => {
     const s = state.santri.find(x => x.id === u.santriId);
+    let statusBadge = '';
+    if (u.status === 'menunggu_persetujuan') {
+      statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Menunggu Persetujuan
+      </span>`;
+    } else if (u.status === 'belum_lunas') {
+      statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
+        Belum Lunas (Cair)
+      </span>`;
+    } else if (u.status === 'lunas') {
+      statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+        Lunas
+      </span>`;
+    } else if (u.status === 'ditolak') {
+      statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+        Ditolak
+      </span>`;
+    }
+
+    let actionButtons = '';
+    if (state.isAdmin) {
+      if (u.status === 'menunggu_persetujuan') {
+        actionButtons = `
+          <div class="flex items-center justify-end gap-1.5">
+            <button onclick="approveUtangSantri('${u.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold cursor-pointer transition shadow-2xs">
+              Setujui & Cairkan
+            </button>
+            <button onclick="rejectUtangSantri('${u.id}')" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10px] font-bold cursor-pointer transition">
+              Tolak
+            </button>
+          </div>
+        `;
+      } else if (u.status === 'belum_lunas') {
+        actionButtons = `
+          <button onclick="markUtangLunas('${u.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer transition">
+            Lunasi
+          </button>
+        `;
+      } else if (u.status === 'lunas') {
+        actionButtons = `<span class="text-[10px] text-emerald-700 font-semibold">Tuntas</span>`;
+      } else if (u.status === 'ditolak') {
+        actionButtons = `<span class="text-[10px] text-slate-400 font-semibold">Ditolak</span>`;
+      }
+    } else if (state.userRole === 'santri') {
+      if (u.status === 'menunggu_persetujuan') {
+        actionButtons = `
+          <button onclick="bukaUlangWaUtang('${u.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer transition inline-flex items-center gap-1">
+            Hubungi WA
+          </button>
+        `;
+      } else if (u.status === 'belum_lunas') {
+        actionButtons = `<span class="text-[10px] text-rose-600 font-semibold">Dana Telah Cair</span>`;
+      } else if (u.status === 'lunas') {
+        actionButtons = `<span class="text-[10px] text-emerald-700 font-semibold">Lunas</span>`;
+      } else if (u.status === 'ditolak') {
+        actionButtons = `<span class="text-[10px] text-slate-400 font-semibold">Pengajuan Ditolak</span>`;
+      }
+    }
+
     return `
       <tr class="hover:bg-slate-50">
         <td class="py-2.5 px-3 font-mono text-slate-500">${u.tanggal}</td>
@@ -3192,16 +3512,10 @@ function renderUtangTab(finData) {
         <td class="py-2.5 px-3 text-slate-600">${u.keterangan}</td>
         <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">${formatRp(u.nominal)}</td>
         <td class="py-2.5 px-3 text-center">
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.status === 'lunas' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-600'}">
-            ${u.status === 'lunas' ? 'Lunas' : 'Belum Lunas'}
-          </span>
+          ${statusBadge}
         </td>
         <td class="py-2.5 px-3 text-right">
-          ${state.isAdmin && u.status === 'belum_lunas' ? `
-            <button onclick="markUtangLunas('${u.id}')" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer">
-              Lunasi
-            </button>
-          ` : ''}
+          ${actionButtons}
         </td>
       </tr>
     `;
@@ -3286,17 +3600,12 @@ function handleResetFotoSantri() {
 
 async function handleSaveSantri(event) {
   event.preventDefault();
-  let editId = document.getElementById('editSantriId').value;
-  if (state.userRole === 'santri' && state.loggedSantriId) {
-    editId = state.loggedSantriId;
-  }
-
-  const isOwnSantri = (state.userRole === 'santri' && editId && editId === state.loggedSantriId);
-  if (!state.isAdmin && !isOwnSantri) {
-    openAdminLoginModal();
+  if (!state.isAdmin) {
+    showToast('Hanya Bendahara yang berwenang menambah atau mengedit profil & prodi santri.', true);
     return;
   }
 
+  const editId = document.getElementById('editSantriId').value;
   const nama = document.getElementById('santriNama').value.trim();
   const alamat = document.getElementById('santriAlamat').value.trim();
   const prodi = document.getElementById('santriProdi').value;
@@ -3318,13 +3627,13 @@ async function handleSaveSantri(event) {
         alamat, 
         prodi, 
         wa, 
-        tanpaMakan: state.isAdmin ? tanpaMakan : isSantriTanpaMakan(existing), 
+        tanpaMakan, 
         avatar, 
         shortName: nama.split(' ')[0] 
       };
       state.santri[idx] = savedSantriObj;
     }
-  } else if (state.isAdmin) {
+  } else {
     const newId = 's' + (state.santri.length + 1);
     const avatar = currentSantriPhotoUrl || '';
     savedSantriObj = { 
@@ -3343,35 +3652,11 @@ async function handleSaveSantri(event) {
     }
   }
 
-  // Jika santri mengganti fotonya sendiri, simpan langsung ke MySQL via endpoint khusus
-  if (!state.isAdmin && isOwnSantri && savedSantriObj && window.location.protocol !== 'file:') {
-    try {
-      await fetch('api.php?action=update_santri_photo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          santri_id: savedSantriObj.id,
-          avatar: savedSantriObj.avatar,
-          nama: savedSantriObj.nama,
-          alamat: savedSantriObj.alamat,
-          prodi: savedSantriObj.prodi,
-          wa: savedSantriObj.wa
-        })
-      });
-    } catch (err) {
-      console.warn('Gagal sinkronisasi foto santri ke server:', err);
-    }
-  }
-
   saveState();
-  if (state.isAdmin) {
-    resetSantriForm();
-  } else if (savedSantriObj) {
-    populateSantriFormForSelf(savedSantriObj);
-  }
+  resetSantriForm();
   updateRoleUI();
   renderAll();
-  showToast('✓ Foto & data profil santri berhasil disimpan permanen!', 'emerald');
+  showToast(editId ? 'Data santri berhasil diperbarui' : 'Santri baru berhasil ditambahkan');
 }
 
 function populateSantriFormForSelf(s) {
@@ -3406,6 +3691,10 @@ function populateSantriFormForSelf(s) {
 }
 
 function openGantiFotoSantriMandiri(id) {
+  if (!state.isAdmin) {
+    showToast('Hanya Bendahara yang berwenang mengubah profil atau foto santri.', true);
+    return;
+  }
   switchTab('santri');
   setTimeout(() => {
     editSantri(id);
@@ -3413,9 +3702,8 @@ function openGantiFotoSantriMandiri(id) {
 }
 
 function editSantri(id) {
-  const isOwnSantri = (state.userRole === 'santri' && id === state.loggedSantriId);
-  if (!state.isAdmin && !isOwnSantri) {
-    openAdminLoginModal();
+  if (!state.isAdmin) {
+    showToast('Hanya Bendahara yang berwenang mengedit data santri & prodi.', true);
     return;
   }
   const s = state.santri.find(x => x.id === id);
@@ -3436,13 +3724,10 @@ function editSantri(id) {
   const fileInput = document.getElementById('santriPhotoFile');
   if (fileInput) fileInput.value = '';
 
-  document.getElementById('formSantriTitle').textContent = state.isAdmin ? 'Edit Santri' : 'Profil & Foto';
-  document.getElementById('btnSaveSantriText').textContent = state.isAdmin ? 'Simpan' : 'Simpan Profil';
+  document.getElementById('formSantriTitle').textContent = 'Edit Data Santri';
+  document.getElementById('btnSaveSantriText').textContent = 'Simpan Perubahan';
   const cancelBtn = document.getElementById('btnCancelEditSantri');
-  if (cancelBtn) {
-    if (state.isAdmin) cancelBtn.classList.remove('hidden');
-    else cancelBtn.classList.add('hidden');
-  }
+  if (cancelBtn) cancelBtn.classList.remove('hidden');
 
   const formEl = document.getElementById('formSantri');
   if (formEl) {
@@ -3515,8 +3800,7 @@ function renderSantriTab() {
       `;
     } else if (isMe) {
       actionHtml = `
-        <button onclick="editSantri('${s.id}')" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold mr-1 cursor-pointer">Foto</button>
-        <button onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer shadow-2xs">Kartu</button>
+        <button onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer shadow-2xs">Kartu Saya</button>
       `;
     } else if (state.userRole === 'santri') {
       actionHtml = `<span class="text-[10px] font-semibold text-slate-400">Aktif</span>`;

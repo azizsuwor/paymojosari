@@ -46,6 +46,11 @@ try {
     // Pastikan avatar bertipe LONGTEXT agar dapat menyimpan foto profil santri
     $pdo->exec("ALTER TABLE santri MODIFY COLUMN avatar LONGTEXT DEFAULT NULL");
 
+    // Pastikan kolom status pada utang_kas mendukung 'menunggu_persetujuan' dan 'ditolak'
+    try {
+        $pdo->exec("ALTER TABLE utang_kas MODIFY COLUMN status VARCHAR(30) NOT NULL DEFAULT 'belum_lunas'");
+    } catch (Exception $e) {}
+
     // Pastikan tabel jurnal_kas_umum tersedia
     $pdo->exec("CREATE TABLE IF NOT EXISTS `jurnal_kas_umum` (
       `id` VARCHAR(50) NOT NULL PRIMARY KEY,
@@ -177,6 +182,16 @@ function check_admin_auth() {
         ]);
         exit;
     }
+}
+
+// Cek apakah sesi admin aktif dan token kriptografis sah tanpa langsung melempar exit
+function is_admin_session() {
+    $sessionRole = $_SESSION['role'] ?? '';
+    $sessionToken = $_SESSION['auth_token'] ?? '';
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $headerToken = $_SERVER['HTTP_X_ADMIN_TOKEN']
+        ?? ($headers['X-Admin-Token'] ?? ($headers['x-admin-token'] ?? ''));
+    return ($sessionRole === 'admin' && !empty($sessionToken) && !empty($headerToken) && hash_equals($sessionToken, $headerToken));
 }
 
 // -------------------------------------------------------------------------
@@ -463,6 +478,15 @@ if ($action === 'update_santri_photo') {
     $prodi = isset($input['prodi']) ? trim($input['prodi']) : '';
     $wa = isset($input['wa']) ? trim($input['wa']) : '';
 
+    $isAdmin = is_admin_session();
+    $isSelf = (isset($_SESSION['role']) && $_SESSION['role'] === 'santri' && ($_SESSION['santri_id'] ?? '') === $santriId);
+
+    if (!$isAdmin && !$isSelf) {
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Akses ditolak: Hanya akun santri terkait atau Bendahara yang diizinkan.']);
+        exit;
+    }
+
     if (!$santriId || !$avatar) {
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Data foto santri tidak lengkap.']);
@@ -470,7 +494,8 @@ if ($action === 'update_santri_photo') {
     }
 
     try {
-        if ($nama && $alamat && $prodi && $wa) {
+        // HANYA BENDAHARA yang berhak mengubah prodi, nama, alamat, atau no WA santri!
+        if ($isAdmin && $nama && $alamat && $prodi && $wa) {
             $shortName = explode(' ', $nama)[0];
             $stmtUpd = $pdo->prepare("UPDATE santri SET avatar = :avatar, nama = :nama, short_name = :short_name, alamat = :alamat, prodi = :prodi, wa = :wa WHERE id = :id");
             $stmtUpd->execute([
@@ -483,6 +508,7 @@ if ($action === 'update_santri_photo') {
                 ':id' => $santriId
             ]);
         } else {
+            // Santri mandiri hanya boleh memperbarui avatar foto, tanpa mengubah data prodi/profil
             $stmtUpd = $pdo->prepare("UPDATE santri SET avatar = :avatar WHERE id = :id");
             $stmtUpd->execute([':avatar' => $avatar, ':id' => $santriId]);
         }
@@ -582,6 +608,94 @@ if ($action === 'verify_payment_proof') {
             'status' => 'success',
             'message' => $status === 'approved' ? 'Bukti pembayaran diverifikasi!' : 'Bukti pembayaran ditolak.'
         ]);
+        exit;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// 0h. Pengajuan Pinjaman Utang Kas oleh Santri (POST ?action=ajukan_utang)
+if ($action === 'ajukan_utang') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $santriId = isset($input['santriId']) ? trim($input['santriId']) : '';
+    $tanggal = isset($input['tanggal']) ? trim($input['tanggal']) : date('Y-m-d');
+    $nominal = isset($input['nominal']) ? (int)$input['nominal'] : 0;
+    $keterangan = isset($input['keterangan']) ? trim($input['keterangan']) : '';
+
+    $isLoggedInSantri = (isset($_SESSION['role']) && $_SESSION['role'] === 'santri' && ($_SESSION['santri_id'] ?? '') === $santriId);
+    $isAdmin = is_admin_session();
+
+    if (!$isAdmin && !$isLoggedInSantri) {
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Hanya akun santri yang bersangkutan atau Bendahara yang dapat mengajukan pinjaman.']);
+        exit;
+    }
+
+    if (!$santriId || $nominal <= 0 || !$keterangan) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Data pengajuan pinjaman tidak lengkap.']);
+        exit;
+    }
+
+    try {
+        $id = 'U' . time() . rand(100, 999);
+        $status = 'menunggu_persetujuan';
+        $stmt = $pdo->prepare("INSERT INTO utang_kas (id, santri_id, tanggal, nominal, keterangan, status, tgl_lunas) 
+                               VALUES (:id, :santri_id, :tanggal, :nominal, :keterangan, :status, NULL)");
+        $stmt->execute([
+            ':id' => $id,
+            ':santri_id' => $santriId,
+            ':tanggal' => $tanggal,
+            ':nominal' => $nominal,
+            ':keterangan' => $keterangan,
+            ':status' => $status
+        ]);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Pengajuan pinjaman berhasil dicatat, menunggu persetujuan Bendahara.',
+            'id' => $id
+        ]);
+        exit;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// 0i. Persetujuan / Penolakan / Pelunasan Pinjaman oleh Bendahara (POST ?action=review_utang)
+if ($action === 'review_utang') {
+    check_admin_auth();
+    $input = json_decode(file_get_contents('php://input'), true);
+    $id = isset($input['id']) ? trim($input['id']) : '';
+    $decision = isset($input['decision']) ? trim($input['decision']) : ''; // 'approve' | 'reject' | 'lunas'
+
+    if (!$id || !in_array($decision, ['approve', 'reject', 'lunas'])) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Permintaan tidak valid.']);
+        exit;
+    }
+
+    try {
+        if ($decision === 'approve') {
+            $stmt = $pdo->prepare("UPDATE utang_kas SET status = 'belum_lunas' WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $msg = 'Pinjaman kas santri disetujui & dicairkan.';
+        } elseif ($decision === 'reject') {
+            $stmt = $pdo->prepare("UPDATE utang_kas SET status = 'ditolak' WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $msg = 'Pengajuan pinjaman telah ditolak.';
+        } elseif ($decision === 'lunas') {
+            $tgl = date('Y-m-d');
+            $stmt = $pdo->prepare("UPDATE utang_kas SET status = 'lunas', tgl_lunas = :tgl WHERE id = :id");
+            $stmt->execute([':tgl' => $tgl, ':id' => $id]);
+            $msg = 'Pinjaman santri telah lunas.';
+        }
+
+        echo json_encode(['status' => 'success', 'message' => $msg]);
         exit;
     } catch (Exception $e) {
         http_response_code(500);
