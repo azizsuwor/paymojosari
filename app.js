@@ -298,12 +298,19 @@ function selectLoginAdminProfile(adminId) {
   }
 }
 
-function getExpectedAdminPassword() {
-  return localStorage.getItem('paymojosari_custom_admin_pass') || '@Deja1590';
+function getAuthToken() {
+  return sessionStorage.getItem('paymojosari_auth_token') || localStorage.getItem('paymojosari_auth_token') || '';
+}
+
+function getAdminHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-Admin-Token': getAuthToken()
+  };
 }
 
 function getAdminKey() {
-  return localStorage.getItem('paymojosari_admin_pass') || getExpectedAdminPassword();
+  return getAuthToken();
 }
 
 function normalizeWaLocal(wa) {
@@ -437,7 +444,7 @@ function toggleResetAdminPassVisibility() {
   if (confInp) confInp.type = nextType;
 }
 
-function sendAdminOtpViaWa() {
+async function sendAdminOtpViaWa() {
   const waInp = document.getElementById('resetAdminWaInput');
   const errEl = document.getElementById('resetAdminError');
   const otpCont = document.getElementById('resetAdminOtpContainer');
@@ -456,12 +463,36 @@ function sendAdminOtpViaWa() {
   }
 
   if (errEl) errEl.classList.add('hidden');
-  generatedAdminOtp = String(Math.floor(1000 + Math.random() * 9000));
+
+  let serverOtp = '';
+  if (window.location.protocol !== 'file:') {
+    try {
+      const res = await fetch('api.php?action=send_admin_otp', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wa: enteredWa })
+      });
+      const json = await res.json();
+      if (!res.ok || json.status !== 'success') {
+        if (errEl) {
+          errEl.textContent = json.message || 'Gagal membuat kode OTP';
+          errEl.classList.remove('hidden');
+        }
+        return;
+      }
+      serverOtp = json.otp;
+    } catch (err) {
+      console.warn('Gagal request OTP server:', err);
+    }
+  }
+
+  generatedAdminOtp = serverOtp || String(Math.floor(100000 + Math.random() * 900000));
   if (otpCont) otpCont.classList.remove('hidden');
   if (otpInp) setTimeout(() => otpInp.focus(), 100);
 
   const intlWa = '62' + enteredWa.replace(/^0+/, '');
-  const msg = `*OTP PAYMOJOSARI*\nKode OTP ganti sandi: *${generatedAdminOtp}*`;
+  const msg = `*KODE VERIFIKASI RESMI PAYMOJOSARI*\nKode OTP Ganti Sandi Bendahara: *${generatedAdminOtp}*\n(Berlaku 5 menit)`;
   window.open(`https://wa.me/${intlWa}?text=${encodeURIComponent(msg)}`, '_blank');
   showToast('OTP terkirim ke WA', 'emerald');
 }
@@ -476,6 +507,7 @@ async function handleResetAdminPasswordSubmit(e) {
   const errEl = document.getElementById('resetAdminError');
 
   const enteredWa = normalizeWaLocal(waInp ? waInp.value : '');
+  const enteredOtp = otpInp ? otpInp.value.trim() : '';
   const newPass = newInp ? newInp.value.trim() : '';
   const confPass = confInp ? confInp.value.trim() : '';
   const validWas = getValidAdminWas();
@@ -493,8 +525,8 @@ async function handleResetAdminPasswordSubmit(e) {
     return;
   }
 
-  if (generatedAdminOtp && otpInp && otpInp.value.trim() !== generatedAdminOtp) {
-    showErr('Kode OTP WhatsApp yang dimasukkan belum sesuai!');
+  if (!enteredOtp) {
+    showErr('Masukkan kode OTP verifikasi WhatsApp!');
     return;
   }
 
@@ -513,8 +545,9 @@ async function handleResetAdminPasswordSubmit(e) {
     try {
       const res = await fetch('api.php?action=reset_admin_password', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wa: enteredWa, new_password: newPass })
+        body: JSON.stringify({ wa: enteredWa, otp: enteredOtp, new_password: newPass })
       });
       const json = await res.json();
       if (!res.ok || json.status !== 'success') {
@@ -531,8 +564,7 @@ async function handleResetAdminPasswordSubmit(e) {
     loginModalTempAdminId = matchedBend.id;
   }
   localStorage.setItem('paymojosari_logged_admin_id', loginModalTempAdminId);
-  localStorage.setItem('paymojosari_custom_admin_pass', newPass);
-  localStorage.setItem('paymojosari_admin_pass', newPass);
+  localStorage.removeItem('paymojosari_admin_pass'); // Keamanan: Jangan simpan password di localStorage!
   localStorage.setItem('paymojosari_role', 'admin');
   localStorage.removeItem('paymojosari_logged_santri_id');
 
@@ -705,8 +737,7 @@ function renderLoginModalSantriPicker() {
   const activeSantri = state.santri.find(s => s.id === loginModalTempSantriId);
   if (hintEl && activeSantri) {
     const cleanWa = String(activeSantri.wa || '').replace(/[^0-9]/g, '');
-    const last4 = cleanWa.slice(-4);
-    hintEl.textContent = `WA: ${maskPhoneNumber(cleanWa)} (4 digit: ${last4})`;
+    hintEl.textContent = `WA: ${maskPhoneNumber(cleanWa)}`;
   }
 }
 
@@ -717,7 +748,7 @@ function selectLoginSantriAvatar(santriId) {
   if (errSantri) errSantri.classList.add('hidden');
 }
 
-function handleSantriLoginSubmit(e) {
+async function handleSantriLoginSubmit(e) {
   e.preventDefault();
   const selectEl = document.getElementById('loginSantriSelect');
   const pinInput = document.getElementById('loginSantriPinInput');
@@ -728,18 +759,53 @@ function handleSantriLoginSubmit(e) {
   if (!s) return;
 
   const rawEntered = String(pinInput ? pinInput.value : '').trim();
-  const entered = rawEntered.replace(/[^0-9a-zA-Z]/g, '');
-  const cleanWa = String(s.wa || '').replace(/[^0-9]/g, '');
-  const last4 = cleanWa.slice(-4);
+  if (!rawEntered) return;
 
-  let isMatch = false;
-  if (s.pinSandi && String(s.pinSandi).trim() !== '') {
-    // Jika santri sudah mengatur sandi kustom, bisa masuk dengan sandi kustom atau nomor WA lengkap
-    isMatch = (rawEntered === String(s.pinSandi).trim()) || (entered === cleanWa);
-  } else {
-    isMatch = (entered === cleanWa || entered === last4 || entered.toLowerCase() === s.id.toLowerCase() || entered === '1234');
+  // Verifikasi ke server backend (api.php?action=login_santri)
+  if (window.location.protocol !== 'file:') {
+    try {
+      const res = await fetch('api.php?action=login_santri', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ santri_id: s.id, pin: rawEntered })
+      });
+      const json = await res.json();
+      if (res.ok && json.status === 'success') {
+        state.userRole = 'santri';
+        state.isAdmin = false;
+        state.loggedSantriId = s.id;
+        state.selectedSantriId = s.id;
+        if (json.token) {
+          sessionStorage.setItem('paymojosari_auth_token', json.token);
+          localStorage.setItem('paymojosari_auth_token', json.token);
+        }
+        localStorage.setItem('paymojosari_role', 'santri');
+        localStorage.setItem('paymojosari_logged_santri_id', s.id);
+        localStorage.removeItem('paymojosari_admin_pass');
+
+        closeAdminLoginModal();
+        updateRoleUI();
+        renderAll();
+        showToast(`Login: ${s.nama}`, 'emerald');
+        return;
+      } else {
+        if (errEl) {
+          errEl.textContent = json.message || 'Sandi atau PIN salah';
+          errEl.classList.remove('hidden');
+        }
+        showToast('Sandi salah', 'rose');
+        return;
+      }
+    } catch (err) {
+      console.warn('Mode offline/file aktif untuk login santri:', err);
+    }
   }
 
+  // Fallback offline jika membuka via file:///
+  const cleanWa = String(s.wa || '').replace(/[^0-9]/g, '');
+  const last4 = cleanWa.slice(-4);
+  const isMatch = (rawEntered === cleanWa || rawEntered === last4 || rawEntered.toLowerCase() === s.id.toLowerCase() || rawEntered === '1234');
   if (isMatch) {
     state.userRole = 'santri';
     state.isAdmin = false;
@@ -747,8 +813,6 @@ function handleSantriLoginSubmit(e) {
     state.selectedSantriId = s.id;
     localStorage.setItem('paymojosari_role', 'santri');
     localStorage.setItem('paymojosari_logged_santri_id', s.id);
-    localStorage.removeItem('paymojosari_admin_pass');
-
     closeAdminLoginModal();
     updateRoleUI();
     renderAll();
@@ -776,31 +840,57 @@ async function handleAdminLoginSubmit(e) {
 
   const validWas = getValidAdminWas();
   const isWaValid = Boolean(enteredWa && validWas.includes(enteredWa));
-  let isPassValid = (enteredPass === '@Deja1590' || enteredPass === getExpectedAdminPassword());
+  if (!isWaValid) {
+    if (errEl) {
+      errEl.textContent = 'Nomor WhatsApp bukan nomor resmi Bendahara';
+      errEl.classList.remove('hidden');
+    }
+    showToast('Nomor WA salah', 'rose');
+    return;
+  }
 
-  // Jika online, verifikasi ke backend api.php
-  if (isWaValid && window.location.protocol !== 'file:') {
+  // Verifikasi ke server backend (api.php?action=login_admin)
+  if (window.location.protocol !== 'file:') {
     try {
-      const res = await fetch('api.php?action=verify_admin', {
+      const res = await fetch('api.php?action=login_admin', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wa: enteredWa, password: enteredPass })
       });
-      if (res.ok) {
-        const json = await res.json();
-        if (json && json.status === 'success') {
-          isPassValid = true;
-          localStorage.setItem('paymojosari_custom_admin_pass', enteredPass);
+      const json = await res.json();
+      if (res.ok && json.status === 'success') {
+        if (json.token) {
+          sessionStorage.setItem('paymojosari_auth_token', json.token);
+          localStorage.setItem('paymojosari_auth_token', json.token);
         }
+        localStorage.setItem('paymojosari_role', 'admin');
+        localStorage.removeItem('paymojosari_admin_pass'); // Keamanan: Jangan simpan password di localStorage!
+        localStorage.removeItem('paymojosari_logged_santri_id');
+        state.userRole = 'admin';
+        state.isAdmin = true;
+        state.loggedSantriId = null;
+        closeAdminLoginModal();
+        updateRoleUI();
+        renderAll();
+        showToast('Masuk Bendahara', 'emerald');
+        return;
+      } else {
+        if (errEl) {
+          errEl.textContent = json.message || 'Sandi salah';
+          errEl.classList.remove('hidden');
+        }
+        showToast('Sandi salah', 'rose');
+        return;
       }
     } catch (err) {
-      // Gunakan fallback pengecekan lokal jika koneksi bermasalah
+      console.warn('Mode offline/file aktif:', err);
     }
   }
 
-  if (isWaValid && isPassValid) {
+  // Fallback offline bila membuka via file:///
+  if (enteredPass && enteredPass.length >= 4) {
     localStorage.setItem('paymojosari_role', 'admin');
-    localStorage.setItem('paymojosari_admin_pass', enteredPass);
     localStorage.removeItem('paymojosari_logged_santri_id');
     state.userRole = 'admin';
     state.isAdmin = true;
@@ -811,17 +901,25 @@ async function handleAdminLoginSubmit(e) {
     showToast('Masuk Bendahara', 'emerald');
   } else {
     if (errEl) {
-      errEl.textContent = !isWaValid ? 'Nomor WA bukan Bendahara' : 'Sandi salah';
+      errEl.textContent = 'Sandi salah';
       errEl.classList.remove('hidden');
     }
-    showToast(!isWaValid ? 'Nomor WA salah' : 'Sandi salah', 'rose');
+    showToast('Sandi salah', 'rose');
   }
 }
 
-function continueAsGuest() {
+async function continueAsGuest() {
+  if (window.location.protocol !== 'file:') {
+    try {
+      await fetch('api.php?action=logout', { method: 'POST', credentials: 'same-origin' });
+    } catch (e) {}
+  }
+  sessionStorage.removeItem('paymojosari_auth_token');
+  localStorage.removeItem('paymojosari_auth_token');
   localStorage.setItem('paymojosari_role', 'guest');
   localStorage.removeItem('paymojosari_logged_santri_id');
   localStorage.removeItem('paymojosari_admin_pass');
+  localStorage.removeItem('paymojosari_custom_admin_pass');
   state.userRole = 'guest';
   state.isAdmin = false;
   state.loggedSantriId = null;
@@ -1210,12 +1308,10 @@ function loadState() {
       saveState(true);
     }
     let savedRole = localStorage.getItem('paymojosari_role') || 'guest';
-    const savedAdminPass = localStorage.getItem('paymojosari_admin_pass') || '';
-    const expectedAdminPass = getExpectedAdminPassword();
-    if (savedRole === 'admin' && savedAdminPass !== expectedAdminPass) {
+    const authToken = getAuthToken();
+    if (savedRole === 'admin' && !authToken) {
       savedRole = 'guest';
       localStorage.setItem('paymojosari_role', 'guest');
-      localStorage.removeItem('paymojosari_admin_pass');
     }
     const savedSantriId = localStorage.getItem('paymojosari_logged_santri_id') || null;
     state.userRole = ['admin', 'santri', 'guest'].includes(savedRole) ? savedRole : 'guest';
@@ -1241,7 +1337,46 @@ function loadState() {
 async function syncFromBackend() {
   if (window.location.protocol === 'file:') return;
   try {
-    const res = await fetch('api.php?action=get_all');
+    // 1. Verifikasi status sesi resmi dari server backend
+    try {
+      const sessRes = await fetch('api.php?action=check_session', { credentials: 'same-origin' });
+      if (sessRes.ok) {
+        const sessJson = await sessRes.json();
+        if (sessJson && sessJson.status === 'success') {
+          if (sessJson.role === 'admin') {
+            state.userRole = 'admin';
+            state.isAdmin = true;
+            state.loggedSantriId = null;
+            if (sessJson.token) {
+              sessionStorage.setItem('paymojosari_auth_token', sessJson.token);
+              localStorage.setItem('paymojosari_auth_token', sessJson.token);
+            }
+          } else if (sessJson.role === 'santri') {
+            state.userRole = 'santri';
+            state.isAdmin = false;
+            state.loggedSantriId = sessJson.santri_id;
+            if (sessJson.token) {
+              sessionStorage.setItem('paymojosari_auth_token', sessJson.token);
+              localStorage.setItem('paymojosari_auth_token', sessJson.token);
+            }
+          } else {
+            if (state.userRole === 'admin') {
+              state.userRole = 'guest';
+              state.isAdmin = false;
+              sessionStorage.removeItem('paymojosari_auth_token');
+              localStorage.removeItem('paymojosari_auth_token');
+              localStorage.setItem('paymojosari_role', 'guest');
+            }
+          }
+          updateRoleUI();
+        }
+      }
+    } catch (e) {
+      console.warn('Cek sesi server dilewati:', e);
+    }
+
+    // 2. Ambil data state terenkripsi/terfilter dari backend
+    const res = await fetch('api.php?action=get_all', { credentials: 'same-origin' });
     if (!res.ok) return;
     const json = await res.json();
     if (json && json.status === 'success' && json.data) {
@@ -1312,10 +1447,8 @@ function saveState(skipRemote = false) {
   if (!skipRemote && window.location.protocol !== 'file:' && state.isAdmin) {
     fetch('api.php?action=sync_all', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Admin-Key': getAdminKey()
-      },
+      credentials: 'same-origin',
+      headers: getAdminHeaders(),
       body: JSON.stringify(state)
     }).catch(err => console.warn('Gagal sinkron ke MySQL:', err));
   }

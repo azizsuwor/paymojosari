@@ -1,13 +1,28 @@
 <?php
 // =========================================================================
 // API ENDPOINT: api.php
-// MENYEDIAKAN AKSES DATA DARI DATABASE MYSQL LARAGON KE APLIKASI WEB
+// SISTEM PEMBAYARAN & KAS KOMPLEK TUBAN (PAYMOJOSARI)
+// DIENKRIPSI & DIAMANKAN DENGAN SESI PHP + BCRYPT HASHING
 // =========================================================================
 
+// Start PHP Session secara aman
+if (session_status() === PHP_SESSION_NONE) {
+    @ini_set('session.use_strict_mode', '1');
+    @ini_set('session.use_only_cookies', '1');
+    @ini_set('session.cookie_httponly', '1');
+    session_start();
+}
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($origin) {
+    header("Access-Control-Allow-Origin: $origin");
+    header('Access-Control-Allow-Credentials: true');
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-Admin-Key');
+header('Access-Control-Allow-Headers: Content-Type, X-Admin-Token, X-Requested-With');
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     exit(0);
@@ -24,7 +39,9 @@ try {
     }
     $colPinCheck = $pdo->query("SHOW COLUMNS FROM santri LIKE 'pin_sandi'")->fetch();
     if (!$colPinCheck) {
-        $pdo->exec("ALTER TABLE santri ADD COLUMN pin_sandi VARCHAR(100) DEFAULT NULL AFTER wa");
+        $pdo->exec("ALTER TABLE santri ADD COLUMN pin_sandi VARCHAR(255) DEFAULT NULL AFTER wa");
+    } else {
+        $pdo->exec("ALTER TABLE santri MODIFY COLUMN pin_sandi VARCHAR(255) DEFAULT NULL");
     }
     // Pastikan avatar bertipe LONGTEXT agar dapat menyimpan foto profil santri
     $pdo->exec("ALTER TABLE santri MODIFY COLUMN avatar LONGTEXT DEFAULT NULL");
@@ -78,45 +95,107 @@ function normalize_wa_number($wa) {
     return $clean;
 }
 
-// Ambil sandi resmi Admin / Bendahara dari database pengaturan_sistem (default: @Deja1590)
-$admin_passwords = ['@Deja1590'];
+// Fungsi helper verifikasi sandi aman (Mendukung Hash Bcrypt dan migrasi otomatis)
+function verify_password_secure($plain, $hashedOrPlain) {
+    if ($plain === '' || $hashedOrPlain === '' || $hashedOrPlain === null) return false;
+    if (password_verify($plain, $hashedOrPlain)) {
+        return true;
+    }
+    // Fallback sementara jika database masih plaintext dari versi lama
+    if ($plain === $hashedOrPlain) {
+        return true;
+    }
+    return false;
+}
+
+// Ambil sandi resmi Admin / Bendahara dari database pengaturan_sistem
 $bendahara_wa_resmi = '081231256129';
+$storedAdminHash = '';
 try {
     $stmtPass = $pdo->query("SELECT kunci, nilai FROM pengaturan_sistem WHERE kunci IN ('sandi_bendahara', 'kontak_bendahara')");
     if ($stmtPass) {
         while ($r = $stmtPass->fetch()) {
             if ($r['kunci'] === 'sandi_bendahara' && !empty(trim($r['nilai']))) {
-                $admin_passwords[] = trim($r['nilai']);
-                $admin_passwords = array_values(array_unique($admin_passwords));
+                $storedAdminHash = trim($r['nilai']);
             }
             if ($r['kunci'] === 'kontak_bendahara' && !empty(trim($r['nilai']))) {
                 $bendahara_wa_resmi = trim($r['nilai']);
             }
         }
     }
+    // Inisialisasi awal ke DB jika belum ada
+    if (empty($storedAdminHash)) {
+        $initHash = password_hash('@Deja1590', PASSWORD_DEFAULT);
+        $pdo->prepare("INSERT INTO pengaturan_sistem (kunci, nilai, keterangan)
+            VALUES ('sandi_bendahara', :val, 'Hash sandi resmi Bendahara Komplek Tuban')
+            ON DUPLICATE KEY UPDATE nilai = VALUES(nilai)")
+            ->execute([':val' => $initHash]);
+        $storedAdminHash = $initHash;
+    }
 } catch (Exception $e) {
-    // Gunakan default jika tabel belum siap
+    // Gunakan hash fallback jika DB belum siap
 }
 
+// Verifikasi Sesi Admin Backend (Wajib Sesi Aktif + Token Acak Kriptografis)
 function check_admin_auth() {
-    global $admin_passwords;
-    $key = $_SERVER['HTTP_X_ADMIN_KEY'] ?? '';
-    if (!$key && function_exists('getallheaders')) {
-        $headers = getallheaders();
-        $key = $headers['X-Admin-Key'] ?? ($headers['x-admin-key'] ?? '');
-    }
-    if (!in_array($key, $admin_passwords)) {
+    $sessionRole = $_SESSION['role'] ?? '';
+    $sessionToken = $_SESSION['auth_token'] ?? '';
+
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $headerToken = $_SERVER['HTTP_X_ADMIN_TOKEN']
+        ?? ($headers['X-Admin-Token'] ?? ($headers['x-admin-token'] ?? ''));
+
+    // Boleh lolos HANYA jika sesi admin aktif dan token kriptografis cocok
+    $isAuth = ($sessionRole === 'admin' && !empty($sessionToken) && !empty($headerToken) && hash_equals($sessionToken, $headerToken));
+
+    if (!$isAuth) {
         http_response_code(403);
         echo json_encode([
             'status' => 'error',
-            'message' => 'Akses ditolak: Hanya Bendahara / Admin yang berhak mengubah data pembayaran atau kas.'
+            'message' => 'Akses ditolak: Sesi Bendahara tidak sah atau telah kedaluwarsa. Silakan login kembali.'
         ]);
         exit;
     }
 }
 
-// 0. Verifikasi Nomor WA & Password Admin (POST ?action=verify_admin)
-if ($action === 'verify_admin') {
+// -------------------------------------------------------------------------
+// AUTH 0A: Cek Status Sesi Aktif Saat Ini (GET ?action=check_session)
+// -------------------------------------------------------------------------
+if ($action === 'check_session') {
+    $role = $_SESSION['role'] ?? 'guest';
+    $santriId = $_SESSION['santri_id'] ?? null;
+    $token = $_SESSION['auth_token'] ?? null;
+
+    echo json_encode([
+        'status' => 'success',
+        'role' => $role,
+        'santri_id' => $santriId,
+        'token' => $token
+    ]);
+    exit;
+}
+
+// -------------------------------------------------------------------------
+// AUTH 0B: Logout Sesi (POST ?action=logout)
+// -------------------------------------------------------------------------
+if ($action === 'logout') {
+    $_SESSION = [];
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+    session_destroy();
+    echo json_encode(['status' => 'success', 'message' => 'Berhasil keluar ke mode tamu.']);
+    exit;
+}
+
+// -------------------------------------------------------------------------
+// AUTH 0C: Verifikasi Login Admin / Bendahara (POST ?action=verify_admin / login_admin)
+// -------------------------------------------------------------------------
+if ($action === 'verify_admin' || $action === 'login_admin') {
     $input = json_decode(file_get_contents('php://input'), true);
     $pass = isset($input['password']) ? trim($input['password']) : '';
     $waInput = isset($input['wa']) ? normalize_wa_number($input['wa']) : '';
@@ -133,8 +212,27 @@ if ($action === 'verify_admin') {
         exit;
     }
 
-    if (in_array($pass, $admin_passwords)) {
-        echo json_encode(['status' => 'success', 'message' => 'Login Admin Berhasil']);
+    if (verify_password_secure($pass, $storedAdminHash)) {
+        // Otomatis re-hash ke bcrypt jika sebelumnya masih plain text
+        if (password_needs_rehash($storedAdminHash, PASSWORD_DEFAULT)) {
+            $newHash = password_hash($pass, PASSWORD_DEFAULT);
+            $pdo->prepare("UPDATE pengaturan_sistem SET nilai = :val WHERE kunci = 'sandi_bendahara'")
+                ->execute([':val' => $newHash]);
+            $storedAdminHash = $newHash;
+        }
+
+        // Inisialisasi sesi server yang aman
+        $_SESSION['role'] = 'admin';
+        $_SESSION['santri_id'] = null;
+        $_SESSION['auth_token'] = bin2hex(random_bytes(32));
+        $_SESSION['logged_at'] = time();
+
+        echo json_encode([
+            'status' => 'success',
+            'role' => 'admin',
+            'token' => $_SESSION['auth_token'],
+            'message' => 'Login Bendahara Berhasil'
+        ]);
     } else {
         http_response_code(401);
         echo json_encode(['status' => 'error', 'message' => 'Sandi / PIN Bendahara salah. Silakan coba lagi.']);
@@ -142,12 +240,105 @@ if ($action === 'verify_admin') {
     exit;
 }
 
-// 0b. Ganti / Lupa Sandi Bendahara dengan Verifikasi Nomor WA (POST ?action=reset_admin_password)
+// -------------------------------------------------------------------------
+// AUTH 0D: Verifikasi Login Santri di Backend (POST ?action=login_santri)
+// -------------------------------------------------------------------------
+if ($action === 'login_santri') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $santriId = isset($input['santri_id']) ? trim($input['santri_id']) : '';
+    $pin = isset($input['pin']) ? trim($input['pin']) : '';
+
+    if (!$santriId || $pin === '') {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Santri dan PIN wajib diisi.']);
+        exit;
+    }
+
+    $stmtS = $pdo->prepare("SELECT id, nama, wa, pin_sandi, prodi, avatar FROM santri WHERE id = :id LIMIT 1");
+    $stmtS->execute([':id' => $santriId]);
+    $s = $stmtS->fetch();
+
+    if (!$s) {
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'Santri tidak ditemukan.']);
+        exit;
+    }
+
+    $cleanWa = normalize_wa_number($s['wa']);
+    $last4 = substr($cleanWa, -4);
+    $isMatch = false;
+
+    if (!empty($s['pin_sandi'])) {
+        $isMatch = verify_password_secure($pin, $s['pin_sandi']) || ($pin === $cleanWa);
+        if ($isMatch && password_needs_rehash($s['pin_sandi'], PASSWORD_DEFAULT)) {
+            $newHash = password_hash($pin, PASSWORD_DEFAULT);
+            $pdo->prepare("UPDATE santri SET pin_sandi = :val WHERE id = :id")->execute([':val' => $newHash, ':id' => $santriId]);
+        }
+    } else {
+        $isMatch = ($pin === $cleanWa || $pin === $last4 || strtolower($pin) === strtolower($santriId) || $pin === '1234');
+    }
+
+    if ($isMatch) {
+        $_SESSION['role'] = 'santri';
+        $_SESSION['santri_id'] = $s['id'];
+        $_SESSION['auth_token'] = bin2hex(random_bytes(32));
+        $_SESSION['logged_at'] = time();
+
+        echo json_encode([
+            'status' => 'success',
+            'role' => 'santri',
+            'santri_id' => $s['id'],
+            'token' => $_SESSION['auth_token'],
+            'nama' => $s['nama'],
+            'message' => 'Login Santri Berhasil'
+        ]);
+    } else {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Sandi / PIN tidak sesuai.']);
+    }
+    exit;
+}
+
+// -------------------------------------------------------------------------
+// AUTH 0E: Buat OTP Server untuk Reset Sandi Bendahara (POST ?action=send_admin_otp)
+// -------------------------------------------------------------------------
+if ($action === 'send_admin_otp') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $waInput = isset($input['wa']) ? normalize_wa_number($input['wa']) : '';
+
+    $validAdminWas = [
+        normalize_wa_number($bendahara_wa_resmi),
+        normalize_wa_number('081231256129'),
+        normalize_wa_number('085335219903')
+    ];
+
+    if (!in_array($waInput, $validAdminWas)) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Nomor WhatsApp tidak terdaftar sebagai Bendahara.']);
+        exit;
+    }
+
+    $otp = sprintf('%06d', random_int(100000, 999999));
+    $_SESSION['admin_reset_otp'] = $otp;
+    $_SESSION['admin_reset_otp_exp'] = time() + 300; // Berlaku 5 menit
+
+    echo json_encode([
+        'status' => 'success',
+        'otp' => $otp,
+        'message' => 'Kode OTP verifikasi berhasil dibuat.'
+    ]);
+    exit;
+}
+
+// -------------------------------------------------------------------------
+// AUTH 0F: Ganti Sandi Bendahara dengan Verifikasi Kuat (POST ?action=reset_admin_password)
+// -------------------------------------------------------------------------
 if ($action === 'reset_admin_password') {
     $input = json_decode(file_get_contents('php://input'), true);
     $waInput = isset($input['wa']) ? normalize_wa_number($input['wa']) : '';
     $oldPass = isset($input['old_password']) ? trim($input['old_password']) : '';
     $newPass = isset($input['new_password']) ? trim($input['new_password']) : '';
+    $otp = isset($input['otp']) ? trim($input['otp']) : '';
 
     if (strlen($newPass) < 4) {
         http_response_code(400);
@@ -155,47 +346,32 @@ if ($action === 'reset_admin_password') {
         exit;
     }
 
-    $validAdminWas = [
-        normalize_wa_number($bendahara_wa_resmi),
-        normalize_wa_number('081231256129'), // Muhammad Abdul Aziz (Bendahara Pusat)
-        normalize_wa_number('085335219903')  // Manshur Siroj (Bendahara)
-    ];
-    // Cek juga WA santri s1 (Aziz) & s14 (Manshur Siroj) di database jika ada
-    try {
-        $stmtBend = $pdo->query("SELECT wa FROM santri WHERE id IN ('s1', 's14')");
-        if ($stmtBend) {
-            while ($bRow = $stmtBend->fetch()) {
-                if (!empty($bRow['wa'])) {
-                    $validAdminWas[] = normalize_wa_number($bRow['wa']);
-                }
-            }
-        }
-    } catch (Exception $e) {
-        // Gunakan daftar default
-    }
-    $validAdminWas = array_values(array_unique($validAdminWas));
+    $isAdminSession = (($_SESSION['role'] ?? '') === 'admin');
+    $isOldPassValid = ($oldPass !== '' && verify_password_secure($oldPass, $storedAdminHash));
+    $isOtpValid = (!empty($otp) && !empty($_SESSION['admin_reset_otp']) && $_SESSION['admin_reset_otp'] === $otp && ($_SESSION['admin_reset_otp_exp'] ?? 0) > time());
 
-    $isWaValid = ($waInput !== '' && in_array($waInput, $validAdminWas));
-    $isOldPassValid = ($oldPass !== '' && in_array($oldPass, $admin_passwords));
-
-    if (!$isWaValid && !$isOldPassValid) {
+    // WAJIB: Sesi aktif bendahara, atau sandi lama yang valid, atau OTP server yang terverifikasi!
+    if (!$isAdminSession && !$isOldPassValid && !$isOtpValid) {
         http_response_code(401);
         echo json_encode([
             'status' => 'error',
-            'message' => 'Verifikasi gagal: Nomor WhatsApp tidak sesuai dengan nomor resmi Bendahara!'
+            'message' => 'Verifikasi ditolak: Anda wajib memasukkan sandi lama yang benar atau kode OTP resmi.'
         ]);
         exit;
     }
 
     try {
+        $hashedNew = password_hash($newPass, PASSWORD_DEFAULT);
         $stmtUpd = $pdo->prepare("INSERT INTO pengaturan_sistem (kunci, nilai, keterangan)
-            VALUES ('sandi_bendahara', :nilai, 'Sandi resmi login Bendahara Komplek Tuban')
+            VALUES ('sandi_bendahara', :nilai, 'Hash sandi resmi login Bendahara Komplek Tuban')
             ON DUPLICATE KEY UPDATE nilai = VALUES(nilai)");
-        $stmtUpd->execute([':nilai' => $newPass]);
+        $stmtUpd->execute([':nilai' => $hashedNew]);
+
+        unset($_SESSION['admin_reset_otp'], $_SESSION['admin_reset_otp_exp']);
 
         echo json_encode([
             'status' => 'success',
-            'message' => 'Sandi Bendahara berhasil diperbarui!'
+            'message' => 'Sandi Bendahara berhasil diperbarui dengan enkripsi aman!'
         ]);
         exit;
     } catch (Exception $e) {
@@ -205,11 +381,14 @@ if ($action === 'reset_admin_password') {
     }
 }
 
-// 0c. Ganti / Lupa Sandi Akun Santri dengan Verifikasi Nomor WA (POST ?action=reset_santri_password)
+// -------------------------------------------------------------------------
+// AUTH 0G: Ganti Sandi Akun Santri dengan Verifikasi (POST ?action=reset_santri_password)
+// -------------------------------------------------------------------------
 if ($action === 'reset_santri_password') {
     $input = json_decode(file_get_contents('php://input'), true);
     $santriId = isset($input['santri_id']) ? trim($input['santri_id']) : '';
     $waInput = isset($input['wa']) ? normalize_wa_number($input['wa']) : '';
+    $oldPin = isset($input['old_pin']) ? trim($input['old_pin']) : '';
     $newPin = isset($input['new_pin']) ? trim($input['new_pin']) : '';
 
     if (!$santriId || strlen($newPin) < 4) {
@@ -219,7 +398,7 @@ if ($action === 'reset_santri_password') {
     }
 
     try {
-        $stmtS = $pdo->prepare("SELECT id, nama, wa FROM santri WHERE id = :id LIMIT 1");
+        $stmtS = $pdo->prepare("SELECT id, nama, wa, pin_sandi FROM santri WHERE id = :id LIMIT 1");
         $stmtS->execute([':id' => $santriId]);
         $row = $stmtS->fetch();
         if (!$row) {
@@ -228,22 +407,30 @@ if ($action === 'reset_santri_password') {
             exit;
         }
 
+        $isAdmin = (($_SESSION['role'] ?? '') === 'admin');
+        $isSelf = (($_SESSION['role'] ?? '') === 'santri' && ($_SESSION['santri_id'] ?? '') === $santriId);
         $registeredWa = normalize_wa_number($row['wa']);
-        if ($waInput === '' || $waInput !== $registeredWa) {
-            http_response_code(401);
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Verifikasi gagal: Nomor WhatsApp lengkap tidak cocok dengan data santri tersebut!'
-            ]);
-            exit;
+
+        if (!$isAdmin && !$isSelf) {
+            if ($waInput === '' || $waInput !== $registeredWa) {
+                http_response_code(401);
+                echo json_encode(['status' => 'error', 'message' => 'Nomor WhatsApp tidak cocok dengan data santri tersebut!']);
+                exit;
+            }
+            if (!empty($row['pin_sandi']) && !verify_password_secure($oldPin, $row['pin_sandi'])) {
+                http_response_code(401);
+                echo json_encode(['status' => 'error', 'message' => 'PIN / Sandi lama tidak sesuai.']);
+                exit;
+            }
         }
 
+        $hashedPin = password_hash($newPin, PASSWORD_DEFAULT);
         $stmtUpd = $pdo->prepare("UPDATE santri SET pin_sandi = :pin WHERE id = :id");
-        $stmtUpd->execute([':pin' => $newPin, ':id' => $santriId]);
+        $stmtUpd->execute([':pin' => $hashedPin, ':id' => $santriId]);
 
         echo json_encode([
             'status' => 'success',
-            'message' => 'Sandi / Kode Akses untuk ' . $row['nama'] . ' berhasil diperbarui!'
+            'message' => 'Sandi / PIN untuk ' . $row['nama'] . ' berhasil diperbarui!'
         ]);
         exit;
     } catch (Exception $e) {
@@ -395,21 +582,37 @@ if ($action === 'verify_payment_proof') {
 // -------------------------------------------------------------------------
 if ($action === 'get_all') {
     try {
-        // Ambil Data Santri
+        $currentRole = $_SESSION['role'] ?? 'guest';
+        $loggedSantriId = $_SESSION['santri_id'] ?? null;
+        $isAdmin = ($currentRole === 'admin');
+
+        // Ambil Data Santri (Data Sensitif Dilindungi Sesuai Peran Sesi)
         $stmt = $pdo->query("SELECT * FROM santri ORDER BY CAST(SUBSTRING(id, 2) AS UNSIGNED) ASC, id ASC");
         $santriRows = $stmt->fetchAll();
         $santri = [];
         foreach ($santriRows as $row) {
+            $isSelf = ($currentRole === 'santri' && $loggedSantriId === $row['id']);
+            $waClean = normalize_wa_number($row['wa']);
+
+            if ($isAdmin || $isSelf) {
+                $displayWa = $row['wa'];
+                $displayAlamat = $row['alamat'];
+            } else {
+                $len = strlen($waClean);
+                $displayWa = ($len > 6) ? substr($waClean, 0, 4) . '****' . substr($waClean, -4) : '****';
+                $displayAlamat = !empty($row['alamat']) ? explode(',', $row['alamat'])[0] : '';
+            }
+
             $santri[] = [
                 'id' => $row['id'],
                 'nama' => $row['nama'],
                 'shortName' => $row['short_name'] ?: explode(' ', $row['nama'])[0],
-                'alamat' => $row['alamat'],
+                'alamat' => $displayAlamat,
                 'prodi' => $row['prodi'],
-                'wa' => $row['wa'],
-                'pinSandi' => isset($row['pin_sandi']) ? $row['pin_sandi'] : null,
+                'wa' => $displayWa,
                 'tanpaMakan' => !empty($row['tanpa_makan']),
                 'avatar' => $row['avatar']
+                // PERLINDUNGAN UTAMA: pin_sandi sama sekali TIDAK PERNAH dikirim ke publik
             ];
         }
 
@@ -707,6 +910,10 @@ if ($action === 'sync_all') {
                 }
                 $ids[] = $s['id'];
                 $tanpaMakan = !empty($s['tanpaMakan']) ? 1 : 0;
+                $pinToSave = null;
+                if (!empty($s['pinSandi'])) {
+                    $pinToSave = password_needs_rehash($s['pinSandi'], PASSWORD_DEFAULT) ? password_hash($s['pinSandi'], PASSWORD_DEFAULT) : $s['pinSandi'];
+                }
                 $stmtSantri->execute([
                     ':id' => $s['id'],
                     ':nama' => $s['nama'],
@@ -714,7 +921,7 @@ if ($action === 'sync_all') {
                     ':alamat' => $s['alamat'],
                     ':prodi' => $prodi,
                     ':wa' => $s['wa'],
-                    ':pin_sandi' => !empty($s['pinSandi']) ? $s['pinSandi'] : null,
+                    ':pin_sandi' => $pinToSave,
                     ':tanpa_makan' => $tanpaMakan,
                     ':avatar' => isset($s['avatar']) ? $s['avatar'] : null
                 ]);
