@@ -419,10 +419,10 @@ function sendAdminOtpViaWa() {
 
   if (!enteredWa || !validWas.includes(enteredWa)) {
     if (errEl) {
-      errEl.textContent = 'Masukkan Nomor WhatsApp resmi Bendahara (Muhammad Abdul Aziz / Manshur Siroj) terlebih dahulu!';
+      errEl.textContent = 'Nomor WA Bendahara tidak sesuai';
       errEl.classList.remove('hidden');
     }
-    showToast('Nomor WA tidak sesuai dengan nomor Bendahara!', 'rose');
+    showToast('Nomor WA salah', 'rose');
     return;
   }
 
@@ -432,9 +432,9 @@ function sendAdminOtpViaWa() {
   if (otpInp) setTimeout(() => otpInp.focus(), 100);
 
   const intlWa = '62' + enteredWa.replace(/^0+/, '');
-  const msg = `*VERIFIKASI SANDI PAYMOJOSARI*\nKomplek Tuban (Rumah Wakaf)\n\nKode OTP Ganti Sandi Bendahara Anda adalah: *${generatedAdminOtp}*\n\nSilakan masukkan kode ini pada form ganti sandi.`;
+  const msg = `*OTP PAYMOJOSARI*\nKode OTP ganti sandi: *${generatedAdminOtp}*`;
   window.open(`https://wa.me/${intlWa}?text=${encodeURIComponent(msg)}`, '_blank');
-  showToast('Kode OTP dikirim ke WhatsApp Bendahara!', 'emerald');
+  showToast('OTP terkirim ke WA', 'emerald');
 }
 
 async function handleResetAdminPasswordSubmit(e) {
@@ -513,14 +513,14 @@ async function handleResetAdminPasswordSubmit(e) {
 
   if (sendWaCheck && sendWaCheck.checked) {
     const intlWa = '62' + enteredWa.replace(/^0+/, '');
-    const msg = `*SANDI BENDAHARA PAYMOJOSARI DIPERBARUI*\nKomplek Tuban (Rumah Wakaf)\n\nSandi Baru Anda: *${newPass}*\nWaktu: ${new Date().toLocaleString('id-ID')}\n\nSimpan pesan ini sebagai pengingat.`;
+    const msg = `*SANDI BENDAHARA PAYMOJOSARI*\nSandi Baru: *${newPass}*`;
     window.open(`https://wa.me/${intlWa}?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
   closeAdminLoginModal();
   updateRoleUI();
   renderAll();
-  showToast('✓ Sandi Bendahara berhasil diganti & Anda telah masuk!', 'emerald');
+  showToast('Sandi berhasil diubah', 'emerald');
 }
 
 function openResetSantriPasswordForm() {
@@ -724,10 +724,10 @@ function handleSantriLoginSubmit(e) {
     closeAdminLoginModal();
     updateRoleUI();
     renderAll();
-    showToast(`✓ Selamat datang, ${s.nama}! Menampilkan data pribadi Anda.`, 'emerald');
+    showToast(`Login: ${s.nama}`, 'emerald');
   } else {
     if (errEl) errEl.classList.remove('hidden');
-    showToast('Kode akses / Sandi Santri belum sesuai!', 'rose');
+    showToast('Sandi salah', 'rose');
   }
 }
 
@@ -780,15 +780,13 @@ async function handleAdminLoginSubmit(e) {
     closeAdminLoginModal();
     updateRoleUI();
     renderAll();
-    showToast('✓ Berhasil masuk sebagai Bendahara (Akses Penuh)!', 'emerald');
+    showToast('Masuk Bendahara', 'emerald');
   } else {
     if (errEl) {
-      errEl.textContent = !isWaValid
-        ? 'Nomor WhatsApp tidak terdaftar sebagai Bendahara!'
-        : 'Sandi Bendahara salah. Gunakan Ganti / Lupa Sandi jika perlu!';
+      errEl.textContent = !isWaValid ? 'Nomor WA bukan Bendahara' : 'Sandi salah';
       errEl.classList.remove('hidden');
     }
-    showToast(!isWaValid ? 'Nomor WA bukan nomor Bendahara!' : 'Sandi Bendahara salah!', 'rose');
+    showToast(!isWaValid ? 'Nomor WA salah' : 'Sandi salah', 'rose');
   }
 }
 
@@ -806,12 +804,12 @@ function continueAsGuest() {
     updateRoleUI();
     renderAll();
   }
-  showToast('Mode Tamu Umum aktif (Hanya melihat informasi umum)', 'slate');
+  showToast('Mode Tamu', 'slate');
 }
 
 function logoutAdmin() {
-  const roleLabel = state.userRole === 'admin' ? 'Bendahara (Admin)' : 'Akun Santri';
-  if (!confirm(`Keluar dari ${roleLabel} dan kembali ke Mode Tamu Umum?`)) return;
+  const roleLabel = state.userRole === 'admin' ? 'Bendahara' : 'Santri';
+  if (!confirm(`Keluar ke Mode Tamu?`)) return;
   continueAsGuest();
 }
 
@@ -1570,7 +1568,7 @@ function switchTab(tabName) {
   if (state.userRole === 'guest' && ['tunggakan', 'utang'].includes(tabName)) {
     toggleMobileDrawer(false);
     openAdminLoginModal('santri');
-    showToast('Silakan masuk akun terlebih dahulu untuk menjelajahi fitur pribadi ini', 'amber');
+    showToast('Silakan login terlebih dahulu', 'amber');
     return;
   }
 
@@ -1725,7 +1723,7 @@ function handleQuickSubmitPayment() {
     return;
   }
   if (!state.selectedSantriId) {
-    showToast('Silakan pilih salah satu santri di deretan avatar!', 'amber');
+    showToast('Pilih santri terlebih dahulu', 'amber');
     return;
   }
   const s = state.santri.find(x => x.id === state.selectedSantriId);
@@ -1735,7 +1733,7 @@ function handleQuickSubmitPayment() {
   const curTarif = getTarif(state.activeMonth);
 
   if (state.quickMode === 'makan' && tanpaMakan) {
-    showToast(`${s ? s.nama : 'Santri ini'} terdaftar Tanpa Uang Makan (Hanya Kas Komplek)!`, 'amber');
+    showToast('Santri ini Tanpa Uang Makan', 'amber');
     return;
   }
 
@@ -1748,7 +1746,7 @@ function handleQuickSubmitPayment() {
     rec.listrik = true;
     rec.air = true;
     amt = tanpaMakan ? curTarif.totalKas : curTarif.totalBulanan;
-    desc = tanpaMakan ? 'Iuran Kas Komplek Lunas (Tanpa Uang Makan)' : 'Iuran Syahriyah Lunas';
+    desc = tanpaMakan ? 'Kas Komplek Lunas' : 'Syahriyah Lunas';
   } else if (state.quickMode === 'makan') {
     rec.makan = true;
     amt = curTarif.makan;
@@ -1756,7 +1754,7 @@ function handleQuickSubmitPayment() {
   } else if (state.quickMode === 'wifi') {
     rec.wifi = true;
     amt = curTarif.wifi;
-    desc = 'Pembayaran Kas WiFi Manual';
+    desc = 'Kas WiFi';
   }
 
   rec.updatedAt = new Date().toISOString().slice(0, 10);
@@ -1778,7 +1776,7 @@ function handleQuickSubmitPayment() {
     document.getElementById('quickNoteInput').value = '';
   }
   renderAll();
-  showToast(`Berhasil mencatat pembayaran untuk ${s ? s.nama : ''}!`);
+  showToast(`Pembayaran disimpan`);
 }
 
 // =========================================================================
@@ -2242,7 +2240,7 @@ function toggleComponentPayment(santriId, monthKey, field) {
     return;
   }
   if (field === 'makan' && isSantriTanpaMakan(santriId)) {
-    showToast('Santri ini terdaftar Tanpa Uang Makan (Hanya Kas Komplek)', 'amber');
+    showToast('Santri ini Tanpa Uang Makan', 'amber');
     return;
   }
   const rec = getPaymentRecord(santriId, monthKey);
@@ -2265,7 +2263,7 @@ function selectDashboardMonth(monthKey) {
 function openRekapGrupForMonth(monthKey) {
   if (!state.isAdmin) {
     openAdminLoginModal('admin');
-    showToast('Fitur Siaran Rekap Grup WA khusus untuk Bendahara (Admin)', 'amber');
+    showToast('Khusus Bendahara', 'amber');
     return;
   }
   state.activeMonth = monthKey;
@@ -2285,7 +2283,7 @@ function resetBulanIni(monthKeyParam) {
   }
   const mKey = monthKeyParam || state.activeMonth;
   const mLabel = getMonthLabel(mKey);
-  if (!confirm(`Reset / kosongkan semua pembayaran pada bulan ${mLabel} menjadi Rp 0 (Belum Bayar)?`)) return;
+  if (!confirm(`Reset pembayaran bulan ${mLabel}?`)) return;
 
   state.santri.forEach(s => {
     const key = `${s.id}_${mKey}`;
@@ -2295,7 +2293,7 @@ function resetBulanIni(monthKeyParam) {
 
   saveState();
   renderAll();
-  showToast(`Data pembayaran bulan ${mLabel} berhasil di-reset ke Rp 0`);
+  showToast(`Bulan ${mLabel} di-reset`);
 }
 
 function resetSemuaKeNol() {
@@ -2303,7 +2301,7 @@ function resetSemuaKeNol() {
     openAdminLoginModal();
     return;
   }
-  if (!confirm('Reset seluruh pembayaran di semua bulan, kas masak, kas umum, dan utang kas menjadi Rp 0 (Data Santri tetap tersimpan)?')) return;
+  if (!confirm('Reset seluruh data kas? (Data santri tetap aman)')) return;
   state.pembayaran = {};
   state.setoranWifiBendahara = {};
   state.masakLogs = [];
@@ -2313,7 +2311,7 @@ function resetSemuaKeNol() {
   state.recentTransactions = [];
   saveState();
   renderAll();
-  showToast('Seluruh data keuangan berhasil di-reset ke Rp 0 & disinkronkan ke MySQL!');
+  showToast('Data kas di-reset');
 }
 
 function renderDashboardTab(fin) {
@@ -4204,7 +4202,7 @@ function ubahLinkGrupWa() {
   if (inputEl) inputEl.value = cleanLink;
   const btnDirectGroup = document.getElementById('btnBukaLinkGrupLangsung');
   if (btnDirectGroup) btnDirectGroup.href = cleanLink;
-  showToast('Tautan grup WhatsApp berhasil diperbarui & ditautkan!');
+  showToast('Link grup disimpan');
 }
 
 function closeRekapGrupModal() {
@@ -4215,7 +4213,7 @@ function copyGroupWaText() {
   const el = document.getElementById('rekapGrupWaText');
   el.select();
   navigator.clipboard.writeText(el.value);
-  showToast('Teks laporan siaran grup WhatsApp disalin!');
+  showToast('Teks siaran disalin');
 }
 
 // =========================================================================
@@ -4225,13 +4223,13 @@ function copyGroupWaText() {
 function copyDanaNumber() {
   const danaNum = state.nomorDanaBendahara || NOMOR_DANA_DEFAULT;
   navigator.clipboard.writeText(danaNum);
-  showToast(`Nomor DANA ${danaNum} berhasil disalin!`, 'emerald');
+  showToast('Nomor DANA disalin', 'emerald');
 }
 
 function openUploadBuktiSantriModal(santriIdParam, monthKeyParam) {
   if (state.userRole === 'guest') {
     openAdminLoginModal('santri');
-    showToast('Silakan masuk akun santri terlebih dahulu untuk upload bukti transfer', 'amber');
+    showToast('Silakan login santri', 'amber');
     return;
   }
 
@@ -4437,7 +4435,7 @@ async function handleSubmitBuktiTransferSantri(event) {
   saveState();
   closeUploadBuktiSantriModal();
   renderAll();
-  showToast('✓ Bukti transfer berhasil dikirim! Menunggu verifikasi Bendahara.', 'emerald');
+  showToast('Bukti transfer terkirim', 'emerald');
 }
 
 function renderPendingProofsForAdmin() {
@@ -4470,23 +4468,23 @@ function renderPendingProofsForAdmin() {
     return `
       <div class="p-3.5 rounded-2xl bg-white border border-amber-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
-          <img src="${p.proofImg}" alt="Bukti" onclick="openPreviewBuktiBayarModal('${p.id}')" class="w-12 h-12 rounded-xl object-cover border border-amber-200 cursor-pointer hover:opacity-80 shrink-0 bg-slate-100" title="Klik untuk perbesar bukti transfer" />
+          <img src="${p.proofImg}" alt="Bukti" onclick="openPreviewBuktiBayarModal('${p.id}')" class="w-12 h-12 rounded-xl object-cover border border-amber-200 cursor-pointer hover:opacity-80 shrink-0 bg-slate-100" title="Klik untuk lihat bukti" />
           <div class="min-w-0">
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="text-xs font-extrabold text-slate-900">${namaSantri}</span>
               <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-900">${mLabel}</span>
             </div>
             <div class="text-[11px] font-mono font-bold text-emerald-800 mt-0.5">${formatRp(p.nominal)} <span class="font-sans font-normal text-slate-500">(${items.join(', ')})</span></div>
-            <p class="text-[10px] text-slate-400 truncate">${p.tanggal} • ${p.catatan || 'Transfer DANA'}</p>
+            <p class="text-[10px] text-slate-400 truncate">${p.tanggal} • ${p.catatan || 'DANA'}</p>
           </div>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
           <button type="button" onclick="openPreviewBuktiBayarModal('${p.id}')" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer">
-            Lihat Bukti
+            Lihat
           </button>
           <button type="button" onclick="approveBuktiTransferSantri('${p.id}')" class="px-3 py-1.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer shadow-2xs flex items-center gap-1">
             <i data-lucide="check" class="w-3.5 h-3.5"></i>
-            <span>Terima & Lunasi</span>
+            <span>Terima</span>
           </button>
           <button type="button" onclick="rejectBuktiTransferSantri('${p.id}')" class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold cursor-pointer">
             Tolak
@@ -4501,9 +4499,9 @@ function renderPendingProofsForAdmin() {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-          <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-950">Verifikasi Bukti Transfer Santri (${pendingList.length} Menunggu)</h4>
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-950">Verifikasi Bukti (${pendingList.length})</h4>
         </div>
-        <span class="text-[10px] font-semibold text-amber-800">Klik "Terima & Lunasi" untuk otomatis mencatat lunas</span>
+        <span class="text-[10px] font-semibold text-amber-800">Verifikasi pembayaran santri</span>
       </div>
       <div class="space-y-2">
         ${cardsHtml}
@@ -4544,7 +4542,7 @@ async function approveBuktiTransferSantri(proofId) {
   state.recentTransactions.unshift({
     id: 'T' + Date.now(),
     title: s ? s.nama : 'Santri',
-    subtitle: `Transfer DANA Terverifikasi (${getMonthLabel(proof.monthKey)})`,
+    subtitle: `Transfer DANA (${getMonthLabel(proof.monthKey)})`,
     type: 'income',
     amount: Number(proof.nominal || 0),
     date: 'Hari ini',
@@ -4567,7 +4565,7 @@ async function approveBuktiTransferSantri(proofId) {
   closePreviewBuktiBayarModal();
   saveState();
   renderAll();
-  showToast(`✓ Pembayaran ${s ? s.nama : 'Santri'} (${getMonthLabel(proof.monthKey)}) diterima & otomatis LUNAS!`, 'emerald');
+  showToast('Pembayaran diterima & LUNAS', 'emerald');
 }
 
 async function rejectBuktiTransferSantri(proofId) {
@@ -4577,7 +4575,7 @@ async function rejectBuktiTransferSantri(proofId) {
   }
   const proof = (state.konfirmasiBayar || []).find(p => p.id === proofId);
   if (!proof) return;
-  if (!confirm('Tolak bukti transfer ini? Status pembayaran santri tidak akan diubah.')) return;
+  if (!confirm('Tolak bukti transfer ini?')) return;
 
   proof.status = 'rejected';
 
