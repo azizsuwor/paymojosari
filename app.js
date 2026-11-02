@@ -690,11 +690,10 @@ function renderLoginModalSantriPicker() {
     const avatarUrl = getSantriAvatar(s, idx);
     return `
       <div onclick="selectLoginSantriAvatar('${s.id}')" class="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group">
-        <div class="relative w-12 h-12 rounded-full p-0.5 ${isSel ? 'ring-2 ring-[#064e3b] ring-offset-2' : 'opacity-75 group-hover:opacity-100'} transition-all">
+        <div class="w-12 h-12 rounded-full p-[2px] transition-all flex items-center justify-center ${isSel ? 'ring-2 ring-[#064e3b] ring-offset-2 ring-offset-white' : 'border border-slate-200 group-hover:border-slate-300 opacity-80 group-hover:opacity-100'}">
           <img src="${avatarUrl}" alt="${s.nama}" class="w-full h-full rounded-full object-cover bg-slate-100" />
-          ${isSel ? `<span class="w-3.5 h-3.5 rounded-full bg-[#064e3b] text-white flex items-center justify-center absolute -bottom-0.5 -right-0.5 text-[8px] font-bold shadow-2xs">✓</span>` : ''}
         </div>
-        <span class="text-[10px] ${isSel ? 'font-bold text-slate-900' : 'font-medium text-slate-500'} max-w-[56px] truncate">${s.shortName || s.nama.split(' ')[0]}</span>
+        <span class="text-[10px] ${isSel ? 'font-bold text-[#064e3b]' : 'font-medium text-slate-500'} max-w-[56px] truncate text-center">${s.shortName || s.nama.split(' ')[0]}</span>
       </div>
     `;
   }).join('');
@@ -1201,7 +1200,7 @@ function loadState() {
       state = JSON.parse(raw);
       if (Array.isArray(state.santri)) {
         state.santri.forEach(s => {
-          if (s.avatar && s.avatar.includes('images.unsplash.com')) {
+          if (s.avatar && !s.avatar.startsWith('data:image/')) {
             s.avatar = '';
           }
         });
@@ -1250,7 +1249,7 @@ async function syncFromBackend() {
       if (Array.isArray(d.santri)) {
         state.santri = d.santri.map(s => ({
           ...s,
-          avatar: (s.avatar && s.avatar.includes('images.unsplash.com')) ? '' : s.avatar
+          avatar: (s.avatar && s.avatar.startsWith('data:image/')) ? s.avatar : ''
         }));
       }
       if (d.tarifWifiPerBulan && Object.keys(d.tarifWifiPerBulan).length > 0) {
@@ -1993,21 +1992,20 @@ function renderQuickTransfer() {
     const isSelected = s.id === state.selectedSantriId;
     return `
       <div onclick="selectQuickSantri('${s.id}')" class="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group">
-        <div class="relative w-11 h-11 rounded-full p-0.5 ${isSelected ? 'ring-2 ring-[#064e3b] ring-offset-2' : 'group-hover:opacity-80'} transition-all">
+        <div class="w-12 h-12 rounded-full p-[2px] transition-all flex items-center justify-center shrink-0 ${isSelected ? 'ring-2 ring-[#064e3b] ring-offset-2 ring-offset-white' : 'border border-slate-200/90 group-hover:border-slate-300 opacity-85 group-hover:opacity-100'}">
           <img src="${getSantriAvatar(s, idx)}" alt="${s.nama}" class="w-full h-full rounded-full object-cover" />
-          ${isSelected ? `<span class="absolute bottom-0 right-0 w-3 h-3 bg-[#064e3b] border-2 border-white rounded-full"></span>` : ''}
         </div>
-        <span class="text-[11px] font-semibold text-slate-700">${s.shortName || s.nama.split(' ')[0]}</span>
+        <span class="text-[11px] max-w-[62px] truncate text-center transition-colors ${isSelected ? 'font-bold text-[#064e3b]' : 'font-medium text-slate-600 group-hover:text-slate-900'}">${s.shortName || s.nama.split(' ')[0]}</span>
       </div>
     `;
   }).join('');
 
   const addNewBtn = `
-    <div onclick="switchTab('santri')" class="flex flex-col items-center gap-1.5 cursor-pointer shrink-0">
-      <div class="w-11 h-11 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:border-slate-400 transition">
+    <div onclick="switchTab('santri')" class="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group">
+      <div class="w-12 h-12 rounded-full border border-dashed border-slate-300 group-hover:border-slate-400 flex items-center justify-center text-slate-400 group-hover:text-slate-700 transition shrink-0">
         <i data-lucide="plus" class="w-4 h-4"></i>
       </div>
-      <span class="text-[11px] font-semibold text-slate-400">Tambah</span>
+      <span class="text-[11px] font-medium text-slate-400 group-hover:text-slate-600">Tambah</span>
     </div>
   `;
 
