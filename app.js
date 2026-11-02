@@ -855,13 +855,13 @@ function updateRoleUI() {
     if (state.userRole === 'admin') {
       desk.innerHTML = `
         <div class="flex items-center gap-2.5 bg-white border border-slate-200/90 rounded-xl px-3 py-1.5 shadow-2xs select-none">
-          <div class="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/80 flex items-center justify-center p-1 shrink-0">
+          <div class="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-center p-1 shrink-0">
             <img src="logo-mojosari.png?v=2" alt="Bendahara" class="w-full h-full object-contain" />
           </div>
           <div class="leading-tight text-left">
             <div class="flex items-center gap-1.5">
               <span class="text-xs font-bold text-slate-900">Bendahara</span>
-              <span class="text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">Admin</span>
+              <span class="text-[9px] font-bold text-[#005B52] bg-[#DDF1E5] px-1.5 py-0.5 rounded-full">Admin</span>
             </div>
             <span class="text-[10px] text-slate-400 font-medium block">PP. Mojosari Tuban</span>
           </div>
@@ -882,7 +882,7 @@ function updateRoleUI() {
           <div class="leading-tight text-left max-w-[130px]">
             <div class="flex items-center gap-1.5">
               <span class="text-xs font-bold text-slate-900 truncate">${loggedSantri.shortName || loggedSantri.nama.split(' ')[0]}</span>
-              <span class="text-[9px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">Santri</span>
+              <span class="text-[9px] font-bold text-[#005B52] bg-[#DDF1E5] px-1.5 py-0.5 rounded-full">Santri</span>
             </div>
             <span class="text-[10px] text-slate-400 font-medium block truncate">${loggedSantri.prodi}</span>
           </div>
@@ -898,7 +898,7 @@ function updateRoleUI() {
       `;
     } else {
       desk.innerHTML = `
-        <button onclick="openAdminLoginModal('santri')" class="flex items-center gap-2 bg-[#064e3b] hover:bg-[#065f46] text-white rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-2xs select-none">
+        <button onclick="openAdminLoginModal('santri')" class="flex items-center gap-2 bg-[#005B52] hover:bg-[#004740] text-white rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-2xs select-none">
           <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
           <span>Masuk Akun</span>
         </button>
@@ -911,21 +911,21 @@ function updateRoleUI() {
   if (mob) {
     if (state.userRole === 'admin') {
       mob.innerHTML = `
-        <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 bg-emerald-50 text-emerald-900 text-[10px] font-bold rounded-full border border-emerald-200 cursor-pointer flex items-center gap-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-[#064e3b]"></span>
+        <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 bg-white text-slate-800 text-[10px] font-bold rounded-full border border-slate-200 cursor-pointer flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#005B52]"></span>
           <span>Bendahara</span>
         </button>
       `;
     } else if (state.userRole === 'santri' && loggedSantri) {
       mob.innerHTML = `
-        <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 bg-emerald-50 text-emerald-900 text-[10px] font-bold rounded-full border border-emerald-200 cursor-pointer flex items-center gap-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+        <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 bg-white text-slate-800 text-[10px] font-bold rounded-full border border-slate-200 cursor-pointer flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#005B52]"></span>
           <span class="max-w-[65px] truncate">${loggedSantri.shortName || loggedSantri.nama.split(' ')[0]}</span>
         </button>
       `;
     } else {
       mob.innerHTML = `
-        <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 bg-[#064e3b] text-white text-[10px] font-bold rounded-full cursor-pointer flex items-center gap-1 shadow-2xs">
+        <button onclick="openAdminLoginModal('santri')" class="px-2.5 py-1 bg-[#005B52] hover:bg-[#004740] text-white text-[10px] font-bold rounded-full cursor-pointer flex items-center gap-1 shadow-2xs">
           <i data-lucide="log-in" class="w-3 h-3"></i>
           <span>Masuk</span>
         </button>
@@ -2082,27 +2082,52 @@ function buildKartuSantriVisualHtml(s, idx = 0, showActions = true) {
   `;
 }
 
+function buildKartuSantriBannerHtml(s, idx = 0) {
+  const nis = getNomorIndukSantri(s, idx);
+  const avatarUrl = getSantriAvatar(s, idx, true);
+  return `
+    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/90 flex items-center justify-between gap-3 select-none">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-200/90 shrink-0 bg-white">
+          <img src="${avatarUrl}" alt="${s.nama}" class="w-full h-full object-cover" />
+        </div>
+        <div class="min-w-0 leading-tight">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <h4 class="text-xs font-bold text-slate-900 truncate">${s.nama}</h4>
+            <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-[#DDF1E5] text-[#005B52]">${nis}</span>
+          </div>
+          <p class="text-[11px] text-slate-500 truncate mt-0.5">${s.prodi || 'Santri Aktif'} • Kamar ${s.kamar || 'A'}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button type="button" onclick="openKartuSantriModal('${s.id}')" title="Pratinjau & Cetak KTA" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-[11px] font-bold cursor-pointer transition flex items-center gap-1">
+          <i data-lucide="printer" class="w-3.5 h-3.5 text-slate-500"></i>
+          <span>KTA</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
 function renderActiveKartuSantriWidget() {
   const widget = document.getElementById('activeKartuSantriWidget');
   if (!widget) return;
 
   if (state.userRole === 'guest') {
     widget.innerHTML = `
-      <div class="flex items-center justify-between">
-        <h3 class="text-sm font-bold text-slate-900 font-display">Kartu Identitas Santri</h3>
-        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">Privat</span>
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-bold text-slate-900 font-display">Identitas Santri</h3>
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">Privat</span>
       </div>
-      <div class="p-5 rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] text-center space-y-2.5">
-        <div class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#064e3b] flex items-center justify-center mx-auto">
-          <i data-lucide="id-card" class="w-5 h-5"></i>
+      <div class="p-3.5 rounded-xl border border-dashed border-slate-200 bg-slate-50 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-slate-200/80 text-slate-600 flex items-center justify-center shrink-0">
+            <i data-lucide="id-card" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs text-slate-500 truncate">Masuk akun untuk KTA</span>
         </div>
-        <div>
-          <h4 class="text-xs font-bold text-slate-900">Kartu Identitas Santri</h4>
-          <p class="text-[11px] text-slate-500 mt-0.5">Masuk akun untuk melihat dan mencetak KTA.</p>
-        </div>
-        <button type="button" onclick="openAdminLoginModal('santri')" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer shadow-xs inline-flex items-center gap-1.5">
-          <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-          <span>Masuk Akun</span>
+        <button type="button" onclick="openAdminLoginModal('santri')" class="px-3 py-1.5 rounded-lg bg-[#005B52] hover:bg-[#004740] text-white text-xs font-bold transition cursor-pointer shrink-0">
+          Masuk
         </button>
       </div>
     `;
@@ -2118,23 +2143,20 @@ function renderActiveKartuSantriWidget() {
   const idx = state.santri.findIndex(x => x.id === s.id);
 
   widget.innerHTML = `
-    <div class="flex items-center justify-between">
-      <h3 class="text-sm font-bold text-slate-900 font-display">${state.userRole === 'santri' ? 'Kartu Identitas Saya' : 'Kartu Identitas Santri'}</h3>
+    <div class="flex items-center justify-between mb-2.5">
+      <h3 class="text-sm font-bold text-slate-900 font-display">${state.userRole === 'santri' ? 'Kartu Identitas Saya' : 'Identitas Santri Terpilih'}</h3>
       <div class="flex items-center gap-1.5">
-        <button type="button" onclick="openGantiFotoSantriMandiri('${s.id}')" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer transition">
-          Ganti Foto
-        </button>
-        <button type="button" onclick="openKartuSantriModal('${s.id}')" class="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold cursor-pointer transition">
-          Cetak
+        <button type="button" onclick="openGantiFotoSantriMandiri('${s.id}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold cursor-pointer transition">
+          Foto
         </button>
         ${state.isAdmin ? `
-          <button type="button" onclick="openSemuaKartuSantriModal()" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold cursor-pointer transition">
+          <button type="button" onclick="openSemuaKartuSantriModal()" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold cursor-pointer transition">
             Semua
           </button>
         ` : ''}
       </div>
     </div>
-    ${buildKartuSantriVisualHtml(s, idx >= 0 ? idx : 0, false)}
+    ${buildKartuSantriBannerHtml(s, idx >= 0 ? idx : 0)}
   `;
 }
 
@@ -2204,24 +2226,24 @@ function renderScheduledPayments(searchFilter = '') {
             ${sum.totalUnpaid > 0 ? `<div class="text-[10px] text-rose-500 font-semibold">Kurang ${formatRp(sum.totalUnpaid)}</div>` : ''}
           </div>
 
-          <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full ${sum.isFullLunas ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
+          <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${sum.isFullLunas ? 'bg-[#DDF1E5] text-[#005B52]' : 'bg-[#FEF3C7] text-[#92400E]'}">
             ${sum.isFullLunas ? 'Active' : 'Pending'}
           </span>
 
           <div class="flex items-center gap-1">
             ${state.isAdmin ? `
-              <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" title="Terbitkan Nota Pembayaran (Bendahara)" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-800 hover:bg-slate-100 cursor-pointer">
+              <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" title="Terbitkan Nota Pembayaran (Bendahara)" class="p-1.5 rounded-lg text-slate-400 hover:text-[#005B52] hover:bg-slate-100 cursor-pointer">
                 <i data-lucide="receipt" class="w-4 h-4"></i>
               </button>
               <button onclick="openNotaTunggakanSantriModal('${s.id}')" title="Kirim Tagihan WA ke Santri" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 cursor-pointer">
                 <i data-lucide="send" class="w-4 h-4"></i>
               </button>
             ` : `
-              <button onclick="openUploadBuktiSantriModal('${s.id}', '${state.activeMonth}')" title="Upload Bukti Transfer DANA" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[10px] font-bold cursor-pointer flex items-center gap-1 shadow-2xs">
+              <button onclick="openUploadBuktiSantriModal('${s.id}', '${state.activeMonth}')" title="Upload Bukti Transfer DANA" class="px-2.5 py-1 rounded-lg bg-[#005B52] hover:bg-[#004740] text-white text-[10px] font-bold cursor-pointer flex items-center gap-1 shadow-2xs">
                 <i data-lucide="upload" class="w-3.5 h-3.5"></i>
                 <span>Upload Bukti</span>
               </button>
-              <button onclick="openWaKonfirmasiKeBendahara('${s.id}', '${state.activeMonth}')" title="Konfirmasi Pembayaran ke WA Bendahara" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer flex items-center gap-1">
+              <button onclick="openWaKonfirmasiKeBendahara('${s.id}', '${state.activeMonth}')" title="Konfirmasi Pembayaran ke WA Bendahara" class="px-2.5 py-1 rounded-lg bg-[#DDF1E5] hover:bg-[#c9ead6] text-[#005B52] text-[10px] font-bold cursor-pointer flex items-center gap-1">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
                 <span>WA</span>
               </button>
@@ -2243,9 +2265,13 @@ function renderRecentPayments() {
     return;
   }
 
-  container.innerHTML = state.recentTransactions.slice(0, 6).map(tx => {
+  container.innerHTML = state.recentTransactions.slice(0, 5).map(tx => {
     const isInc = tx.type === 'income';
-    const statusColor = tx.status === 'Completed' ? 'text-emerald-800 font-medium' : tx.status === 'Pending' ? 'text-amber-500 font-medium' : 'text-rose-500 font-medium';
+    const statusBadge = tx.status === 'Completed'
+      ? 'bg-[#DDF1E5] text-[#005B52]'
+      : tx.status === 'Pending'
+        ? 'bg-[#FEF3C7] text-[#92400E]'
+        : 'bg-[#FCE4E5] text-[#991B1B]';
 
     return `
       <div class="flex items-center justify-between gap-3">
@@ -2263,7 +2289,7 @@ function renderRecentPayments() {
           <div class="text-xs font-bold font-mono ${isInc ? 'text-slate-900' : 'text-slate-900'}">
             ${isInc ? '+' : '-'}${formatRp(tx.amount)}
           </div>
-          <div class="text-[10px] ${statusColor}">${tx.status}</div>
+          <span class="inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${statusBadge}">${tx.status}</span>
         </div>
       </div>
     `;
