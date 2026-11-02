@@ -850,58 +850,58 @@ function updateRoleUI() {
     : null;
   const loggedIdx = loggedSantri ? state.santri.findIndex(s => s.id === loggedSantri.id) : 0;
 
-  // 0. Top Profile Pill (Jordan Blake FinPilot style)
-  const topName = document.getElementById('topProfileName');
-  const topSub = document.getElementById('topProfileSub');
-  const topAvatar = document.getElementById('topProfileAvatar');
-  if (topName && topSub && topAvatar) {
-    if (state.userRole === 'admin') {
-      topName.textContent = 'Bendahara';
-      topSub.textContent = 'Admin';
-      topAvatar.src = 'logo-mojosari.png?v=2';
-    } else if (state.userRole === 'santri' && loggedSantri) {
-      topName.textContent = loggedSantri.nama;
-      topSub.textContent = loggedSantri.prodi;
-      topAvatar.src = getSantriAvatar(loggedSantri, loggedIdx);
-    } else {
-      topName.textContent = 'Tamu';
-      topSub.textContent = 'Masuk Akun';
-      topAvatar.src = 'logo-mojosari.png?v=2';
-    }
-  }
-
-  // 1. Desktop Role Indicator
+  // 0. Top Profile Unified
   const desk = document.getElementById('adminRoleIndicatorDesktop');
   if (desk) {
     if (state.userRole === 'admin') {
       desk.innerHTML = `
-        <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200/90 rounded-full px-3 py-1.5 text-xs shadow-2xs select-none">
-          <span class="w-2 h-2 rounded-full bg-[#064e3b] animate-pulse"></span>
-          <span class="font-bold text-emerald-950">Bendahara</span>
-          <button onclick="openAdminLoginModal('santri')" class="text-[10px] text-slate-700 font-bold hover:underline ml-1 cursor-pointer">Santri</button>
-          <span class="text-emerald-300">•</span>
-          <button onclick="openResetAdminPasswordForm()" class="text-[10px] text-emerald-800 font-bold hover:underline cursor-pointer">Sandi</button>
-          <span class="text-emerald-300">•</span>
-          <button onclick="logoutAdmin()" class="text-[10px] text-rose-600 font-bold hover:underline cursor-pointer">Keluar</button>
+        <div class="flex items-center gap-2.5 bg-white border border-slate-200/90 rounded-xl px-3 py-1.5 shadow-2xs select-none">
+          <div class="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/80 flex items-center justify-center p-1 shrink-0">
+            <img src="logo-mojosari.png?v=2" alt="Bendahara" class="w-full h-full object-contain" />
+          </div>
+          <div class="leading-tight text-left">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-900">Bendahara</span>
+              <span class="text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">Admin</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-medium block">PP. Mojosari Tuban</span>
+          </div>
+          <div class="flex items-center gap-1 ml-1.5 pl-2 border-l border-slate-200 text-slate-400">
+            <button onclick="openResetAdminPasswordForm()" title="Ubah Sandi" class="p-1 hover:text-slate-700 hover:bg-slate-100 rounded-md transition cursor-pointer">
+              <i data-lucide="key" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="logoutAdmin()" title="Keluar Mode Admin" class="p-1 hover:text-rose-600 hover:bg-rose-50 rounded-md transition cursor-pointer">
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
         </div>
       `;
     } else if (state.userRole === 'santri' && loggedSantri) {
       desk.innerHTML = `
-        <div class="flex items-center gap-2 bg-white border border-slate-200/90 rounded-full px-3 py-1.5 text-xs shadow-2xs select-none">
-          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
-          <span class="font-bold text-slate-800">Santri</span>
-          <button onclick="openResetSantriPasswordForm()" class="text-[10px] text-emerald-800 font-bold hover:underline ml-1 cursor-pointer">Sandi</button>
-          <span class="text-slate-300">•</span>
-          <button onclick="openAdminLoginModal('santri')" class="text-[10px] text-slate-600 font-bold hover:underline cursor-pointer">Ganti</button>
-          <span class="text-slate-300">•</span>
-          <button onclick="logoutAdmin()" class="text-[10px] text-rose-600 font-bold hover:underline cursor-pointer">Keluar</button>
+        <div class="flex items-center gap-2.5 bg-white border border-slate-200/90 rounded-xl px-3 py-1.5 shadow-2xs select-none">
+          <img src="${getSantriAvatar(loggedSantri, loggedIdx)}" alt="${loggedSantri.nama}" class="w-7 h-7 rounded-lg object-cover border border-slate-200 shrink-0" />
+          <div class="leading-tight text-left max-w-[130px]">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-900 truncate">${loggedSantri.shortName || loggedSantri.nama.split(' ')[0]}</span>
+              <span class="text-[9px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">Santri</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-medium block truncate">${loggedSantri.prodi}</span>
+          </div>
+          <div class="flex items-center gap-1 ml-1.5 pl-2 border-l border-slate-200 text-slate-400">
+            <button onclick="openResetSantriPasswordForm()" title="Ubah Sandi" class="p-1 hover:text-slate-700 hover:bg-slate-100 rounded-md transition cursor-pointer">
+              <i data-lucide="key" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="logoutAdmin()" title="Keluar Akun" class="p-1 hover:text-rose-600 hover:bg-rose-50 rounded-md transition cursor-pointer">
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
         </div>
       `;
     } else {
       desk.innerHTML = `
-        <button onclick="openAdminLoginModal('santri')" class="flex items-center gap-1.5 bg-[#064e3b] hover:bg-[#065f46] text-white rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer shadow-xs select-none">
+        <button onclick="openAdminLoginModal('santri')" class="flex items-center gap-2 bg-[#064e3b] hover:bg-[#065f46] text-white rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-2xs select-none">
           <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-          <span>Masuk</span>
+          <span>Masuk Akun</span>
         </button>
       `;
     }

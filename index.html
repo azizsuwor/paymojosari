@@ -27,18 +27,31 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            display: ['"Plus Jakarta Sans"', 'sans-serif'],
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            display: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+          },
+          fontSize: {
+            // Modular Scale: Perfect Fourth (Ratio 1.333, Base 16px / 1rem)
+            'ms-micro':   ['0.563rem', { lineHeight: '0.875rem' }],  // 9px (Level -2)
+            'ms-caption': ['0.75rem',  { lineHeight: '1.125rem' }],  // 12px (Level -1)
+            'ms-body':    ['1rem',     { lineHeight: '1.5rem' }],    // 16px (Base Level 0)
+            'ms-title':   ['1.333rem', { lineHeight: '1.75rem' }],   // 21.3px (Level 1)
+            'ms-stat':    ['1.777rem', { lineHeight: '2.125rem' }],  // 28.4px (Level 2)
+            'ms-hero':    ['2.369rem', { lineHeight: '2.75rem' }],   // 37.9px (Level 3)
+            // Major Third (Ratio 1.250) for dense documents & tables
+            'mt-sm':      ['0.8rem',   { lineHeight: '1.25rem' }],   // 12.8px
+            'mt-base':    ['1rem',     { lineHeight: '1.5rem' }],    // 16px
+            'mt-lg':      ['1.25rem',  { lineHeight: '1.625rem' }],  // 20px
           },
           colors: {
             brand: {
-              primary: '#064e3b',   // deep dark emerald matching FinPilot's dark green #064E3B / #065F46
+              primary: '#064e3b',
               accent: '#047857',
               pill: '#064e3b',
               light: '#f1f5f9',
               card: '#ffffff',
-              canvas: '#eef2f6',
-              border: '#f1f5f9'
+              canvas: '#f8fafc',
+              border: '#e2e8f0'
             }
           }
         }
@@ -46,8 +59,37 @@
     }
   </script>
   <style>
+    /* =========================================================================
+       MODULAR SCALE TYPOGRAPHY (Perfect Fourth 1.333 & Major Third 1.25)
+       Formula: f_n = f_0 * (r)^n, with base f_0 = 16px (1rem)
+       ========================================================================= */
+    :root {
+      --ms-ratio: 1.333;
+      --step--2: 0.563rem; /* 9.0px - Micro badges & legal tags */
+      --step--1: 0.750rem; /* 12.0px - Captions, helper text, timestamps */
+      --step-0:  1.000rem; /* 16.0px - Base body text & inputs */
+      --step-1:  1.333rem; /* 21.3px - Section headers & card titles */
+      --step-2:  1.777rem; /* 28.4px - Page headings & primary statistics */
+      --step-3:  2.369rem; /* 37.9px - Hero display figures */
+
+      --dense--1: 0.800rem; /* 12.8px - Dense table text */
+      --dense-0:  1.000rem; /* 16.0px */
+      --dense-1:  1.250rem; /* 20.0px - Dense modal titles */
+
+      /* 8pt Harmonic Layout Spacing */
+      --space-1: 0.25rem;  /* 4px */
+      --space-2: 0.5rem;   /* 8px */
+      --space-3: 0.75rem;  /* 12px */
+      --space-4: 1.000rem; /* 16px */
+      --space-5: 1.250rem; /* 20px */
+      --space-6: 1.500rem; /* 24px */
+      --space-8: 2.000rem; /* 32px */
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: var(--step-0);
+      line-height: 1.5;
       background-color: #f8fafc;
       color: #0f172a;
       min-height: 100vh;
@@ -308,16 +350,7 @@
             <span id="navNotifDot" class="w-2 h-2 rounded-full bg-rose-500 absolute top-2 right-2"></span>
           </button>
 
-          <!-- User Profile Pill (FinPilot Jordan Blake Style) -->
-          <div onclick="handleTopProfileClick()" title="Klik untuk ganti akun / login" class="flex items-center gap-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-xl pl-3 pr-1.5 py-1 cursor-pointer transition">
-            <div class="text-right">
-              <span id="topProfileName" class="text-xs font-semibold text-slate-800 block leading-tight">Tamu Umum</span>
-              <span id="topProfileSub" class="text-[10px] text-slate-400 font-medium">Login</span>
-            </div>
-            <img id="topProfileAvatar" src="logo-mojosari.png?v=2" alt="Profile" class="w-7 h-7 rounded-lg object-cover shrink-0 border border-slate-200 bg-white" />
-          </div>
-
-          <!-- Role Indicator Desktop -->
+          <!-- Unified Profile & Account Actions (Desktop) -->
           <div id="adminRoleIndicatorDesktop"></div>
         </div>
       </header>
@@ -1162,18 +1195,20 @@
   </div>
 
   <!-- ================= MODAL: SETORAN WIFI BULANAN (BENDAHARA) ================= -->
-  <div id="modalWifiProof" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 no-print">
+  <div id="modalWifiProof" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 no-print">
     <div class="bg-white rounded-2xl max-w-lg w-full border border-slate-200/80 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-      <div class="px-5 sm:px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <i data-lucide="wifi" class="w-5 h-5 text-emerald-300"></i>
+      <div class="px-5 sm:px-6 py-4 bg-white border-b border-slate-200/80 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <i data-lucide="wifi" class="w-4 h-4"></i>
+          </div>
           <div>
-            <h3 class="text-sm font-bold font-display">Setoran WiFi Induk</h3>
-            <p id="modalWifiSubtitle" class="text-[11px] text-emerald-200"></p>
+            <h3 class="text-sm font-semibold text-slate-900">Setoran WiFi Induk</h3>
+            <p id="modalWifiSubtitle" class="text-[11px] text-slate-500"></p>
           </div>
         </div>
-        <button onclick="closeWifiModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button onclick="closeWifiModal()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
@@ -1231,15 +1266,20 @@
   </div>
 
   <!-- ================= MODAL: NOTA PEMBAYARAN / TUNGGAKAN & WA ================= -->
-  <div id="modalNota" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+  <div id="modalNota" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
     <div class="bg-white rounded-2xl max-w-xl w-full border border-slate-200/80 shadow-xl overflow-hidden">
-      <div class="px-5 sm:px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print">
-        <div class="flex items-center gap-2">
-          <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i>
-          <h3 id="modalNotaHeaderTitle" class="text-sm font-bold font-display">Nota Pembayaran</h3>
+      <div class="px-5 sm:px-6 py-4 bg-white border-b border-slate-200/80 flex items-center justify-between no-print">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <i data-lucide="receipt" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 id="modalNotaHeaderTitle" class="text-sm font-semibold text-slate-900">Nota Pembayaran</h3>
+            <p class="text-[11px] text-slate-500">PayMojosari • Dokumen Resmi</p>
+          </div>
         </div>
-        <button onclick="closeNotaModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button onclick="closeNotaModal()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
@@ -1298,18 +1338,20 @@
   </div>
 
   <!-- ================= MODAL: SIARAN REKAP LENGKAP KE GRUP WA ================= -->
-  <div id="modalRekapGrup" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+  <div id="modalRekapGrup" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl max-w-xl w-full border border-slate-200/80 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-      <div class="px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <i data-lucide="messages-square" class="w-5 h-5 text-emerald-300"></i>
+      <div class="px-6 py-4 bg-white border-b border-slate-200/80 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <i data-lucide="messages-square" class="w-4 h-4"></i>
+          </div>
           <div>
-            <h3 class="text-sm font-bold font-display">Siaran WA</h3>
-            <p id="modalRekapGrupSubtitle" class="text-[11px] text-emerald-200">Komplek Tuban</p>
+            <h3 class="text-sm font-semibold text-slate-900">Siaran WhatsApp</h3>
+            <p id="modalRekapGrupSubtitle" class="text-[11px] text-slate-500">Komplek Tuban</p>
           </div>
         </div>
-        <button onclick="closeRekapGrupModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button onclick="closeRekapGrupModal()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
@@ -1611,24 +1653,26 @@
   <!-- ================= MODAL: UPLOAD BUKTI TRANSFER DANA SANTRI ================= -->
   <div id="modalUploadBuktiSantri" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 no-print select-none">
     <div class="bg-white rounded-2xl max-w-md w-full border border-slate-200/80 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-      <div class="px-5 sm:px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <i data-lucide="upload-cloud" class="w-5 h-5 text-emerald-300"></i>
+      <div class="px-5 sm:px-6 py-4 bg-white border-b border-slate-200/80 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+          </div>
           <div>
-            <h3 class="text-sm font-bold font-display">Upload Bukti Transfer</h3>
-            <p id="modalBuktiSantriSubtitle" class="text-[11px] text-emerald-200">Konfirmasi Bayar</p>
+            <h3 class="text-sm font-semibold text-slate-900">Upload Bukti Transfer</h3>
+            <p id="modalBuktiSantriSubtitle" class="text-[11px] text-slate-500">Konfirmasi Pembayaran</p>
           </div>
         </div>
-        <button type="button" onclick="closeUploadBuktiSantriModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button type="button" onclick="closeUploadBuktiSantriModal()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
       <form onsubmit="handleSubmitBuktiTransferSantri(event)" class="p-5 sm:p-6 space-y-4 max-h-[82vh] overflow-y-auto custom-scroll text-xs">
         <!-- Kartu Informasi Tujuan Transfer DANA -->
-        <div class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-slate-50 border border-emerald-200/80 flex items-center justify-between gap-3">
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded-xl bg-[#008CEB] text-white font-extrabold text-[11px] tracking-tight flex items-center justify-center shrink-0 shadow-xs">
+            <div class="w-10 h-10 rounded-lg bg-[#008CEB] text-white font-extrabold text-[11px] tracking-tight flex items-center justify-center shrink-0 shadow-xs">
               DANA
             </div>
             <div class="min-w-0">
