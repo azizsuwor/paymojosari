@@ -47,24 +47,12 @@
   </script>
   <style>
     body {
-      font-family: 'Inter', sans-serif;
-      background: radial-gradient(circle at 50% 0%, #e2e8f0 0%, #cbd5e1 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f8fafc;
       color: #0f172a;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      margin: 0;
       padding: 0;
-    }
-    @media (min-width: 640px) {
-      body {
-        padding: 1rem;
-      }
-    }
-    @media (min-width: 1024px) {
-      body {
-        padding: 1.5rem;
-      }
     }
     .custom-scroll::-webkit-scrollbar {
       width: 5px;
@@ -96,10 +84,10 @@
     }
   </style>
 </head>
-<body class="antialiased selection:bg-emerald-900 selection:text-white">
+<body class="antialiased selection:bg-emerald-900 selection:text-white bg-[#f8fafc]">
 
-  <!-- Outer Dashboard Window Container (100% Match with FinPilot Frame, fully responsive on mobile) -->
-  <div id="mainAppContainer" class="w-full max-w-[1360px] bg-[#f8fafc] rounded-none sm:rounded-[28px] lg:rounded-[38px] shadow-none sm:shadow-[0_25px_70px_rgba(15,23,42,0.18)] border-0 sm:border sm:border-white/60 flex flex-col lg:flex-row overflow-hidden min-h-screen sm:min-h-[820px] transition-all relative">
+  <!-- Outer Dashboard Full-Bleed Enterprise Layout -->
+  <div id="mainAppContainer" class="w-full min-h-screen bg-[#f8fafc] flex flex-col lg:flex-row transition-all relative">
 
     <!-- ================= MOBILE HEADER (TOP BAR FOR SMARTPHONE/TABLET) ================= -->
     <div class="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100 sticky top-0 z-30 select-none no-print">
@@ -212,77 +200,77 @@
       </div>
     </div>
 
-    <!-- ================= SIDEBAR DESKTOP (FINPILOT STYLE) ================= -->
-    <aside class="hidden lg:flex w-[230px] shrink-0 bg-white border-r border-[#f1f5f9] p-6 flex-col justify-between select-none no-print">
-      <div class="space-y-7">
+    <!-- ================= SIDEBAR DESKTOP (ENTERPRISE CLEAN) ================= -->
+    <aside class="hidden lg:flex w-64 shrink-0 bg-white border-r border-slate-200/80 p-5 flex-col justify-between sticky top-0 h-screen select-none no-print">
+      <div class="space-y-6">
         <!-- Logo Header -->
         <div class="flex items-center gap-3 px-2">
-          <img src="logo-mojosari.png?v=2" alt="PayMojosari Logo" class="w-10 h-10 object-contain shrink-0" />
+          <img src="logo-mojosari.png?v=2" alt="PayMojosari Logo" class="w-9 h-9 object-contain shrink-0" />
           <div class="flex flex-col">
-            <span class="font-display font-extrabold text-lg text-slate-900 tracking-tight leading-none">PayMojosari</span>
-            <span class="text-[9px] font-semibold text-slate-400 tracking-wider uppercase mt-0.5">Komplek Tuban</span>
+            <span class="font-display font-bold text-base text-slate-900 tracking-tight leading-none">PayMojosari</span>
+            <span class="text-[10px] font-medium text-slate-400 tracking-wider uppercase mt-1">Komplek Tuban</span>
           </div>
         </div>
 
         <!-- Navigation Menu Items -->
-        <nav class="space-y-1.5 text-[13px] font-medium text-slate-500">
-          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
-            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+        <nav class="space-y-1 text-[13px] font-medium text-slate-600">
+          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-500"></i>
             <span>Dashboard</span>
           </button>
 
-          <button onclick="switchTab('pembayaran')" id="nav-pembayaran" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all bg-[#064e3b] text-white font-semibold shadow-xs cursor-pointer">
-            <i data-lucide="wallet" class="w-4 h-4"></i>
+          <button onclick="switchTab('pembayaran')" id="nav-pembayaran" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all bg-[#064e3b] text-white font-semibold shadow-xs cursor-pointer">
+            <i data-lucide="wallet" class="w-4 h-4 text-emerald-300"></i>
             <span>Pembayaran</span>
           </button>
 
-          <button onclick="switchTab('tunggakan')" id="nav-tunggakan" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
-            <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+          <button onclick="switchTab('tunggakan')" id="nav-tunggakan" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="arrow-left-right" class="w-4 h-4 text-slate-500"></i>
             <span>Tunggakan</span>
           </button>
 
-          <button onclick="openRekapGrupModal()" id="nav-grupwa" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-emerald-800 hover:bg-emerald-50 cursor-pointer font-semibold">
-            <i data-lucide="messages-square" class="w-4 h-4 text-emerald-800"></i>
+          <button onclick="openRekapGrupModal()" id="nav-grupwa" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-emerald-800 hover:bg-emerald-50 cursor-pointer font-semibold">
+            <i data-lucide="messages-square" class="w-4 h-4 text-emerald-700"></i>
             <span>Siaran WA</span>
           </button>
 
-          <button onclick="switchTab('masak')" id="nav-masak" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
-            <i data-lucide="utensils" class="w-4 h-4"></i>
+          <button onclick="switchTab('masak')" id="nav-masak" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="utensils" class="w-4 h-4 text-slate-500"></i>
             <span>Kas Masak</span>
           </button>
 
-          <button onclick="switchTab('kasumum')" id="nav-kasumum" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
-            <i data-lucide="receipt-text" class="w-4 h-4"></i>
+          <button onclick="switchTab('kasumum')" id="nav-kasumum" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="receipt-text" class="w-4 h-4 text-slate-500"></i>
             <span>Kas Umum</span>
           </button>
 
-          <button onclick="switchTab('utang')" id="nav-utang" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
-            <i data-lucide="hand-coins" class="w-4 h-4"></i>
+          <button onclick="switchTab('utang')" id="nav-utang" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="hand-coins" class="w-4 h-4 text-slate-500"></i>
             <span>Utang Kas</span>
           </button>
 
-          <button onclick="switchTab('santri')" id="nav-santri" class="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
-            <i data-lucide="users" class="w-4 h-4"></i>
+          <button onclick="switchTab('santri')" id="nav-santri" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer">
+            <i data-lucide="users" class="w-4 h-4 text-slate-500"></i>
             <span>Data Santri</span>
           </button>
         </nav>
       </div>
 
       <!-- Bottom Sidebar Links -->
-      <div class="space-y-1.5 text-[13px] font-medium text-slate-500 pt-6 border-t border-slate-100">
-        <button onclick="triggerInstallPwa()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl bg-emerald-50/80 hover:bg-emerald-100 text-emerald-900 transition text-left cursor-pointer font-bold">
+      <div class="space-y-1 text-[13px] font-medium text-slate-500 pt-5 border-t border-slate-100">
+        <button onclick="triggerInstallPwa()" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-emerald-50/80 hover:bg-emerald-100 text-emerald-900 transition text-left cursor-pointer font-bold">
           <i data-lucide="smartphone" class="w-4 h-4 text-[#064e3b]"></i>
           <span class="truncate">Install Aplikasi</span>
         </button>
-        <button onclick="ubahLinkGrupWa()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-emerald-50 text-emerald-800 transition text-left cursor-pointer font-semibold">
+        <button onclick="ubahLinkGrupWa()" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-50 text-emerald-800 transition text-left cursor-pointer font-semibold">
           <i data-lucide="link" class="w-4 h-4 text-emerald-800"></i>
           <span class="truncate">Link Grup WA</span>
         </button>
-        <button onclick="openBendaharaWifiModal()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
+        <button onclick="openBendaharaWifiModal()" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
           <i data-lucide="wifi" class="w-4 h-4 text-emerald-800"></i>
           <span class="truncate">Setor WiFi</span>
         </button>
-        <button onclick="ubahTarifWifiManual()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
+        <button onclick="ubahTarifWifiManual()" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-left cursor-pointer">
           <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
           <span>Tarif WiFi</span>
         </button>
@@ -290,18 +278,18 @@
     </aside>
 
     <!-- ================= MAIN CONTENT WRAPPER ================= -->
-    <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc] overflow-y-auto custom-scroll">
+    <div class="flex-1 flex flex-col min-w-0 min-h-screen bg-[#f8fafc]">
 
-      <!-- TOP NAVBAR (MATCHING FINPILOT: TITLE, SEARCH, NOTIF, USER PROFILE) -->
-      <header class="hidden lg:flex px-8 pt-7 pb-4 items-center justify-between gap-4 no-print select-none">
+      <!-- TOP NAVBAR -->
+      <header class="hidden lg:flex px-8 py-3.5 items-center justify-between gap-4 bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-20 no-print select-none">
         <div>
-          <h1 id="pageHeadingTitle" class="text-2xl font-bold font-display text-slate-900 tracking-tight">Pembayaran</h1>
+          <h1 id="pageHeadingTitle" class="text-xl font-bold font-display text-slate-900 tracking-tight">Pembayaran</h1>
           <p id="pageHeadingSubtitle" class="text-xs text-slate-400 font-medium mt-0.5">Komplek Tuban</p>
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3.5">
           <!-- Periode Dropdown styled cleanly -->
-          <div class="flex items-center gap-1.5 bg-white border border-slate-200/80 rounded-full px-3.5 py-1.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+          <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-1.5">
             <span class="text-[11px] font-semibold text-slate-400">Periode:</span>
             <select id="globalMonthSelect" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
             </select>
@@ -310,23 +298,23 @@
           <!-- Search Input Pill (FinPilot style) -->
           <div class="relative w-48 hidden md:block">
             <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-            <input id="quickSearchInput" oninput="handleGlobalSearch(event)" type="text" placeholder="Search" class="w-full pl-9 pr-6 py-2 rounded-full bg-white border border-slate-200/80 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-800 shadow-[0_2px_4px_rgba(0,0,0,0.02)]" />
+            <input id="quickSearchInput" oninput="handleGlobalSearch(event)" type="text" placeholder="Cari santri..." class="w-full pl-9 pr-6 py-1.5 rounded-xl bg-slate-50 border border-slate-200/90 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-800" />
             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-300 font-mono">/</span>
           </div>
 
           <!-- Notification Bell -->
-          <button onclick="switchTab('tunggakan')" title="Cek Tunggakan Santri" class="w-9 h-9 rounded-full bg-white border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-slate-900 shadow-[0_2px_4px_rgba(0,0,0,0.02)] cursor-pointer relative">
+          <button onclick="switchTab('tunggakan')" title="Cek Tunggakan Santri" class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200/90 flex items-center justify-center text-slate-600 hover:text-slate-900 cursor-pointer relative">
             <i data-lucide="bell" class="w-4 h-4"></i>
             <span id="navNotifDot" class="w-2 h-2 rounded-full bg-rose-500 absolute top-2 right-2"></span>
           </button>
 
           <!-- User Profile Pill (FinPilot Jordan Blake Style) -->
-          <div onclick="handleTopProfileClick()" title="Klik untuk ganti akun / login" class="flex items-center gap-2.5 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-full pl-3.5 pr-1.5 py-1 shadow-[0_2px_4px_rgba(0,0,0,0.02)] cursor-pointer transition">
+          <div onclick="handleTopProfileClick()" title="Klik untuk ganti akun / login" class="flex items-center gap-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-xl pl-3 pr-1.5 py-1 cursor-pointer transition">
             <div class="text-right">
               <span id="topProfileName" class="text-xs font-semibold text-slate-800 block leading-tight">Tamu Umum</span>
               <span id="topProfileSub" class="text-[10px] text-slate-400 font-medium">Login</span>
             </div>
-            <img id="topProfileAvatar" src="logo-mojosari.png?v=2" alt="Profile" class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200 bg-slate-50" />
+            <img id="topProfileAvatar" src="logo-mojosari.png?v=2" alt="Profile" class="w-7 h-7 rounded-lg object-cover shrink-0 border border-slate-200 bg-white" />
           </div>
 
           <!-- Role Indicator Desktop -->
@@ -340,8 +328,8 @@
         <span class="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">Komplek Tuban</span>
       </div>
 
-      <!-- ================= CONTENT VIEW: PAYMENTS (DEFAULT FINPILOT LAYOUT) ================= -->
-      <main class="px-3 sm:px-6 lg:px-8 pb-28 sm:pb-8 flex-1 space-y-5 sm:space-y-6">
+      <!-- ================= CONTENT VIEW: PAYMENTS ================= -->
+      <main class="px-4 sm:px-6 lg:px-8 py-6 pb-28 sm:pb-8 flex-1 space-y-6 max-w-[1400px] w-full mx-auto">
 
         <!-- ================= TAB: PAYMENTS (FINPILOT EXACT VIEW) ================= -->
         <div id="view-pembayaran" class="view-panel space-y-6">
@@ -1175,7 +1163,7 @@
 
   <!-- ================= MODAL: SETORAN WIFI BULANAN (BENDAHARA) ================= -->
   <div id="modalWifiProof" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 no-print">
-    <div class="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full border border-slate-100 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div class="bg-white rounded-2xl max-w-lg w-full border border-slate-200/80 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
       <div class="px-5 sm:px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <i data-lucide="wifi" class="w-5 h-5 text-emerald-300"></i>
@@ -1244,7 +1232,7 @@
 
   <!-- ================= MODAL: NOTA PEMBAYARAN / TUNGGAKAN & WA ================= -->
   <div id="modalNota" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-    <div class="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full border border-slate-100 shadow-2xl overflow-hidden">
+    <div class="bg-white rounded-2xl max-w-xl w-full border border-slate-200/80 shadow-xl overflow-hidden">
       <div class="px-5 sm:px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print">
         <div class="flex items-center gap-2">
           <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i>
@@ -1311,7 +1299,7 @@
 
   <!-- ================= MODAL: SIARAN REKAP LENGKAP KE GRUP WA ================= -->
   <div id="modalRekapGrup" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
-    <div class="bg-white rounded-3xl max-w-xl w-full border border-slate-100 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div class="bg-white rounded-2xl max-w-xl w-full border border-slate-200/80 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
       <div class="px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <i data-lucide="messages-square" class="w-5 h-5 text-emerald-300"></i>
@@ -1388,7 +1376,7 @@
 
   <!-- ================= MODAL: LOGIN AKUN FINPILOT STYLE (SANTRI & BENDAHARA) ================= -->
   <div id="modalAdminLogin" class="fixed inset-0 z-50 hidden bg-slate-900/45 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 no-print select-none">
-    <div class="bg-white rounded-[32px] max-w-[440px] w-full border border-white/80 shadow-[0_25px_70px_rgba(15,23,42,0.2)] overflow-hidden animate-in fade-in zoom-in-95 duration-150 p-6 sm:p-7 space-y-5">
+    <div class="bg-white rounded-2xl max-w-[440px] w-full border border-slate-200/80 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 p-6 sm:p-7 space-y-5">
       
       <!-- Top Header (FinPilot Style) -->
       <div class="flex items-start justify-between gap-3">
@@ -1622,7 +1610,7 @@
 
   <!-- ================= MODAL: UPLOAD BUKTI TRANSFER DANA SANTRI ================= -->
   <div id="modalUploadBuktiSantri" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 no-print select-none">
-    <div class="bg-white rounded-[28px] max-w-md w-full border border-white/80 shadow-[0_25px_70px_rgba(15,23,42,0.2)] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div class="bg-white rounded-2xl max-w-md w-full border border-slate-200/80 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
       <div class="px-5 sm:px-6 py-4 bg-[#064e3b] text-white flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <i data-lucide="upload-cloud" class="w-5 h-5 text-emerald-300"></i>
@@ -1714,7 +1702,7 @@
 
   <!-- ================= MODAL: LIHAT FOTO BUKTI TRANSFER ================= -->
   <div id="modalPreviewBuktiBayar" class="fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 no-print" onclick="closePreviewBuktiBayarModal()">
-    <div class="bg-white rounded-3xl max-w-md w-full p-4 space-y-3 shadow-2xl" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-2xl max-w-md w-full p-4 space-y-3 shadow-xl border border-slate-200/80" onclick="event.stopPropagation()">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
         <div>
           <h4 id="previewBuktiTitle" class="text-xs font-bold text-slate-900">Bukti Transfer Santri</h4>

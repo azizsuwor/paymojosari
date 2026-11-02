@@ -63,24 +63,58 @@ function buildDefaultTarifMap() {
   return map;
 }
 
+function getInitials(name) {
+  if (!name) return 'S';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function getSantriAvatar(s, index = 0, is3x4 = false) {
+  if (s && s.avatar && s.avatar.startsWith('data:image/')) {
+    return s.avatar;
+  }
+  const name = s ? (s.nama || s.shortName || 'Santri') : 'Santri';
+  const initials = getInitials(name);
+  const palettes = [
+    { bg: '#064e3b', text: '#ffffff' }, // deep emerald
+    { bg: '#0f766e', text: '#ffffff' }, // teal
+    { bg: '#1e3a8a', text: '#ffffff' }, // navy blue
+    { bg: '#334155', text: '#ffffff' }, // slate
+    { bg: '#047857', text: '#ffffff' }, // forest green
+    { bg: '#374151', text: '#ffffff' }, // cool dark gray
+    { bg: '#115e59', text: '#ffffff' }, // deep teal
+    { bg: '#1e293b', text: '#ffffff' }  // dark blue-gray
+  ];
+  const p = palettes[Math.abs(index) % palettes.length];
+  const w = is3x4 ? 90 : 120;
+  const h = 120;
+  const fs = is3x4 ? 30 : 42;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <rect width="${w}" height="${h}" fill="${p.bg}"/>
+    <text x="50%" y="54%" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="${fs}" font-weight="700" fill="${p.text}" text-anchor="middle" dominant-baseline="middle" letter-spacing="1">${initials}</text>
+  </svg>`;
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
 const DEFAULT_SANTRI = [
-  { id: 's1', nama: 'Muhammad Abdul Aziz', shortName: 'Aziz', alamat: 'Lampung', prodi: 'Sistem Informasi', wa: '081231256129', tanpaMakan: true, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's2', nama: 'Rahmat Taufik', shortName: 'Taufik', alamat: 'Rejoso', prodi: 'Sistem Informasi', wa: '0891209269', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's3', nama: 'Nailul Author Ahmad', shortName: 'Nailul', alamat: 'Boyolali', prodi: 'Sistem Informasi', wa: '082136066882', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's4', nama: 'Raihan Chayin', shortName: 'Raihan', alamat: 'Ngawi', prodi: 'Sistem Informasi', wa: '082331491897', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's5', nama: 'Angga Sanjaya', shortName: 'Angga', alamat: 'Purworejo', prodi: 'Sistem Informasi', wa: '083821865361', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's6', nama: 'Ahmad Dimas Nasrulloh', shortName: 'Dimas', alamat: 'Sidoarjo', prodi: 'Sistem Informasi', wa: '085645259514', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's7', nama: 'Ahmad Lukman Hakim', shortName: 'Lukman', alamat: 'Rejoso', prodi: 'Sistem Informasi', wa: '083849858925', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's8', nama: 'Riyadlus Sholikhin', shortName: 'Riyad', alamat: 'Loceret', prodi: 'Sistem Informasi', wa: '08318726592', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's9', nama: 'Muhammad Saiful Anam', shortName: 'Anam', alamat: 'Sawahan', prodi: 'Sistem Informasi', wa: '082146282076', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's10', nama: 'Ahmad Fathony Sidqan', shortName: 'Fathony', alamat: 'Berbek', prodi: 'Sistem Informasi', wa: '0895414997822', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's11', nama: 'Muhammad Nasikhul Umam', shortName: 'Umam', alamat: 'Loceret', prodi: 'Pendidikan Teknologi Informasi', wa: '085710272496', tanpaMakan: true, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's12', nama: 'Alwi Shihab Azzuhry', shortName: 'Alwi', alamat: 'Jambi', prodi: 'Pendidikan Teknologi Informasi', wa: '082294423387', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's13', nama: 'Muhammad Choirul Anwar', shortName: 'Anwar', alamat: 'Sawahan', prodi: 'Pendidikan Teknologi Informasi', wa: '081770092651', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's14', nama: 'Manshur Siroj', shortName: 'Manshur', alamat: 'Rejoso', prodi: 'Pendidikan Teknologi Informasi', wa: '085335219903', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's15', nama: 'Fadli Hibatulloh Ahmad', shortName: 'Fadli', alamat: 'Kudus', prodi: 'Teknik Industri', wa: '0887766847234', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's16', nama: 'Muhammad Rasyid Fathoni', shortName: 'Rasyid', alamat: 'Madiun', prodi: 'Akuntansi Bisnis Digital', wa: '082143460969', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&h=120&q=80' },
-  { id: 's17', nama: 'Ahmad Zuhdi Affabillah', shortName: 'Zuhdi', alamat: 'Ngeronggot', prodi: 'Akuntansi Bisnis Digital', wa: '085704414868', tanpaMakan: false, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80' }
+  { id: 's1', nama: 'Muhammad Abdul Aziz', shortName: 'Aziz', alamat: 'Lampung', prodi: 'Sistem Informasi', wa: '081231256129', tanpaMakan: true, avatar: '' },
+  { id: 's2', nama: 'Rahmat Taufik', shortName: 'Taufik', alamat: 'Rejoso', prodi: 'Sistem Informasi', wa: '0891209269', tanpaMakan: false, avatar: '' },
+  { id: 's3', nama: 'Nailul Author Ahmad', shortName: 'Nailul', alamat: 'Boyolali', prodi: 'Sistem Informasi', wa: '082136066882', tanpaMakan: false, avatar: '' },
+  { id: 's4', nama: 'Raihan Chayin', shortName: 'Raihan', alamat: 'Ngawi', prodi: 'Sistem Informasi', wa: '082331491897', tanpaMakan: false, avatar: '' },
+  { id: 's5', nama: 'Angga Sanjaya', shortName: 'Angga', alamat: 'Purworejo', prodi: 'Sistem Informasi', wa: '083821865361', tanpaMakan: false, avatar: '' },
+  { id: 's6', nama: 'Ahmad Dimas Nasrulloh', shortName: 'Dimas', alamat: 'Sidoarjo', prodi: 'Sistem Informasi', wa: '085645259514', tanpaMakan: false, avatar: '' },
+  { id: 's7', nama: 'Ahmad Lukman Hakim', shortName: 'Lukman', alamat: 'Rejoso', prodi: 'Sistem Informasi', wa: '083849858925', tanpaMakan: false, avatar: '' },
+  { id: 's8', nama: 'Riyadlus Sholikhin', shortName: 'Riyad', alamat: 'Loceret', prodi: 'Sistem Informasi', wa: '08318726592', tanpaMakan: false, avatar: '' },
+  { id: 's9', nama: 'Muhammad Saiful Anam', shortName: 'Anam', alamat: 'Sawahan', prodi: 'Sistem Informasi', wa: '082146282076', tanpaMakan: false, avatar: '' },
+  { id: 's10', nama: 'Ahmad Fathony Sidqan', shortName: 'Fathony', alamat: 'Berbek', prodi: 'Sistem Informasi', wa: '0895414997822', tanpaMakan: false, avatar: '' },
+  { id: 's11', nama: 'Muhammad Nasikhul Umam', shortName: 'Umam', alamat: 'Loceret', prodi: 'Pendidikan Teknologi Informasi', wa: '085710272496', tanpaMakan: true, avatar: '' },
+  { id: 's12', nama: 'Alwi Shihab Azzuhry', shortName: 'Alwi', alamat: 'Jambi', prodi: 'Pendidikan Teknologi Informasi', wa: '082294423387', tanpaMakan: false, avatar: '' },
+  { id: 's13', nama: 'Muhammad Choirul Anwar', shortName: 'Anwar', alamat: 'Sawahan', prodi: 'Pendidikan Teknologi Informasi', wa: '081770092651', tanpaMakan: false, avatar: '' },
+  { id: 's14', nama: 'Manshur Siroj', shortName: 'Manshur', alamat: 'Rejoso', prodi: 'Pendidikan Teknologi Informasi', wa: '085335219903', tanpaMakan: false, avatar: '' },
+  { id: 's15', nama: 'Fadli Hibatulloh Ahmad', shortName: 'Fadli', alamat: 'Kudus', prodi: 'Teknik Industri', wa: '0887766847234', tanpaMakan: false, avatar: '' },
+  { id: 's16', nama: 'Muhammad Rasyid Fathoni', shortName: 'Rasyid', alamat: 'Madiun', prodi: 'Akuntansi Bisnis Digital', wa: '082143460969', tanpaMakan: false, avatar: '' },
+  { id: 's17', nama: 'Ahmad Zuhdi Affabillah', shortName: 'Zuhdi', alamat: 'Ngeronggot', prodi: 'Akuntansi Bisnis Digital', wa: '085704414868', tanpaMakan: false, avatar: '' }
 ];
 
 let state = {
@@ -116,15 +150,10 @@ let deferredPwaPrompt = null;
 
 let currentSantriPhotoUrl = '';
 
-// Avatar profile placeholder pictures matching FinPilot's clean avatars
-const AVATAR_IMAGES = [
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=120&h=120&q=80',
-  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&h=120&q=80',
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&h=120&q=80',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&h=120&q=80'
-];
+// Fallback avatar helper
+function getFallbackAvatar(index = 0) {
+  return getSantriAvatar(null, index);
+}
 
 function createSampleWifiChatDataUrl(bulanLabel, nominalRp) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="460" height="300" viewBox="0 0 460 300">
@@ -226,7 +255,7 @@ function getActiveAdminProfile() {
     ...cfg,
     nama: santriData ? santriData.nama : cfg.nama,
     wa: normalizeWaLocal(santriData && santriData.wa ? santriData.wa : cfg.wa),
-    avatar: (santriData && santriData.avatar) ? santriData.avatar : AVATAR_IMAGES[idx >= 0 ? idx % AVATAR_IMAGES.length : 0]
+    avatar: getSantriAvatar(santriData || cfg, idx >= 0 ? idx : 0)
   };
 }
 
@@ -237,19 +266,19 @@ function renderAdminProfilePicker() {
   container.innerHTML = BENDAHARA_LIST.map(b => {
     const s = state.santri.find(x => x.id === b.id);
     const idx = state.santri.findIndex(x => x.id === b.id);
-    const avatarUrl = (s && s.avatar) ? s.avatar : AVATAR_IMAGES[idx >= 0 ? idx % AVATAR_IMAGES.length : 0];
+    const avatarUrl = getSantriAvatar(s || b, idx >= 0 ? idx : 0);
     const isSel = b.id === loginModalTempAdminId;
     const nis = s ? getNomorIndukSantri(s, idx >= 0 ? idx : 0) : (b.id === 's1' ? 'NIS-TBN-2026-001' : 'NIS-TBN-2026-014');
 
     return `
-      <div onclick="selectLoginAdminProfile('${b.id}')" class="p-2.5 rounded-2xl border ${isSel ? 'bg-emerald-50/70 border-[#064e3b] ring-1 ring-[#064e3b]/20' : 'bg-[#f8fafc] border-slate-200/80 hover:bg-slate-50'} flex items-center gap-2.5 cursor-pointer transition">
+      <div onclick="selectLoginAdminProfile('${b.id}')" class="p-2.5 rounded-xl border ${isSel ? 'bg-emerald-50/70 border-[#064e3b] ring-1 ring-[#064e3b]/20' : 'bg-[#f8fafc] border-slate-200/80 hover:bg-slate-50'} flex items-center gap-2.5 cursor-pointer transition">
         <div class="relative shrink-0">
-          <img src="${avatarUrl}" alt="${b.nama}" class="w-9 h-9 rounded-full object-cover border ${isSel ? 'border-[#064e3b]' : 'border-slate-200'} bg-white" onerror="this.src='${AVATAR_IMAGES[0]}'" />
+          <img src="${avatarUrl}" alt="${b.nama}" class="w-9 h-9 rounded-full object-cover border ${isSel ? 'border-[#064e3b]' : 'border-slate-200'} bg-white" />
           ${isSel ? `<span class="w-3.5 h-3.5 rounded-full bg-[#064e3b] text-white flex items-center justify-center absolute -bottom-0.5 -right-0.5 text-[8px] font-bold">✓</span>` : ''}
         </div>
         <div class="min-w-0 flex-1">
-          <span class="text-[11px] font-extrabold text-slate-900 block truncate leading-tight">${s ? s.nama : b.nama}</span>
-          <span class="text-[10px] font-bold text-emerald-800 block leading-tight mt-0.5">${b.jabatan}</span>
+          <span class="text-[11px] font-bold text-slate-900 block truncate leading-tight">${s ? s.nama : b.nama}</span>
+          <span class="text-[10px] font-semibold text-emerald-800 block leading-tight mt-0.5">${b.jabatan}</span>
           <span class="text-[9px] font-mono text-slate-400 block truncate">${nis}</span>
         </div>
       </div>
@@ -658,11 +687,11 @@ function renderLoginModalSantriPicker() {
 
   avatarContainer.innerHTML = state.santri.map((s, idx) => {
     const isSel = s.id === loginModalTempSantriId;
-    const avatarUrl = s.avatar || AVATAR_IMAGES[idx % AVATAR_IMAGES.length];
+    const avatarUrl = getSantriAvatar(s, idx);
     return `
       <div onclick="selectLoginSantriAvatar('${s.id}')" class="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group">
         <div class="relative w-12 h-12 rounded-full p-0.5 ${isSel ? 'ring-2 ring-[#064e3b] ring-offset-2' : 'opacity-75 group-hover:opacity-100'} transition-all">
-          <img src="${avatarUrl}" alt="${s.nama}" class="w-full h-full rounded-full object-cover bg-slate-100" onerror="this.src='${AVATAR_IMAGES[0]}'" />
+          <img src="${avatarUrl}" alt="${s.nama}" class="w-full h-full rounded-full object-cover bg-slate-100" />
           ${isSel ? `<span class="w-3.5 h-3.5 rounded-full bg-[#064e3b] text-white flex items-center justify-center absolute -bottom-0.5 -right-0.5 text-[8px] font-bold shadow-2xs">✓</span>` : ''}
         </div>
         <span class="text-[10px] ${isSel ? 'font-bold text-slate-900' : 'font-medium text-slate-500'} max-w-[56px] truncate">${s.shortName || s.nama.split(' ')[0]}</span>
@@ -833,7 +862,7 @@ function updateRoleUI() {
     } else if (state.userRole === 'santri' && loggedSantri) {
       topName.textContent = loggedSantri.nama;
       topSub.textContent = loggedSantri.prodi;
-      topAvatar.src = loggedSantri.avatar || AVATAR_IMAGES[loggedIdx % AVATAR_IMAGES.length];
+      topAvatar.src = getSantriAvatar(loggedSantri, loggedIdx);
     } else {
       topName.textContent = 'Tamu';
       topSub.textContent = 'Masuk Akun';
@@ -927,9 +956,9 @@ function updateRoleUI() {
       `;
     } else if (state.userRole === 'santri' && loggedSantri) {
       drawer.innerHTML = `
-        <div class="p-3 rounded-2xl bg-[#f8fafc] border border-slate-200 text-slate-900 flex items-center justify-between gap-2">
+        <div class="p-3 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-900 flex items-center justify-between gap-2">
           <div class="flex items-center gap-2.5 min-w-0">
-            <img src="${loggedSantri.avatar || AVATAR_IMAGES[loggedIdx % AVATAR_IMAGES.length]}" class="w-8 h-8 rounded-full object-cover border border-emerald-600 shrink-0" />
+            <img src="${getSantriAvatar(loggedSantri, loggedIdx)}" class="w-8 h-8 rounded-full object-cover border border-emerald-600 shrink-0" />
             <div class="min-w-0">
               <span class="text-xs font-bold block truncate">${loggedSantri.nama}</span>
               <span class="text-[10px] text-emerald-700 font-semibold block">Santri</span>
@@ -989,11 +1018,11 @@ function updateRoleUI() {
            </div>`
         : '';
 
-      qNotice.className = 'p-5 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-slate-900 space-y-4';
+      qNotice.className = 'p-5 rounded-xl bg-[#f8fafc] border border-slate-200/80 text-slate-900 space-y-4';
       qNotice.innerHTML = `
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/70">
           <div class="flex items-center gap-3">
-            <img src="${loggedSantri.avatar || AVATAR_IMAGES[loggedIdx % AVATAR_IMAGES.length]}" class="w-12 h-12 rounded-full object-cover ring-2 ring-[#064e3b] ring-offset-2 bg-white" />
+            <img src="${getSantriAvatar(loggedSantri, loggedIdx)}" class="w-12 h-12 rounded-full object-cover ring-2 ring-[#064e3b] ring-offset-2 bg-white" />
             <div>
               <div class="flex items-center gap-2 flex-wrap">
                 <h4 class="text-sm font-extrabold text-slate-900 font-display">${loggedSantri.nama}</h4>
@@ -1170,6 +1199,13 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       state = JSON.parse(raw);
+      if (Array.isArray(state.santri)) {
+        state.santri.forEach(s => {
+          if (s.avatar && s.avatar.includes('images.unsplash.com')) {
+            s.avatar = '';
+          }
+        });
+      }
     } else {
       state = getInitialDemoState();
       saveState(true);
@@ -1212,7 +1248,10 @@ async function syncFromBackend() {
     if (json && json.status === 'success' && json.data) {
       const d = json.data;
       if (Array.isArray(d.santri)) {
-        state.santri = d.santri;
+        state.santri = d.santri.map(s => ({
+          ...s,
+          avatar: (s.avatar && s.avatar.includes('images.unsplash.com')) ? '' : s.avatar
+        }));
       }
       if (d.tarifWifiPerBulan && Object.keys(d.tarifWifiPerBulan).length > 0) {
         state.tarifWifiPerBulan = { ...buildDefaultTarifMap(), ...d.tarifWifiPerBulan };
@@ -1955,7 +1994,7 @@ function renderQuickTransfer() {
     return `
       <div onclick="selectQuickSantri('${s.id}')" class="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group">
         <div class="relative w-11 h-11 rounded-full p-0.5 ${isSelected ? 'ring-2 ring-[#064e3b] ring-offset-2' : 'group-hover:opacity-80'} transition-all">
-          <img src="${s.avatar || AVATAR_IMAGES[idx % AVATAR_IMAGES.length]}" alt="${s.nama}" class="w-full h-full rounded-full object-cover" />
+          <img src="${getSantriAvatar(s, idx)}" alt="${s.nama}" class="w-full h-full rounded-full object-cover" />
           ${isSelected ? `<span class="absolute bottom-0 right-0 w-3 h-3 bg-[#064e3b] border-2 border-white rounded-full"></span>` : ''}
         </div>
         <span class="text-[11px] font-semibold text-slate-700">${s.shortName || s.nama.split(' ')[0]}</span>
@@ -1984,7 +2023,7 @@ function getNomorIndukSantri(s, idxParam = null) {
 
 function buildKartuSantriVisualHtml(s, idx = 0, showActions = true) {
   const nis = getNomorIndukSantri(s, idx);
-  const avatarUrl = s.avatar || AVATAR_IMAGES[idx % AVATAR_IMAGES.length];
+  const avatarUrl = getSantriAvatar(s, idx, true);
 
   return `
     <div class="rounded-2xl overflow-hidden border border-emerald-100 shadow-[0_4px_20px_rgba(6,78,59,0.06)] bg-white text-slate-800 p-4 relative select-none">
@@ -2010,7 +2049,7 @@ function buildKartuSantriVisualHtml(s, idx = 0, showActions = true) {
       <!-- Middle Biodata Identitas -->
       <div class="py-3.5 flex items-center gap-3.5 relative z-10">
         <div class="w-[66px] h-[88px] shrink-0 rounded-xl overflow-hidden border-2 border-emerald-200/90 shadow-xs bg-slate-50 relative">
-          <img src="${avatarUrl}" alt="${s.nama}" class="w-full h-full object-cover object-center" style="aspect-ratio: 3/4;" onerror="this.src='${AVATAR_IMAGES[0]}'" />
+          <img src="${avatarUrl}" alt="${s.nama}" class="w-full h-full object-cover object-center" style="aspect-ratio: 3/4;" />
         </div>
         <div class="min-w-0 flex-1 space-y-1">
           <div class="inline-block px-2 py-0.5 rounded-md bg-emerald-50/70 border border-emerald-200/60 text-[10px] font-mono font-bold text-emerald-800 tracking-wider">${nis}</div>
@@ -3064,22 +3103,27 @@ function handleSantriPhotoUpload(event) {
 }
 
 function handlePilihAvatarAcak() {
-  const randIdx = Math.floor(Math.random() * AVATAR_IMAGES.length);
-  currentSantriPhotoUrl = AVATAR_IMAGES[randIdx];
+  const randIdx = Math.floor(Math.random() * 8);
+  const editId = document.getElementById('editSantriId').value;
+  const s = state.santri.find(x => x.id === editId) || { nama: document.getElementById('santriNama').value || 'Santri' };
+  currentSantriPhotoUrl = getSantriAvatar(s, randIdx);
   const preview = document.getElementById('santriPhotoPreview');
   if (preview) preview.src = currentSantriPhotoUrl;
   const fileInput = document.getElementById('santriPhotoFile');
   if (fileInput) fileInput.value = '';
-  showToast('Avatar acak dipilih');
+  showToast('Inisial warna acak dipilih');
 }
 
 function handleResetFotoSantri() {
-  currentSantriPhotoUrl = AVATAR_IMAGES[0];
+  const editId = document.getElementById('editSantriId').value;
+  const idx = state.santri.findIndex(x => x.id === editId);
+  const s = idx >= 0 ? state.santri[idx] : null;
+  currentSantriPhotoUrl = '';
   const preview = document.getElementById('santriPhotoPreview');
-  if (preview) preview.src = currentSantriPhotoUrl;
+  if (preview) preview.src = getSantriAvatar(s, idx >= 0 ? idx : 0);
   const fileInput = document.getElementById('santriPhotoFile');
   if (fileInput) fileInput.value = '';
-  showToast('Foto dikembalikan ke default');
+  showToast('Foto dikembalikan ke inisial');
 }
 
 async function handleSaveSantri(event) {
@@ -3109,7 +3153,7 @@ async function handleSaveSantri(event) {
     const idx = state.santri.findIndex(s => s.id === editId);
     if (idx !== -1) {
       const existing = state.santri[idx];
-      const avatar = currentSantriPhotoUrl || existing.avatar || AVATAR_IMAGES[idx % AVATAR_IMAGES.length];
+      const avatar = currentSantriPhotoUrl || (existing.avatar && existing.avatar.startsWith('data:image/') ? existing.avatar : '');
       savedSantriObj = { 
         ...existing, 
         nama, 
@@ -3124,7 +3168,7 @@ async function handleSaveSantri(event) {
     }
   } else if (state.isAdmin) {
     const newId = 's' + (state.santri.length + 1);
-    const avatar = currentSantriPhotoUrl || AVATAR_IMAGES[state.santri.length % AVATAR_IMAGES.length];
+    const avatar = currentSantriPhotoUrl || '';
     savedSantriObj = { 
       id: newId, 
       nama, 
@@ -3189,16 +3233,16 @@ function populateSantriFormForSelf(s) {
   if (waEl) waEl.value = s.wa;
   if (chkTanpaMakan) chkTanpaMakan.checked = isSantriTanpaMakan(s);
 
-  currentSantriPhotoUrl = s.avatar || AVATAR_IMAGES[idx >= 0 ? idx % AVATAR_IMAGES.length : 0];
+  currentSantriPhotoUrl = (s.avatar && s.avatar.startsWith('data:image/')) ? s.avatar : '';
   const preview = document.getElementById('santriPhotoPreview');
-  if (preview) preview.src = currentSantriPhotoUrl;
+  if (preview) preview.src = getSantriAvatar(s, idx >= 0 ? idx : 0);
   const fileInput = document.getElementById('santriPhotoFile');
   if (fileInput) fileInput.value = '';
 
   const titleEl = document.getElementById('formSantriTitle');
   const btnTextEl = document.getElementById('btnSaveSantriText');
   const cancelBtn = document.getElementById('btnCancelEditSantri');
-  if (titleEl) titleEl.textContent = 'Profil & Foto Saya';
+  if (titleEl) titleEl.textContent = 'Profil & Foto';
   if (btnTextEl) btnTextEl.textContent = 'Simpan Profil';
   if (cancelBtn) cancelBtn.classList.add('hidden');
 }
@@ -3228,14 +3272,14 @@ function editSantri(id) {
   if (chkTanpaMakan) chkTanpaMakan.checked = isSantriTanpaMakan(s);
 
   // Set avatar foto preview
-  currentSantriPhotoUrl = s.avatar || AVATAR_IMAGES[idx >= 0 ? idx % AVATAR_IMAGES.length : 0];
+  currentSantriPhotoUrl = (s.avatar && s.avatar.startsWith('data:image/')) ? s.avatar : '';
   const preview = document.getElementById('santriPhotoPreview');
-  if (preview) preview.src = currentSantriPhotoUrl;
+  if (preview) preview.src = getSantriAvatar(s, idx >= 0 ? idx : 0);
   const fileInput = document.getElementById('santriPhotoFile');
   if (fileInput) fileInput.value = '';
 
-  document.getElementById('formSantriTitle').textContent = state.isAdmin ? 'Edit Data Santri' : 'Profil & Foto Saya';
-  document.getElementById('btnSaveSantriText').textContent = state.isAdmin ? 'Simpan Perubahan' : 'Simpan Profil';
+  document.getElementById('formSantriTitle').textContent = state.isAdmin ? 'Edit Santri' : 'Profil & Foto';
+  document.getElementById('btnSaveSantriText').textContent = state.isAdmin ? 'Simpan' : 'Simpan Profil';
   const cancelBtn = document.getElementById('btnCancelEditSantri');
   if (cancelBtn) {
     if (state.isAdmin) cancelBtn.classList.remove('hidden');
@@ -3259,11 +3303,11 @@ function resetSantriForm() {
 
   currentSantriPhotoUrl = '';
   const preview = document.getElementById('santriPhotoPreview');
-  if (preview) preview.src = AVATAR_IMAGES[0];
+  if (preview) preview.src = getSantriAvatar(null, 0);
   const fileInput = document.getElementById('santriPhotoFile');
   if (fileInput) fileInput.value = '';
 
-  document.getElementById('formSantriTitle').textContent = 'Form Data Santri';
+  document.getElementById('formSantriTitle').textContent = 'Tambah Santri';
   document.getElementById('btnSaveSantriText').textContent = 'Simpan Santri';
   document.getElementById('btnCancelEditSantri').classList.add('hidden');
 }
@@ -3328,7 +3372,7 @@ function renderSantriTab() {
       <tr class="${isMe ? 'bg-emerald-50/40' : 'hover:bg-slate-50'} transition-colors">
         <td class="py-2.5 px-3 font-bold text-slate-900">
           <div class="flex items-center gap-2.5">
-            <img src="${s.avatar || AVATAR_IMAGES[idx % AVATAR_IMAGES.length]}" alt="${s.nama}" class="w-8 h-8 rounded-full object-cover border ${isMe ? 'border-[#064e3b] ring-2 ring-emerald-100' : 'border-slate-200'} shrink-0 bg-slate-100" onerror="this.src='${AVATAR_IMAGES[0]}'" />
+            <img src="${getSantriAvatar(s, idx)}" alt="${s.nama}" class="w-8 h-8 rounded-full object-cover border ${isMe ? 'border-[#064e3b] ring-2 ring-emerald-100' : 'border-slate-200'} shrink-0 bg-slate-100" />
             <div>
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span>${s.nama}</span>
