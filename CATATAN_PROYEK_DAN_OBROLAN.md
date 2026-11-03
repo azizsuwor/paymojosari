@@ -364,6 +364,12 @@ Menjawab permasalahan riil di lapangan:
   2. Pengajuan yang berstatus **`ditolak`** atau **`menunggu_persetujuan`** tidak akan pernah mengurangi uang kas fisik. Saldo kas kembali normal seketika saat pengajuan ditolak.
   3. Disediakan tombol **Hapus** (ikon sampah) pada tabel Utang Kas khusus Bendahara untuk menghapus riwayat pengajuan pinjaman yang sudah ditolak atau selesai (`api.php?action=delete_utang`).
 
+### L. Reset Kas Tersedia Menjadi Rp 0 & Cache V14
+- **Reset Saldo Kas ke Rp 0 Bersih:** Menghapus data transaksi uji coba pinjaman 10jt dan transaksi lama sehingga **Kas Tersedia** kembali bersih menjadi **Rp 0** pada awal periode.
+- **Peningkatan Cache Storage ke `V14` (`SIMKAS_MOJOSARI_FINPILOT_V14`):** Mengosongkan cache lama browser saat halaman dimuat/di-refresh (`Ctrl + F5`) sekaligus memfilter otomatis pinjaman uji coba yang tidak valid.
+- **Sinkronisasi Endpoint Reset Server (`reset_all_kas`):** Menambahkan tindakan di `api.php?action=reset_all_kas` dan helper `window.resetKasTersedia()` di `app.js` agar pembukuan kas dapat di-reset kapan saja dengan tetap mempertahankan 17 data profil santri secara aman.
+
+
 
 
 
