@@ -490,13 +490,13 @@
                   <div id="quickTransferAvatarList" class="flex items-center gap-3.5 overflow-x-auto py-2.5 px-1.5 custom-scroll">
                   </div>
 
-                  <!-- 3 Segmented Filter Tabs (Makan, WiFi Manual, Kas All) -->
+                  <!-- 3 Segmented Filter Tabs (Include, Kas Makan, Kas Umum) -->
                   <div class="bg-[#f1f5f9] p-1 rounded-xl grid grid-cols-3 gap-1 text-xs font-semibold text-slate-600 text-center select-none">
-                    <button type="button" onclick="setQuickMode('full')" id="qtab-full" class="py-2 rounded-lg bg-white text-slate-900 shadow-xs cursor-pointer transition">
-                      Lunas (100k)
+                    <button type="button" onclick="setQuickMode('full')" id="qtab-full" class="py-2 rounded-lg bg-white text-slate-900 shadow-xs cursor-pointer transition font-bold">
+                      Include (100k)
                     </button>
                     <button type="button" onclick="setQuickMode('makan')" id="qtab-makan" class="py-2 rounded-lg hover:text-slate-900 cursor-pointer transition">
-                      Makan (50k)
+                      Kas Makan (50k)
                     </button>
                     <button type="button" onclick="setQuickMode('kas')" id="qtab-wifi" class="py-2 rounded-lg hover:text-slate-900 cursor-pointer transition">
                       Kas Umum (50k)
@@ -748,7 +748,7 @@
                 <thead>
                   <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
                     <th class="pb-3 px-3">Santri</th>
-                    <th class="pb-3 px-3 text-center">Uang Makan (Rp 50k)</th>
+                    <th class="pb-3 px-3 text-center">Kas Makan (Rp 50k)</th>
                     <th class="pb-3 px-3 text-center">Kas Umum (Rp 50k)</th>
                     <th class="pb-3 px-3 text-right">Terbayar</th>
                     <th class="pb-3 px-3 text-right">Aksi</th>
@@ -1798,7 +1798,7 @@
             <label id="lblBuktiMakan" class="flex items-center gap-2.5 p-3 rounded-xl bg-[#f8fafc] border border-slate-200 cursor-pointer hover:border-[#064e3b] transition">
               <input type="checkbox" id="chkBuktiMakan" onchange="recalcBuktiSantriNominal()" checked class="w-4 h-4 rounded accent-[#064e3b]" />
               <div>
-                <span class="font-bold text-slate-800 block text-xs">Uang Makan</span>
+                <span class="font-bold text-slate-800 block text-xs">Kas Makan</span>
                 <span class="text-[10px] text-slate-500 font-mono">Rp 50.000</span>
               </div>
             </label>

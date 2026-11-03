@@ -1189,15 +1189,15 @@ function updateRoleUI() {
           </div>
         </div>
 
-        <!-- 2 Komponen Bersih: Uang Makan & Kas Umum -->
+        <!-- 2 Komponen Bersih: Kas Makan & Kas Umum -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
             <div>
-              <span class="font-bold text-slate-800 block text-xs">Uang Makan</span>
+              <span class="font-bold text-slate-800 block text-xs">Kas Makan</span>
               <span class="text-[11px] text-slate-400 font-mono">Rp 50.000 / bln</span>
             </div>
             <span class="font-bold text-xs ${sum.tanpaMakan ? 'text-slate-400' : (rec.makan ? 'text-emerald-700' : 'text-rose-600')}">
-              ${sum.tanpaMakan ? 'Bebas (Tanpa Makan)' : (rec.makan ? '✓ Lunas' : 'Belum Lunas')}
+              ${sum.tanpaMakan ? 'Bebas (Tanpa Kas Makan)' : (rec.makan ? '✓ Lunas' : 'Belum Lunas')}
             </span>
           </div>
           <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
@@ -1685,16 +1685,14 @@ function calculateRecordSummary(rec, monthKey, santriOrId = null) {
   const isFullLunas = totalPaid >= targetSantri && (tanpaMakan || rec.makan) && rec.wifi && rec.listrik && rec.air;
 
   const unpaidItems = [];
-  if (!tanpaMakan && !rec.makan) unpaidItems.push({ nama: 'Uang Makan', nominal: curTarif.makan });
-  if (!rec.wifi) unpaidItems.push({ nama: `Kas WiFi (${formatRp(curTarif.wifi)})`, nominal: curTarif.wifi });
-  if (!rec.listrik) unpaidItems.push({ nama: 'Kas Listrik', nominal: curTarif.listrik });
-  if (!rec.air) unpaidItems.push({ nama: 'Kas Air', nominal: curTarif.air });
+  if (!tanpaMakan && !rec.makan) unpaidItems.push({ nama: 'Kas Makan', nominal: curTarif.makan });
+  const unpaidKas = (!rec.wifi ? curTarif.wifi : 0) + (!rec.listrik ? curTarif.listrik : 0) + (!rec.air ? curTarif.air : 0);
+  if (unpaidKas > 0) unpaidItems.push({ nama: 'Kas Umum', nominal: unpaidKas });
 
   const paidItems = [];
-  if (!tanpaMakan && rec.makan) paidItems.push({ nama: 'Uang Makan', nominal: curTarif.makan });
-  if (rec.wifi) paidItems.push({ nama: `Kas WiFi (${formatRp(curTarif.wifi)})`, nominal: curTarif.wifi });
-  if (rec.listrik) paidItems.push({ nama: 'Kas Listrik', nominal: curTarif.listrik });
-  if (rec.air) paidItems.push({ nama: 'Kas Air', nominal: curTarif.air });
+  if (!tanpaMakan && rec.makan) paidItems.push({ nama: 'Kas Makan', nominal: curTarif.makan });
+  const paidKas = (rec.wifi ? curTarif.wifi : 0) + (rec.listrik ? curTarif.listrik : 0) + (rec.air ? curTarif.air : 0);
+  if (paidKas > 0) paidItems.push({ nama: 'Kas Umum', nominal: paidKas });
 
   return {
     paidMakan,
@@ -2147,19 +2145,25 @@ function setQuickMode(mode) {
   const btnFull = document.getElementById('qtab-full');
   if (btnFull) {
     btnFull.textContent = tanpaMakan
-      ? `Lunas (${curTarif.totalKas / 1000}k)`
-      : `Lunas (${curTarif.totalBulanan / 1000}k)`;
+      ? `Kas Umum (${curTarif.totalKas / 1000}k)`
+      : `Include (${curTarif.totalBulanan / 1000}k)`;
   }
 
   const btnMakan = document.getElementById('qtab-makan');
   if (btnMakan) {
+    btnMakan.textContent = `Kas Makan (${curTarif.makan / 1000}k)`;
     if (tanpaMakan) {
       btnMakan.classList.add('opacity-40');
-      btnMakan.title = 'Santri Bebas / Tanpa Uang Makan';
+      btnMakan.title = 'Santri Bebas / Tanpa Kas Makan';
     } else {
       btnMakan.classList.remove('opacity-40');
       btnMakan.title = '';
     }
+  }
+
+  const btnKas = document.getElementById('qtab-wifi');
+  if (btnKas) {
+    btnKas.textContent = `Kas Umum (${curTarif.totalKas / 1000}k)`;
   }
 
   // Update tabs appearance
@@ -2177,7 +2181,7 @@ function setQuickMode(mode) {
   if (mode === 'full') {
     amtInput.value = formatRp(tanpaMakan ? curTarif.totalKas : curTarif.totalBulanan);
   } else if (mode === 'makan') {
-    amtInput.value = tanpaMakan ? 'Rp 0 (Tanpa Makan)' : formatRp(curTarif.makan);
+    amtInput.value = tanpaMakan ? 'Rp 0 (Tanpa Kas Makan)' : formatRp(curTarif.makan);
   } else if (mode === 'kas' || mode === 'wifi') {
     amtInput.value = formatRp(curTarif.totalKas);
   }
@@ -2222,12 +2226,12 @@ function handleQuickSubmitPayment() {
   const curTarif = getTarif(state.activeMonth);
 
   if (state.quickMode === 'makan' && tanpaMakan) {
-    showToast('Santri ini Tanpa Uang Makan', 'amber');
+    showToast('Santri ini Tanpa Kas Makan', 'amber');
     return;
   }
 
   let amt = tanpaMakan ? curTarif.totalKas : curTarif.totalBulanan;
-  let desc = 'Pembayaran Lunas Syahriyah';
+  let desc = tanpaMakan ? 'Pembayaran Kas Umum' : 'Include Kas Makan & Kas Umum';
 
   if (state.quickMode === 'full') {
     rec.makan = !tanpaMakan;
@@ -2235,17 +2239,17 @@ function handleQuickSubmitPayment() {
     rec.listrik = true;
     rec.air = true;
     amt = tanpaMakan ? curTarif.totalKas : curTarif.totalBulanan;
-    desc = tanpaMakan ? 'Kas Komplek Lunas' : 'Syahriyah Lunas';
+    desc = tanpaMakan ? 'Pembayaran Kas Umum Lunas' : 'Include Kas Makan & Kas Umum Lunas';
   } else if (state.quickMode === 'makan') {
     rec.makan = true;
     amt = curTarif.makan;
-    desc = 'Pembayaran Uang Makan';
+    desc = 'Pembayaran Kas Makan';
   } else if (state.quickMode === 'kas' || state.quickMode === 'wifi') {
     rec.wifi = true;
     rec.listrik = true;
     rec.air = true;
     amt = curTarif.totalKas;
-    desc = 'Pembayaran Kas Umum (Fasilitas)';
+    desc = 'Pembayaran Kas Umum';
   }
 
   const metode = currentQuickPaymentMethod || 'cash';
@@ -3264,7 +3268,7 @@ function renderTunggakanTab(finData) {
                 <span class="${md.sum.isFullLunas ? 'text-emerald-800' : 'text-rose-600'} font-mono">${md.sum.isFullLunas ? 'Lunas' : `Kurang ${formatRp(md.sum.totalUnpaid)}`}</span>
               </div>
               <div class="text-[10px] text-slate-500">
-                Makan: ${makanText} • Kas Umum: ${kasText}
+                Kas Makan: ${makanText} • Kas Umum: ${kasText}
               </div>
             </div>
           `;
@@ -4538,43 +4542,27 @@ function openNotaPembayaranModal(santriId, monthKey) {
         </thead>
         <tbody class="divide-y divide-slate-200">
           <tr>
-            <td class="py-2 px-2.5 text-center text-slate-400 font-mono">1</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">Uang Makan Bulanan</td>
-            <td class="py-2 px-3 text-right font-mono text-slate-500">${sum.tanpaMakan ? 'Rp 0 (Tanpa Makan)' : formatRp(curTarif.makan)}</td>
-            <td class="py-2 px-3 text-center">
+            <td class="py-2.5 px-2.5 text-center text-slate-400 font-mono">1</td>
+            <td class="py-2.5 px-3 font-semibold text-slate-800">Kas Makan Bulanan</td>
+            <td class="py-2.5 px-3 text-right font-mono text-slate-500">${sum.tanpaMakan ? 'Rp 0 (Bebas)' : formatRp(curTarif.makan)}</td>
+            <td class="py-2.5 px-3 text-center">
               ${sum.tanpaMakan
-                ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">TANPA MAKAN</span>`
+                ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">BEBAS</span>`
                 : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${rec.makan ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}">${rec.makan ? '✓ LUNAS' : '✗ BELUM'}</span>`
               }
             </td>
-            <td class="py-2 px-3 text-right font-mono font-bold ${(!sum.tanpaMakan && rec.makan) ? 'text-slate-900' : 'text-slate-400'}">${formatRp(sum.paidMakan)}</td>
+            <td class="py-2.5 px-3 text-right font-mono font-bold ${(!sum.tanpaMakan && rec.makan) ? 'text-slate-900' : 'text-slate-400'}">${formatRp(sum.paidMakan)}</td>
           </tr>
           <tr class="bg-slate-50/50">
-            <td class="py-2 px-2.5 text-center text-slate-400 font-mono">2</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">Kas WiFi (Input Manual)</td>
-            <td class="py-2 px-3 text-right font-mono text-slate-500">${formatRp(curTarif.wifi)}</td>
-            <td class="py-2 px-3 text-center">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${rec.wifi ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}">${rec.wifi ? '✓ LUNAS' : '✗ BELUM'}</span>
+            <td class="py-2.5 px-2.5 text-center text-slate-400 font-mono">2</td>
+            <td class="py-2.5 px-3 font-semibold text-slate-800">Kas Umum Bulanan</td>
+            <td class="py-2.5 px-3 text-right font-mono text-slate-500">${formatRp(curTarif.totalKas)}</td>
+            <td class="py-2.5 px-3 text-center">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isKasUmumLunas ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : (paidKasUmum > 0 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-rose-50 text-rose-600 border border-rose-200')}">
+                ${isKasUmumLunas ? '✓ LUNAS' : (paidKasUmum > 0 ? 'SEBAGIAN' : '✗ BELUM')}
+              </span>
             </td>
-            <td class="py-2 px-3 text-right font-mono font-bold ${rec.wifi ? 'text-slate-900' : 'text-slate-400'}">${formatRp(rec.wifi ? curTarif.wifi : 0)}</td>
-          </tr>
-          <tr>
-            <td class="py-2 px-2.5 text-center text-slate-400 font-mono">3</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">Kas Listrik</td>
-            <td class="py-2 px-3 text-right font-mono text-slate-500">${formatRp(curTarif.listrik)}</td>
-            <td class="py-2 px-3 text-center">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${rec.listrik ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}">${rec.listrik ? '✓ LUNAS' : '✗ BELUM'}</span>
-            </td>
-            <td class="py-2 px-3 text-right font-mono font-bold ${rec.listrik ? 'text-slate-900' : 'text-slate-400'}">${formatRp(rec.listrik ? curTarif.listrik : 0)}</td>
-          </tr>
-          <tr class="bg-slate-50/50">
-            <td class="py-2 px-2.5 text-center text-slate-400 font-mono">4</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">Kas Air</td>
-            <td class="py-2 px-3 text-right font-mono text-slate-500">${formatRp(curTarif.air)}</td>
-            <td class="py-2 px-3 text-center">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${rec.air ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}">${rec.air ? '✓ LUNAS' : '✗ BELUM'}</span>
-            </td>
-            <td class="py-2 px-3 text-right font-mono font-bold ${rec.air ? 'text-slate-900' : 'text-slate-400'}">${formatRp(rec.air ? curTarif.air : 0)}</td>
+            <td class="py-2.5 px-3 text-right font-mono font-bold ${paidKasUmum > 0 ? 'text-slate-900' : 'text-slate-400'}">${formatRp(paidKasUmum)}</td>
           </tr>
         </tbody>
         <tfoot class="border-t-2 border-slate-300 bg-slate-50 font-bold text-xs">
@@ -4598,10 +4586,8 @@ function openNotaPembayaranModal(santriId, monthKey) {
     `*NOTA PEMBAYARAN — ${monthLabel.toUpperCase()}*`,
     `Nama : *${s.nama}*`,
     ``,
-    `• Makan   : ${sum.tanpaMakan ? 'Bebas' : (rec.makan ? 'Lunas' : 'Belum')} (${sum.tanpaMakan ? 'Rp 0' : formatRp(curTarif.makan)})`,
-    `• WiFi    : ${rec.wifi ? 'Lunas' : 'Belum'} (${formatRp(curTarif.wifi)})`,
-    `• Listrik : ${rec.listrik ? 'Lunas' : 'Belum'} (${formatRp(curTarif.listrik)})`,
-    `• Air     : ${rec.air ? 'Lunas' : 'Belum'} (${formatRp(curTarif.air)})`,
+    `• Kas Makan : ${sum.tanpaMakan ? 'Bebas' : (rec.makan ? 'Lunas' : 'Belum')} (${sum.tanpaMakan ? 'Rp 0' : formatRp(curTarif.makan)})`,
+    `• Kas Umum  : ${isKasUmumLunas ? 'Lunas' : (paidKasUmum > 0 ? `Sebagian (${formatRp(paidKasUmum)})` : 'Belum')} (${formatRp(curTarif.totalKas)})`,
     ``,
     `Total Dibayar : *${formatRp(sum.totalPaid)}*`,
     `Metode        : *${(rec.metode === 'cash' || (rec.catatan && (rec.catatan.includes('Tunai') || rec.catatan.includes('Cash')))) ? 'Tunai / Cash (Langsung)' : 'Transfer DANA'}*`,
@@ -5244,7 +5230,13 @@ function recalcBuktiSantriNominal() {
   if (kasChecked) total += curTarif.totalKas;
 
   const lbl = document.getElementById('buktiSantriNominalLabel');
-  if (lbl) lbl.textContent = formatRp(total);
+  if (lbl) {
+    if (makanChecked && kasChecked) {
+      lbl.textContent = `Include: ${formatRp(total)}`;
+    } else {
+      lbl.textContent = formatRp(total);
+    }
+  }
   const nomInput = document.getElementById('buktiSantriNominalInput');
   if (nomInput) nomInput.value = total;
 
