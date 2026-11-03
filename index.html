@@ -503,6 +503,17 @@
                     </button>
                   </div>
 
+                  <!-- Metode Bayar: Tunai vs Transfer DANA -->
+                  <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl text-xs font-semibold">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-2">Metode:</span>
+                    <button type="button" id="quickMetodeCash" onclick="setQuickPaymentMethod('cash')" class="flex-1 py-1.5 rounded-lg bg-white text-emerald-950 font-bold shadow-2xs cursor-pointer transition flex items-center justify-center gap-1">
+                      <span>💵 Tunai / Cash</span>
+                    </button>
+                    <button type="button" id="quickMetodeDana" onclick="setQuickPaymentMethod('dana')" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1">
+                      <span>📱 Transfer DANA</span>
+                    </button>
+                  </div>
+
                   <!-- Amount & Note Inputs -->
                   <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
                     <div class="sm:col-span-5 space-y-1.5">
@@ -1729,8 +1740,21 @@
       </div>
 
       <form onsubmit="handleSubmitBuktiTransferSantri(event)" class="p-5 sm:p-6 space-y-4 max-h-[82vh] overflow-y-auto custom-scroll text-xs">
+        <!-- Pilihan Metode Pembayaran: DANA vs Cash -->
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Metode Pembayaran *</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btnMetodeTransferDana" onclick="setBuktiPaymentMethod('dana')" class="p-2.5 rounded-xl border-2 border-[#064e3b] bg-emerald-50 text-[#064e3b] font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs">
+              <span>📱 Transfer DANA</span>
+            </button>
+            <button type="button" id="btnMetodeTunaiCash" onclick="setBuktiPaymentMethod('cash')" class="p-2.5 rounded-xl border border-slate-200 bg-[#f8fafc] text-slate-600 font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer hover:bg-slate-100">
+              <span>💵 Tunai / Cash</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Kartu Informasi Tujuan Transfer DANA -->
-        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+        <div id="cardInfoDana" class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-10 h-10 rounded-lg bg-[#008CEB] text-white font-extrabold text-[11px] tracking-tight flex items-center justify-center shrink-0 shadow-xs">
               DANA
@@ -1745,6 +1769,18 @@
             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
             <span>Salin</span>
           </button>
+        </div>
+
+        <!-- Kartu Informasi Bayar Tunai Langsung -->
+        <div id="cardInfoCash" class="hidden p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-amber-600 text-white font-extrabold text-lg flex items-center justify-center shrink-0 shadow-xs">
+            💵
+          </div>
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">Bayar Tunai / Cash</span>
+            <span class="text-xs font-bold text-slate-900 block">Diserahkan ke Bendahara Komplek</span>
+            <span class="text-[10px] text-slate-500 block">Bendahara akan memverifikasi lunas setelah menerima uang fisik.</span>
+          </div>
         </div>
 
         <!-- Periode yang Dibayar -->

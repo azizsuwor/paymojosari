@@ -179,6 +179,28 @@ function createSampleWifiChatDataUrl(bulanLabel, nominalRp) {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 
+function createCashPaymentSvgDataUrl(santriName, nominalRp, bulanLabel) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="460" height="260" viewBox="0 0 460 260">
+    <rect width="460" height="260" rx="20" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+    <rect width="460" height="52" rx="20" fill="#064e3b"/>
+    <text x="30" y="32" font-family="sans-serif" font-size="14" font-weight="bold" fill="#ffffff">💵 KONFIRMASI PEMBAYARAN TUNAI (CASH)</text>
+    <circle cx="420" cy="26" r="10" fill="#10b981"/>
+    
+    <text x="30" y="90" font-family="sans-serif" font-size="12" fill="#64748b">Nama Santri:</text>
+    <text x="30" y="112" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0f172a">${santriName}</text>
+    
+    <text x="30" y="145" font-family="sans-serif" font-size="12" fill="#64748b">Periode Iuran:</text>
+    <text x="30" y="165" font-family="sans-serif" font-size="14" font-weight="bold" fill="#064e3b">${bulanLabel}</text>
+    
+    <text x="260" y="145" font-family="sans-serif" font-size="12" fill="#64748b">Total Nominal Tunai:</text>
+    <text x="260" y="168" font-family="monospace" font-size="18" font-weight="bold" fill="#064e3b">${nominalRp}</text>
+    
+    <rect x="25" y="195" width="410" height="45" rx="10" fill="#dcfce7" stroke="#bbf7d0"/>
+    <text x="40" y="222" font-family="sans-serif" font-size="11" font-weight="bold" fill="#166534">✓ Diserahkan langsung secara tunai/cash kepada Bendahara</text>
+  </svg>`;
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
 function getInitialDemoState() {
   return {
     activeMonth: '2026-10',
@@ -2107,6 +2129,29 @@ function setQuickMode(mode) {
   }
 }
 
+let currentQuickPaymentMethod = 'cash'; // Default cash for direct payment
+
+function setQuickPaymentMethod(method) {
+  currentQuickPaymentMethod = method;
+  const btnCash = document.getElementById('quickMetodeCash');
+  const btnDana = document.getElementById('quickMetodeDana');
+  if (method === 'cash') {
+    if (btnCash) {
+      btnCash.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-950 font-bold shadow-2xs cursor-pointer transition flex items-center justify-center gap-1';
+    }
+    if (btnDana) {
+      btnDana.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1';
+    }
+  } else {
+    if (btnCash) {
+      btnCash.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 cursor-pointer transition flex items-center justify-center gap-1';
+    }
+    if (btnDana) {
+      btnDana.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-950 font-bold shadow-2xs cursor-pointer transition flex items-center justify-center gap-1';
+    }
+  }
+}
+
 function handleQuickSubmitPayment() {
   if (!state.isAdmin) {
     openAdminLoginModal();
@@ -2147,18 +2192,22 @@ function handleQuickSubmitPayment() {
     desc = 'Kas WiFi';
   }
 
+  const metode = currentQuickPaymentMethod || 'cash';
+  const metodeLabel = metode === 'cash' ? 'Tunai (Cash)' : 'Transfer DANA';
+  rec.metode = metode;
+  rec.catatan = note ? `${note} [${metodeLabel}]` : `Bayar ${metodeLabel}`;
   rec.updatedAt = new Date().toISOString().slice(0, 10);
 
   // Push to recent transactions
   state.recentTransactions.unshift({
     id: 'T' + Date.now(),
     title: s ? s.nama : 'Santri',
-    subtitle: note ? `${desc} (${note})` : desc,
+    subtitle: note ? `${desc} (${metodeLabel} - ${note})` : `${desc} (${metodeLabel})`,
     type: 'income',
     amount: amt,
     date: 'Hari ini',
     status: 'Completed',
-    icon: 'wallet'
+    icon: metode === 'cash' ? 'banknote' : 'wallet'
   });
 
   saveState();
@@ -2166,7 +2215,7 @@ function handleQuickSubmitPayment() {
     document.getElementById('quickNoteInput').value = '';
   }
   renderAll();
-  showToast(`Pembayaran disimpan`);
+  showToast(`✓ Pembayaran ${metodeLabel} berhasil disimpan!`, 'emerald');
 }
 
 // =========================================================================
@@ -4384,6 +4433,12 @@ function openNotaPembayaranModal(santriId, monthKey) {
             <td class="py-1.5 px-3 text-slate-500 font-semibold">No. WA</td>
             <td class="py-1.5 px-3 font-mono text-slate-700">${s.wa}</td>
           </tr>
+          <tr>
+            <td class="py-1.5 px-3 text-slate-500 font-semibold">Metode Bayar</td>
+            <td class="py-1.5 px-3 font-bold text-slate-800">${(rec.metode === 'cash' || (rec.catatan && (rec.catatan.includes('Tunai') || rec.catatan.includes('Cash')))) ? '💵 Tunai / Cash (Langsung)' : '📱 Transfer DANA'}</td>
+            <td class="py-1.5 px-3 text-slate-500 font-semibold">Keterangan</td>
+            <td class="py-1.5 px-3 text-slate-600">${rec.catatan || '-'}</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -4467,6 +4522,7 @@ function openNotaPembayaranModal(santriId, monthKey) {
     `• Air     : ${rec.air ? 'Lunas' : 'Belum'} (${formatRp(curTarif.air)})`,
     ``,
     `Total Dibayar : *${formatRp(sum.totalPaid)}*`,
+    `Metode        : *${(rec.metode === 'cash' || (rec.catatan && (rec.catatan.includes('Tunai') || rec.catatan.includes('Cash')))) ? 'Tunai / Cash (Langsung)' : 'Transfer DANA'}*`,
     `Kekurangan    : *${formatRp(sum.totalUnpaid)}*`,
     `Status        : *${sum.isFullLunas ? 'LUNAS ✓' : 'BELUM LUNAS'}*`
   ].join('\n');
@@ -4999,6 +5055,8 @@ function openUploadBuktiSantriModal(santriIdParam, monthKeyParam) {
   }
   if (empty) empty.classList.remove('hidden');
 
+  setBuktiPaymentMethod('dana');
+
   const modal = document.getElementById('modalUploadBuktiSantri');
   if (modal) modal.classList.remove('hidden');
   if (window.lucide) window.lucide.createIcons();
@@ -5007,6 +5065,67 @@ function openUploadBuktiSantriModal(santriIdParam, monthKeyParam) {
 function closeUploadBuktiSantriModal() {
   const modal = document.getElementById('modalUploadBuktiSantri');
   if (modal) modal.classList.add('hidden');
+}
+
+function setBuktiPaymentMethod(method) {
+  currentBuktiSantriCtx.method = method;
+  const btnDana = document.getElementById('btnMetodeTransferDana');
+  const btnCash = document.getElementById('btnMetodeTunaiCash');
+  const cardDana = document.getElementById('cardInfoDana');
+  const cardCash = document.getElementById('cardInfoCash');
+  const noteInput = document.getElementById('buktiSantriCatatanInput');
+  const preview = document.getElementById('buktiSantriPreviewImg');
+  const empty = document.getElementById('buktiSantriEmptyState');
+
+  const s = state.santri.find(x => x.id === currentBuktiSantriCtx.santriId);
+  const sName = s ? s.nama : 'Santri';
+  const mKey = document.getElementById('buktiSantriPeriodeSelect')?.value || currentBuktiSantriCtx.monthKey || state.activeMonth;
+  const mLabel = getMonthLabel(mKey);
+  const nominal = Number(document.getElementById('buktiSantriNominalInput')?.value || 0);
+
+  if (method === 'cash') {
+    if (btnDana) {
+      btnDana.className = 'p-2.5 rounded-xl border border-slate-200 bg-[#f8fafc] text-slate-600 font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer hover:bg-slate-100';
+    }
+    if (btnCash) {
+      btnCash.className = 'p-2.5 rounded-xl border-2 border-amber-600 bg-amber-50 text-amber-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs';
+    }
+    if (cardDana) cardDana.classList.add('hidden');
+    if (cardCash) cardCash.classList.remove('hidden');
+
+    if (noteInput && (!noteInput.value || noteInput.value.includes('Transfer DANA'))) {
+      noteInput.value = `Bayar Tunai / Cash langsung ke Bendahara (${mLabel})`;
+    }
+
+    // Buat voucher SVG otomatis konfirmasi bayar tunai
+    const svgUrl = createCashPaymentSvgDataUrl(sName, formatRp(nominal), mLabel);
+    currentBuktiSantriCtx.tempImgDataUrl = svgUrl;
+    if (preview) {
+      preview.src = svgUrl;
+      preview.classList.remove('hidden');
+    }
+    if (empty) empty.classList.add('hidden');
+  } else {
+    if (btnDana) {
+      btnDana.className = 'p-2.5 rounded-xl border-2 border-[#064e3b] bg-emerald-50 text-[#064e3b] font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs';
+    }
+    if (btnCash) {
+      btnCash.className = 'p-2.5 rounded-xl border border-slate-200 bg-[#f8fafc] text-slate-600 font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer hover:bg-slate-100';
+    }
+    if (cardDana) cardDana.classList.remove('hidden');
+    if (cardCash) cardCash.classList.add('hidden');
+
+    if (noteInput && noteInput.value.includes('Bayar Tunai / Cash')) {
+      noteInput.value = `Transfer DANA ${state.nomorDanaBendahara || NOMOR_DANA_DEFAULT} (${mLabel})`;
+    }
+
+    currentBuktiSantriCtx.tempImgDataUrl = '';
+    if (preview) {
+      preview.src = '';
+      preview.classList.add('hidden');
+    }
+    if (empty) empty.classList.remove('hidden');
+  }
 }
 
 function handleBuktiSantriPeriodeChange(newMonthKey) {
@@ -5028,8 +5147,20 @@ function recalcBuktiSantriNominal() {
   if (chkListrik && chkListrik.checked) total += curTarif.listrik;
   if (chkAir && chkAir.checked) total += curTarif.air;
 
+  const lbl = document.getElementById('buktiSantriNominalLabel');
+  if (lbl) lbl.textContent = formatRp(total);
   const nomInput = document.getElementById('buktiSantriNominalInput');
   if (nomInput) nomInput.value = total;
+
+  if (currentBuktiSantriCtx.method === 'cash') {
+    const s = state.santri.find(x => x.id === currentBuktiSantriCtx.santriId);
+    const sName = s ? s.nama : 'Santri';
+    const selMKey = document.getElementById('buktiSantriPeriodeSelect')?.value || mKey;
+    const svgUrl = createCashPaymentSvgDataUrl(sName, formatRp(total), getMonthLabel(selMKey));
+    currentBuktiSantriCtx.tempImgDataUrl = svgUrl;
+    const preview = document.getElementById('buktiSantriPreviewImg');
+    if (preview) preview.src = svgUrl;
+  }
 }
 
 function handleBuktiSantriFilePreview(event) {
@@ -5086,9 +5217,16 @@ async function handleSubmitBuktiTransferSantri(event) {
   const s = state.santri.find(x => x.id === sId);
   if (!s) return;
 
+  const nominal = Number(document.getElementById('buktiSantriNominalInput')?.value || 0);
+  const metode = currentBuktiSantriCtx.method || 'dana';
+
   if (!currentBuktiSantriCtx.tempImgDataUrl) {
-    showToast('Silakan pilih foto / screenshot bukti transfer DANA terlebih dahulu!', 'amber');
-    return;
+    if (metode === 'cash') {
+      currentBuktiSantriCtx.tempImgDataUrl = createCashPaymentSvgDataUrl(s.nama, formatRp(nominal), getMonthLabel(targetPeriode));
+    } else {
+      showToast('Silakan pilih foto / screenshot bukti transfer DANA terlebih dahulu!', 'amber');
+      return;
+    }
   }
 
   const makan = Boolean(document.getElementById('chkBuktiMakan')?.checked && !document.getElementById('chkBuktiMakan')?.disabled);
@@ -5101,8 +5239,10 @@ async function handleSubmitBuktiTransferSantri(event) {
     return;
   }
 
-  const nominal = Number(document.getElementById('buktiSantriNominalInput')?.value || 0);
-  const catatan = (document.getElementById('buktiSantriCatatanInput')?.value || '').trim() || `Transfer DANA ${state.nomorDanaBendahara || NOMOR_DANA_DEFAULT}`;
+  const defaultCatatan = metode === 'cash'
+    ? `Bayar Tunai / Cash langsung ke Bendahara (${getMonthLabel(targetPeriode)})`
+    : `Transfer DANA ${state.nomorDanaBendahara || NOMOR_DANA_DEFAULT} (${getMonthLabel(targetPeriode)})`;
+  const catatan = (document.getElementById('buktiSantriCatatanInput')?.value || '').trim() || defaultCatatan;
   const tanggal = new Date().toISOString().slice(0, 10);
 
   const newProof = {
@@ -5115,6 +5255,7 @@ async function handleSubmitBuktiTransferSantri(event) {
     wifi,
     listrik,
     air,
+    metode,
     catatan,
     proofImg: currentBuktiSantriCtx.tempImgDataUrl,
     buktiFoto: currentBuktiSantriCtx.tempImgDataUrl,
@@ -5142,7 +5283,7 @@ async function handleSubmitBuktiTransferSantri(event) {
   saveState();
   closeUploadBuktiSantriModal();
   renderAll();
-  showToast(`Bukti transfer periode ${getMonthLabel(targetPeriode)} berhasil dikirim!`, 'emerald');
+  showToast(metode === 'cash' ? `✓ Konfirmasi bayar tunai periode ${getMonthLabel(targetPeriode)} terkirim ke Bendahara!` : `✓ Bukti transfer DANA periode ${getMonthLabel(targetPeriode)} berhasil dikirim!`, 'emerald');
 }
 
 function renderPendingProofsForAdmin() {
@@ -5172,6 +5313,11 @@ function renderPendingProofsForAdmin() {
     if (p.listrik) items.push('Listrik');
     if (p.air) items.push('Air');
 
+    const isCash = p.metode === 'cash' || (p.catatan && (p.catatan.toLowerCase().includes('tunai') || p.catatan.toLowerCase().includes('cash')));
+    const methodBadge = isCash
+      ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-950 border border-amber-300">💵 TUNAI / CASH</span>`
+      : `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-50 text-blue-800 border border-blue-200">📱 TRANSFER DANA</span>`;
+
     return `
       <div class="p-3.5 rounded-2xl bg-white border border-amber-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
@@ -5179,10 +5325,11 @@ function renderPendingProofsForAdmin() {
           <div class="min-w-0">
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="text-xs font-extrabold text-slate-900">${namaSantri}</span>
+              ${methodBadge}
               <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-900">${mLabel}</span>
             </div>
             <div class="text-[11px] font-mono font-bold text-emerald-800 mt-0.5">${formatRp(p.nominal)} <span class="font-sans font-normal text-slate-500">(${items.join(', ')})</span></div>
-            <p class="text-[10px] text-slate-400 truncate">${p.tanggal} • ${p.catatan || 'DANA'}</p>
+            <p class="text-[10px] text-slate-400 truncate">${p.tanggal} • ${p.catatan || (isCash ? 'Tunai' : 'DANA')}</p>
           </div>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
@@ -5191,7 +5338,7 @@ function renderPendingProofsForAdmin() {
           </button>
           <button type="button" onclick="approveBuktiTransferSantri('${p.id}')" class="px-3 py-1.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer shadow-2xs flex items-center gap-1">
             <i data-lucide="check" class="w-3.5 h-3.5"></i>
-            <span>Terima</span>
+            <span>${isCash ? 'Terima Uang' : 'Terima'}</span>
           </button>
           <button type="button" onclick="rejectBuktiTransferSantri('${p.id}')" class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold cursor-pointer">
             Tolak
@@ -5206,9 +5353,9 @@ function renderPendingProofsForAdmin() {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-          <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-950">Verifikasi Bukti (${pendingList.length})</h4>
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-950">Verifikasi Pembayaran Santri (${pendingList.length})</h4>
         </div>
-        <span class="text-[10px] font-semibold text-amber-800">Verifikasi pembayaran santri</span>
+        <span class="text-[10px] font-semibold text-amber-800">Menunggu konfirmasi Bendahara</span>
       </div>
       <div class="space-y-2">
         ${cardsHtml}
@@ -5242,6 +5389,11 @@ async function approveBuktiTransferSantri(proofId) {
   if (proof.wifi) rec.wifi = true;
   if (proof.listrik) rec.listrik = true;
   if (proof.air) rec.air = true;
+
+  const isCash = proof.metode === 'cash' || (proof.catatan && (proof.catatan.toLowerCase().includes('tunai') || proof.catatan.toLowerCase().includes('cash')));
+  const metodeLabel = isCash ? 'Tunai (Cash)' : 'Transfer DANA';
+  rec.metode = isCash ? 'cash' : 'dana';
+  rec.catatan = proof.catatan || `Bayar ${metodeLabel}`;
   rec.updatedAt = new Date().toISOString().slice(0, 10);
 
   proof.status = 'approved';
@@ -5249,12 +5401,12 @@ async function approveBuktiTransferSantri(proofId) {
   state.recentTransactions.unshift({
     id: 'T' + Date.now(),
     title: s ? s.nama : 'Santri',
-    subtitle: `Transfer DANA (${getMonthLabel(proof.monthKey)})`,
+    subtitle: `${metodeLabel} (${getMonthLabel(proof.monthKey)})`,
     type: 'income',
     amount: Number(proof.nominal || 0),
     date: 'Hari ini',
     status: 'Completed',
-    icon: 'check-circle-2'
+    icon: isCash ? 'banknote' : 'wallet'
   });
 
   if (window.location.protocol !== 'file:') {
@@ -5272,7 +5424,7 @@ async function approveBuktiTransferSantri(proofId) {
   closePreviewBuktiBayarModal();
   saveState();
   renderAll();
-  showToast('Pembayaran diterima & LUNAS', 'emerald');
+  showToast(`✓ Pembayaran ${metodeLabel} ${s ? s.nama : 'Santri'} diterima & LUNAS!`, 'emerald');
 }
 
 async function rejectBuktiTransferSantri(proofId) {
