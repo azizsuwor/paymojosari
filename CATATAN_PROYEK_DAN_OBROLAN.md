@@ -280,5 +280,19 @@ Menjawab permasalahan riil di lapangan:
 - Santri dapat secara mandiri memilih apakah transfer DANA tersebut diperuntukkan bagi jatah bulan berjalan atau bulan berikutnya (*bayar di muka*).
 - Saat bendahara memverifikasi bukti, pembayaran otomatis tercatat pada periode bulan yang dipilih oleh santri.
 
+### E. Dukungan Pembayaran Tunai / Cash Langsung ke Bendahara
+1. **Pilihan Metode Bayar di Modal Konfirmasi Santri:**
+   - Santri dapat memilih opsi: **📱 Transfer DANA** atau **💵 Tunai / Cash**.
+   - Jika santri memilih **Tunai / Cash**, santri tidak diwajibkan mengunggah file screenshot. Sistem secara otomatis membuatkan **Voucher Konfirmasi Bayar Tunai (SVG)** dengan nama santri, periode, dan nominal yang dipilih.
+   - Catatan pembayaran otomatis diset menjadi: *`Bayar Tunai / Cash langsung ke Bendahara (Periode)`*.
+2. **Notifikasi Khusus Bendahara dengan Badge Tunai:**
+   - Di daftar verifikasi Bendahara, muncul badge mencolok **`[💵 TUNAI / CASH]`** dan tombol verifikasi bertuliskan **`✓ Terima Uang`**.
+   - Bendahara dapat mengecek uang fisik di tangan, lalu sekali klik untuk melunasi tagihan santri.
+3. **Pilihan Metode di Quick Transfer Bendahara:**
+   - Bendahara yang menerima uang cash langsung dapat mencatat pembayaran dengan toggle **`[💵 Tunai / Cash]`**, yang otomatis mencantumkan metode tunai pada mutasi transaksi dan nota resmi.
+4. **Keterangan Metode pada Nota Pembayaran:**
+   - Nota resmi (cetak/PDF/WA) mencantumkan: *`Metode: Tunai / Cash (Diterima Langsung oleh Bendahara)`* sebagai bukti sah kuitansi pembayaran santri.
+
+
 
 
