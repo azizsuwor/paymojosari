@@ -729,6 +729,25 @@ if ($action === 'delete_utang') {
     }
 }
 
+// 0k. Reset Seluruh Transaksi Kas ke Rp 0 (POST ?action=reset_all_kas)
+if ($action === 'reset_all_kas') {
+    check_admin_auth();
+    try {
+        $pdo->exec("DELETE FROM pembayaran_santri");
+        $pdo->exec("DELETE FROM setoran_wifi_bendahara");
+        $pdo->exec("DELETE FROM jurnal_masak");
+        $pdo->exec("DELETE FROM jurnal_kas_umum");
+        $pdo->exec("DELETE FROM utang_kas");
+        $pdo->exec("DELETE FROM konfirmasi_pembayaran");
+        echo json_encode(['status' => 'success', 'message' => 'Seluruh data transaksi kas berhasil di-reset ke Rp 0.']);
+        exit;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
 // -------------------------------------------------------------------------
 // 1. Ambil Semua Data State Lengkap dari Database (GET ?action=get_all)
 // -------------------------------------------------------------------------

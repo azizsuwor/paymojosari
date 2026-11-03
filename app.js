@@ -4,7 +4,7 @@
 // FINPILOT DESIGN ADAPTATION (100% VISUAL & INTERACTION PARITY)
 // =========================================================================
 
-const STORAGE_KEY = 'SIMKAS_MOJOSARI_FINPILOT_V13';
+const STORAGE_KEY = 'SIMKAS_MOJOSARI_FINPILOT_V14';
 const BENDAHARA_WA = '081231256129';
 const NOMOR_DANA_DEFAULT = '085335219903';
 const DEFAULT_GRUP_LINK = 'https://chat.whatsapp.com/LgVFDhgRgHmDTuC3tCly7c';
@@ -1447,12 +1447,9 @@ function updateRoleUI() {
 
 function loadState() {
   try {
-    localStorage.removeItem('SIMKAS_MOJOSARI_FINPILOT_V7');
-    localStorage.removeItem('SIMKAS_MOJOSARI_FINPILOT_V8');
-    localStorage.removeItem('SIMKAS_MOJOSARI_FINPILOT_V9');
-    localStorage.removeItem('SIMKAS_MOJOSARI_FINPILOT_V10');
-    localStorage.removeItem('SIMKAS_MOJOSARI_FINPILOT_V11');
-    localStorage.removeItem('SIMKAS_MOJOSARI_FINPILOT_V12');
+    ['V7', 'V8', 'V9', 'V10', 'V11', 'V12', 'V13'].forEach(v => {
+      localStorage.removeItem('SIMKAS_MOJOSARI_FINPILOT_' + v);
+    });
 
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -1463,6 +1460,10 @@ function loadState() {
             s.avatar = '';
           }
         });
+      }
+      // Bersihkan utang kas yang berstatus ditolak atau nominal uji coba ekstrem
+      if (Array.isArray(state.utangKas)) {
+        state.utangKas = state.utangKas.filter(u => u.status !== 'ditolak' && Number(u.nominal) < 5000000);
       }
     } else {
       state = getInitialDemoState();
@@ -2853,7 +2854,34 @@ function resetSemuaKeNol() {
     openAdminLoginModal();
     return;
   }
-  if (!confirm('Reset seluruh data kas? (Data santri tetap aman)')) return;
+  if (!confirm('Reset seluruh data transaksi kas ke Rp 0? (Data profil santri tetap aman)')) return;
+  state.pembayaran = {};
+  state.setoranWifiBendahara = {};
+  state.masakLogs = [];
+  state.kasUmumLogs = [];
+  state.konfirmasiBayar = [];
+  state.utangKas = [];
+  state.recentTransactions = [];
+  saveState();
+
+  if (window.location.protocol !== 'file:') {
+    try {
+      fetch('api.php?action=reset_all_kas', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: getAdminHeaders()
+      });
+    } catch (e) {
+      console.warn('Gagal reset di server:', e);
+    }
+  }
+
+  renderAll();
+  showToast('✓ Seluruh data kas berhasil di-reset ke Rp 0!', 'emerald');
+}
+
+// Helper reset kas langsung jika dibutuhkan
+window.resetKasTersedia = function() {
   state.pembayaran = {};
   state.setoranWifiBendahara = {};
   state.masakLogs = [];
@@ -2863,8 +2891,8 @@ function resetSemuaKeNol() {
   state.recentTransactions = [];
   saveState();
   renderAll();
-  showToast('Data kas di-reset');
-}
+  showToast('✓ Kas Tersedia berhasil di-reset ke Rp 0!', 'emerald');
+};
 
 function renderDashboardTab(fin) {
   // 1. Render Laporan Pembayaran WiFi Induk Bulan Aktif
