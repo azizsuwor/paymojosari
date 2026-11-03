@@ -2147,8 +2147,19 @@ function setQuickMode(mode) {
   const btnFull = document.getElementById('qtab-full');
   if (btnFull) {
     btnFull.textContent = tanpaMakan
-      ? `Kas (${curTarif.totalKas / 1000}k)`
+      ? `Lunas (${curTarif.totalKas / 1000}k)`
       : `Lunas (${curTarif.totalBulanan / 1000}k)`;
+  }
+
+  const btnMakan = document.getElementById('qtab-makan');
+  if (btnMakan) {
+    if (tanpaMakan) {
+      btnMakan.classList.add('opacity-40');
+      btnMakan.title = 'Santri Bebas / Tanpa Uang Makan';
+    } else {
+      btnMakan.classList.remove('opacity-40');
+      btnMakan.title = '';
+    }
   }
 
   // Update tabs appearance
