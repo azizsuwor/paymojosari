@@ -1818,8 +1818,8 @@
         </div>
 
         <!-- Upload File Bukti Transfer -->
-        <div class="space-y-1.5">
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Foto Bukti *</label>
+        <div id="wrapBuktiUploadFile" class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Foto Bukti Transfer *</label>
           <input type="file" id="buktiSantriFileInput" accept="image/*" onchange="handleBuktiSantriFilePreview(event)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-900 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded-xl p-1.5" />
           <div class="border border-dashed border-slate-200 rounded-2xl p-3 bg-slate-50 text-center mt-2">
             <img id="buktiSantriPreviewImg" src="" alt="Preview Bukti Transfer" class="max-h-48 mx-auto rounded-xl shadow-xs hidden object-contain border border-slate-200 bg-white" />
@@ -1841,7 +1841,7 @@
           </button>
           <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold shadow-sm cursor-pointer flex items-center justify-center gap-1.5">
             <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-            <span>Kirim Bukti</span>
+            <span id="btnTextSubmitBukti">Kirim Bukti</span>
           </button>
         </div>
       </form>

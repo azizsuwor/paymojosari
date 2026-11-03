@@ -5073,6 +5073,8 @@ function setBuktiPaymentMethod(method) {
   const btnCash = document.getElementById('btnMetodeTunaiCash');
   const cardDana = document.getElementById('cardInfoDana');
   const cardCash = document.getElementById('cardInfoCash');
+  const wrapFile = document.getElementById('wrapBuktiUploadFile');
+  const btnText = document.getElementById('btnTextSubmitBukti');
   const noteInput = document.getElementById('buktiSantriCatatanInput');
   const preview = document.getElementById('buktiSantriPreviewImg');
   const empty = document.getElementById('buktiSantriEmptyState');
@@ -5092,19 +5094,15 @@ function setBuktiPaymentMethod(method) {
     }
     if (cardDana) cardDana.classList.add('hidden');
     if (cardCash) cardCash.classList.remove('hidden');
+    if (wrapFile) wrapFile.classList.add('hidden');
+    if (btnText) btnText.textContent = '✓ Simpan & Konfirmasi Lunas Langsung';
 
     if (noteInput && (!noteInput.value || noteInput.value.includes('Transfer DANA'))) {
-      noteInput.value = `Bayar Tunai / Cash langsung ke Bendahara (${mLabel})`;
+      noteInput.value = `Bayar Tunai / Cash langsung (${mLabel})`;
     }
 
-    // Buat voucher SVG otomatis konfirmasi bayar tunai
     const svgUrl = createCashPaymentSvgDataUrl(sName, formatRp(nominal), mLabel);
     currentBuktiSantriCtx.tempImgDataUrl = svgUrl;
-    if (preview) {
-      preview.src = svgUrl;
-      preview.classList.remove('hidden');
-    }
-    if (empty) empty.classList.add('hidden');
   } else {
     if (btnDana) {
       btnDana.className = 'p-2.5 rounded-xl border-2 border-[#064e3b] bg-emerald-50 text-[#064e3b] font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs';
@@ -5114,6 +5112,8 @@ function setBuktiPaymentMethod(method) {
     }
     if (cardDana) cardDana.classList.remove('hidden');
     if (cardCash) cardCash.classList.add('hidden');
+    if (wrapFile) wrapFile.classList.remove('hidden');
+    if (btnText) btnText.textContent = 'Kirim Bukti Transfer';
 
     if (noteInput && noteInput.value.includes('Bayar Tunai / Cash')) {
       noteInput.value = `Transfer DANA ${state.nomorDanaBendahara || NOMOR_DANA_DEFAULT} (${mLabel})`;
@@ -5158,8 +5158,6 @@ function recalcBuktiSantriNominal() {
     const selMKey = document.getElementById('buktiSantriPeriodeSelect')?.value || mKey;
     const svgUrl = createCashPaymentSvgDataUrl(sName, formatRp(total), getMonthLabel(selMKey));
     currentBuktiSantriCtx.tempImgDataUrl = svgUrl;
-    const preview = document.getElementById('buktiSantriPreviewImg');
-    if (preview) preview.src = svgUrl;
   }
 }
 
@@ -5220,15 +5218,6 @@ async function handleSubmitBuktiTransferSantri(event) {
   const nominal = Number(document.getElementById('buktiSantriNominalInput')?.value || 0);
   const metode = currentBuktiSantriCtx.method || 'dana';
 
-  if (!currentBuktiSantriCtx.tempImgDataUrl) {
-    if (metode === 'cash') {
-      currentBuktiSantriCtx.tempImgDataUrl = createCashPaymentSvgDataUrl(s.nama, formatRp(nominal), getMonthLabel(targetPeriode));
-    } else {
-      showToast('Silakan pilih foto / screenshot bukti transfer DANA terlebih dahulu!', 'amber');
-      return;
-    }
-  }
-
   const makan = Boolean(document.getElementById('chkBuktiMakan')?.checked && !document.getElementById('chkBuktiMakan')?.disabled);
   const wifi = Boolean(document.getElementById('chkBuktiWifi')?.checked);
   const listrik = Boolean(document.getElementById('chkBuktiListrik')?.checked);
@@ -5240,10 +5229,69 @@ async function handleSubmitBuktiTransferSantri(event) {
   }
 
   const defaultCatatan = metode === 'cash'
-    ? `Bayar Tunai / Cash langsung ke Bendahara (${getMonthLabel(targetPeriode)})`
+    ? `Bayar Tunai / Cash langsung (${getMonthLabel(targetPeriode)})`
     : `Transfer DANA ${state.nomorDanaBendahara || NOMOR_DANA_DEFAULT} (${getMonthLabel(targetPeriode)})`;
   const catatan = (document.getElementById('buktiSantriCatatanInput')?.value || '').trim() || defaultCatatan;
   const tanggal = new Date().toISOString().slice(0, 10);
+
+  // JIKA BAYAR CASH: LANGSUNG LUNAS & TERKONFIRMASI SELESAI TANPA RIBET
+  if (metode === 'cash') {
+    const rec = getPaymentRecord(s.id, targetPeriode);
+    const tanpaMakan = isSantriTanpaMakan(s);
+    if (!tanpaMakan && makan) rec.makan = true;
+    if (wifi) rec.wifi = true;
+    if (listrik) rec.listrik = true;
+    if (air) rec.air = true;
+    rec.metode = 'cash';
+    rec.catatan = catatan;
+    rec.updatedAt = tanggal;
+
+    // Catat transaksi pemasukan kas
+    state.recentTransactions.unshift({
+      id: 'T' + Date.now(),
+      title: s.nama,
+      subtitle: `Bayar Tunai / Cash (${getMonthLabel(targetPeriode)})`,
+      type: 'income',
+      amount: nominal,
+      date: 'Hari ini',
+      status: 'Completed',
+      icon: 'banknote'
+    });
+
+    // Simpan ke konfirmasiBayar berstatus approved
+    const approvedProof = {
+      id: 'KB' + Date.now(),
+      santriId: s.id,
+      monthKey: targetPeriode,
+      periode: targetPeriode,
+      nominal,
+      makan,
+      wifi,
+      listrik,
+      air,
+      metode: 'cash',
+      catatan,
+      proofImg: currentBuktiSantriCtx.tempImgDataUrl || createCashPaymentSvgDataUrl(s.nama, formatRp(nominal), getMonthLabel(targetPeriode)),
+      status: 'approved',
+      tanggal
+    };
+
+    if (!Array.isArray(state.konfirmasiBayar)) state.konfirmasiBayar = [];
+    state.konfirmasiBayar = state.konfirmasiBayar.filter(p => !(p.santriId === s.id && (p.monthKey === targetPeriode || p.periode === targetPeriode)));
+    state.konfirmasiBayar.unshift(approvedProof);
+
+    saveState();
+    closeUploadBuktiSantriModal();
+    renderAll();
+    showToast(`✓ Pembayaran Tunai (Cash) ${s.nama} langsung LUNAS & terkonfirmasi!`, 'emerald');
+    return;
+  }
+
+  // JIKA TRANSFER DANA: MENGIRIM BUKTI FOTO KE BENDAHARA
+  if (!currentBuktiSantriCtx.tempImgDataUrl) {
+    showToast('Silakan pilih foto / screenshot bukti transfer DANA terlebih dahulu!', 'amber');
+    return;
+  }
 
   const newProof = {
     id: 'KB' + Date.now(),
@@ -5255,7 +5303,7 @@ async function handleSubmitBuktiTransferSantri(event) {
     wifi,
     listrik,
     air,
-    metode,
+    metode: 'dana',
     catatan,
     proofImg: currentBuktiSantriCtx.tempImgDataUrl,
     buktiFoto: currentBuktiSantriCtx.tempImgDataUrl,
@@ -5264,7 +5312,6 @@ async function handleSubmitBuktiTransferSantri(event) {
   };
 
   if (!Array.isArray(state.konfirmasiBayar)) state.konfirmasiBayar = [];
-  // Hapus bukti pending lama untuk santri & bulan yang sama agar tidak duplikat
   state.konfirmasiBayar = state.konfirmasiBayar.filter(p => !(p.santriId === s.id && (p.monthKey === targetPeriode || p.periode === targetPeriode) && p.status === 'pending'));
   state.konfirmasiBayar.unshift(newProof);
 
@@ -5283,7 +5330,7 @@ async function handleSubmitBuktiTransferSantri(event) {
   saveState();
   closeUploadBuktiSantriModal();
   renderAll();
-  showToast(metode === 'cash' ? `✓ Konfirmasi bayar tunai periode ${getMonthLabel(targetPeriode)} terkirim ke Bendahara!` : `✓ Bukti transfer DANA periode ${getMonthLabel(targetPeriode)} berhasil dikirim!`, 'emerald');
+  showToast(`✓ Bukti transfer DANA periode ${getMonthLabel(targetPeriode)} berhasil dikirim!`, 'emerald');
 }
 
 function renderPendingProofsForAdmin() {
