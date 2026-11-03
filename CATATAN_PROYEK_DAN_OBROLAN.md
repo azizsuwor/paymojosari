@@ -348,6 +348,16 @@ Menjawab permasalahan riil di lapangan:
 ### I. Standardisasi Tombol WhatsApp dengan Ikon
 - Semua tombol aksi pengiriman pesan / konfirmasi WhatsApp diubah dari tombol teks panjang menjadi tombol ikon WhatsApp (`<i data-lucide="message-circle"></i>`) yang seragam, rapi, dan modern.
 
+### J. Penamaan Resmi: Include (100k), Kas Makan (50k), dan Kas Umum (50k)
+- **Tiga Pilihan Bayar Cepat & Modal:**
+  1. **`Include (100k)`**: Pembayaran gabungan Kas Makan (50k) dan Kas Umum (50k) sekaligus.
+  2. **`Kas Makan (50k)`**: Pembayaran porsi Kas Makan bulanan (otomatis redup/bebas bagi santri tanpa jatah makan seperti Aziz & Umam).
+  3. **`Kas Umum (50k)`**: Pembayaran porsi Kas Fasilitas umum bulanan.
+- **Rincian Internal Kas Umum Tetap Rapi & Bersih (Disembunyikan di UI):**
+  - Secara pembukuan internal sistem, Kas Umum Rp 50.000 mencakup: **Listrik Rp 20.000**, **WiFi Rp 20.000**, dan **Air Rp 10.000**.
+  - Keterangan rincian 20k listrik, 20k wifi, dan 10k air tersebut **disembunyikan sepenuhnya dari antarmuka pengguna, nota santri, maupun pesan WhatsApp**, sehingga santri hanya melihat label bersih **`Kas Umum (Rp 50.000)`**.
+
+
 
 
 
