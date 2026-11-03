@@ -1243,7 +1243,7 @@ if ($action === 'sync_all') {
                 $stmtKonf->execute([
                     ':id' => $kb['id'],
                     ':santri_id' => $kb['santriId'],
-                    ':periode' => $kb['periode'] ?? '2026-10',
+                    ':periode' => $kb['periode'] ?? date('Y-m'),
                     ':makan' => !empty($kb['makan']) ? 1 : 0,
                     ':wifi' => !empty($kb['wifi']) ? 1 : 0,
                     ':listrik' => !empty($kb['listrik']) ? 1 : 0,

@@ -37,23 +37,52 @@ function getTarif(monthKey) {
 
 const START_MONTH_KEY = '2026-10';
 
-const AVAILABLE_MONTHS = [
-  { key: '2026-10', label: 'Oktober 2026' },
-  { key: '2026-11', label: 'November 2026' },
-  { key: '2026-12', label: 'Desember 2026' },
-  { key: '2027-01', label: 'Januari 2027' },
-  { key: '2027-02', label: 'Februari 2027' },
-  { key: '2027-03', label: 'Maret 2027' },
-  { key: '2027-04', label: 'April 2027' },
-  { key: '2027-05', label: 'Mei 2027' },
-  { key: '2027-06', label: 'Juni 2027' },
-  { key: '2027-07', label: 'Juli 2027' },
-  { key: '2027-08', label: 'Agustus 2027' },
-  { key: '2027-09', label: 'September 2027' },
-  { key: '2027-10', label: 'Oktober 2027' },
-  { key: '2027-11', label: 'November 2027' },
-  { key: '2027-12', label: 'Desember 2027' }
+const NAMA_BULAN_INDONESIA = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
+
+function generateAvailableMonths() {
+  const list = [];
+  const startYear = 2026;
+  const startMonth = 10; // Periode awal sistem: Oktober 2026
+  
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  // Jangkauan otomatis selalu menyertakan minimal 1 tahun ke depan dari tahun saat ini
+  const endYear = Math.max(startYear + 1, currentYear + 1);
+
+  for (let y = startYear; y <= endYear; y++) {
+    const mStart = (y === startYear) ? startMonth : 1;
+    const mEnd = 12;
+    for (let m = mStart; m <= mEnd; m++) {
+      const key = `${y}-${String(m).padStart(2, '0')}`;
+      const label = `${NAMA_BULAN_INDONESIA[m - 1]} ${y}`;
+      list.push({ key, label });
+    }
+  }
+  return list;
+}
+
+const AVAILABLE_MONTHS = generateAvailableMonths();
+
+function getCurrentMonthKey() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const key = `${y}-${m}`;
+  if (key < START_MONTH_KEY) return START_MONTH_KEY;
+  const exists = AVAILABLE_MONTHS.some(x => x.key === key);
+  return exists ? key : START_MONTH_KEY;
+}
+
+function getTodayDateString() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
 const TRACKED_ARREARS_MONTHS = ['2026-10'];
 
@@ -118,7 +147,7 @@ const DEFAULT_SANTRI = [
 ];
 
 let state = {
-  activeMonth: '2026-10',
+  activeMonth: getCurrentMonthKey(),
   activeTab: 'pembayaran', // Defaulting to Payments tab matching FinPilot
   selectedSantriId: 's1',  // Selected in Quick Transfer
   quickMode: 'full',       // 'full' (100k) | 'makan' (50k) | 'wifi' (manual)
@@ -203,7 +232,7 @@ function createCashPaymentSvgDataUrl(santriName, nominalRp, bulanLabel) {
 
 function getInitialDemoState() {
   return {
-    activeMonth: '2026-10',
+    activeMonth: getCurrentMonthKey(),
     activeTab: 'pembayaran',
     selectedSantriId: 's1',
     quickMode: 'full',
@@ -223,7 +252,7 @@ function getInitialDemoState() {
 
 function purgeOldMonthsFromState() {
   if (!AVAILABLE_MONTHS.some(m => m.key === state.activeMonth)) {
-    state.activeMonth = START_MONTH_KEY;
+    state.activeMonth = getCurrentMonthKey();
   }
   if (!Array.isArray(state.kasUmumLogs)) state.kasUmumLogs = [];
   if (!Array.isArray(state.konfirmasiBayar)) state.konfirmasiBayar = [];
@@ -1441,6 +1470,8 @@ function loadState() {
       state = getInitialDemoState();
       saveState(true);
     }
+    // Periode yang digunakan otomatis selalu up-to-date mengikuti bulan saat web/apk dibuka
+    state.activeMonth = getCurrentMonthKey();
     let savedRole = localStorage.getItem('paymojosari_role') || 'guest';
     const authToken = getAuthToken();
     if (savedRole === 'admin' && !authToken) {
@@ -1622,7 +1653,7 @@ function getBendaharaWifiRecord(monthKey) {
       status: 'unpaid',
       proofImg: '',
       proofNote: '',
-      tanggalBayar: '2026-10-30',
+      tanggalBayar: getTodayDateString(),
       nominalBayar: TAGIHAN_WIFI_INDUK_DEFAULT
     };
   } else if (state.setoranWifiBendahara[monthKey].status === 'unpaid' && (!state.setoranWifiBendahara[monthKey].nominalBayar || state.setoranWifiBendahara[monthKey].nominalBayar === 340000)) {
@@ -1946,6 +1977,7 @@ function initControls() {
 
   if (select) {
     select.innerHTML = monthOptions;
+    select.value = state.activeMonth;
     select.onchange = (e) => {
       state.activeMonth = e.target.value;
       if (mobileSelect) mobileSelect.value = e.target.value;
@@ -1956,6 +1988,7 @@ function initControls() {
 
   if (mobileSelect) {
     mobileSelect.innerHTML = monthOptions;
+    mobileSelect.value = state.activeMonth;
     mobileSelect.onchange = (e) => {
       state.activeMonth = e.target.value;
       if (select) select.value = e.target.value;
@@ -1964,7 +1997,7 @@ function initControls() {
     };
   }
 
-  const today = '2026-10-30';
+  const today = getTodayDateString();
   const masakDate = document.getElementById('masakTanggal');
   if (masakDate && !masakDate.value) masakDate.value = today;
 
@@ -2228,6 +2261,10 @@ function renderAll() {
 
   // Metrics Bar (Payments Tab & Dashboard Tab) — Disesuaikan berdasarkan Role (Bendahara vs Santri Pribadi vs Tamu Umum)
   const monthLabelShort = getMonthLabel(state.activeMonth);
+  const selGlobal = document.getElementById('globalMonthSelect');
+  if (selGlobal && selGlobal.value !== state.activeMonth) selGlobal.value = state.activeMonth;
+  const selMobile = document.getElementById('mobileMonthSelect');
+  if (selMobile && selMobile.value !== state.activeMonth) selMobile.value = state.activeMonth;
   if (document.getElementById('mMonthBadge')) document.getElementById('mMonthBadge').textContent = monthLabelShort;
   if (document.getElementById('dashMonthBadge')) document.getElementById('dashMonthBadge').textContent = monthLabelShort;
   if (document.getElementById('dashActiveMonthTitle')) document.getElementById('dashActiveMonthTitle').textContent = monthLabelShort;
@@ -4277,7 +4314,7 @@ function openBendaharaWifiModal(monthKeyParam) {
   currentWifiModalCtx = { monthKey, tempImgDataUrl: wifiRec.proofImg || '' };
 
   document.getElementById('modalWifiSubtitle').textContent = `Periode: ${getMonthLabel(monthKey)}`;
-  document.getElementById('wifiProofDateInput').value = wifiRec.tanggalBayar || '2026-10-30';
+  document.getElementById('wifiProofDateInput').value = wifiRec.tanggalBayar || getTodayDateString();
   document.getElementById('wifiProofNominalInput').value = wifiRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT;
   document.getElementById('wifiProofNoteInput').value = wifiRec.proofNote || '';
   document.getElementById('wifiProofFileInput').value = '';
@@ -4346,7 +4383,7 @@ function saveWifiProofOnly() {
   const wifiRec = getBendaharaWifiRecord(currentWifiModalCtx.monthKey);
   wifiRec.proofImg = currentWifiModalCtx.tempImgDataUrl;
   wifiRec.proofNote = document.getElementById('wifiProofNoteInput').value.trim() || 'Foto bukti chat setor WiFi Induk Rp 200.000 diupload';
-  wifiRec.tanggalBayar = document.getElementById('wifiProofDateInput').value || '2026-10-30';
+  wifiRec.tanggalBayar = document.getElementById('wifiProofDateInput').value || getTodayDateString();
   wifiRec.nominalBayar = Number(document.getElementById('wifiProofNominalInput').value) || TAGIHAN_WIFI_INDUK_DEFAULT;
   wifiRec.status = 'pending_confirm';
 
@@ -4368,7 +4405,7 @@ function confirmWifiPaidWithProof() {
   const wifiRec = getBendaharaWifiRecord(currentWifiModalCtx.monthKey);
   wifiRec.proofImg = currentWifiModalCtx.tempImgDataUrl;
   wifiRec.proofNote = document.getElementById('wifiProofNoteInput').value.trim() || 'Setoran WiFi Induk Rp 200.000 lunas dikonfirmasi Bendahara (sisa masuk kas)';
-  wifiRec.tanggalBayar = document.getElementById('wifiProofDateInput').value || '2026-10-30';
+  wifiRec.tanggalBayar = document.getElementById('wifiProofDateInput').value || getTodayDateString();
   wifiRec.nominalBayar = Number(document.getElementById('wifiProofNominalInput').value) || TAGIHAN_WIFI_INDUK_DEFAULT;
   wifiRec.status = 'paid';
 

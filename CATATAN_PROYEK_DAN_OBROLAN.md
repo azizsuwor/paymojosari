@@ -293,6 +293,20 @@ Menjawab permasalahan riil di lapangan:
 3. **Keterangan Metode pada Kuitansi / Nota:**
    - Transaksi tercatat rapi dengan label *`Tunai / Cash`* pada mutasi keuangan dan nota resmi.
 
+---
+
+## 12. Periode Otomatis Up-to-Date Realtime (Update 4 November 2026)
+
+1. **Otomatis Mendeteksi Bulan Berjalan Saat Web / APK Dibuka:**
+   - Setiap kali halaman web atau aplikasi dibuka / di-refresh, sistem otomatis mendeteksi kalender saat ini secara realtime via fungsi `getCurrentMonthKey()`.
+   - Dasbor, kartu metrik, status syahriyah, dan tabel pembayaran santri langsung menampilkan bulan berjalan (misal: otomatis **November 2026** di bulan November, **Desember 2026** di bulan Desember, **Januari 2027**, dst.) tanpa perlu dipilih manual.
+2. **Daftar Bulan Dinamis (*Future-proof*):**
+   - Generator `generateAvailableMonths()` secara otomatis memproduksi daftar periode dari baseline awal (`Oktober 2026`) hingga minimal 1 tahun ke depan melampaui tahun kalender saat ini.
+   - Dropdown periode tidak akan pernah kehabisan daftar bulan di masa mendatang.
+3. **Sinkronisasi Tanggal Input Hari Ini (`getTodayDateString`):**
+   - Tanggal default pada form pencatatan Belanja Dapur (*Jurnal Masak*), Pengeluaran Kas Umum, Peminjaman Utang Kas, dan Bukti Setoran WiFi Induk secara otomatis terisi tanggal hari ini (`YYYY-MM-DD`).
+
+
 
 
 
