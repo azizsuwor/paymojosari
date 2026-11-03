@@ -1793,6 +1793,113 @@ function calculateGlobalFinancials() {
 }
 
 // =========================================================================
+// ARUS KAS & SALDO BERGULIR ANTAR-BULAN (ROLL-FORWARD CASH FLOW)
+// =========================================================================
+
+function getMonthlyCashFlowRollForward() {
+  const result = [];
+  let prevRoll = null;
+
+  AVAILABLE_MONTHS.forEach(m => {
+    const mKey = m.key;
+
+    // 1. Saldo Awal (Bawaan sisa dari bulan sebelumnya)
+    const saldoAwalMakan = prevRoll ? prevRoll.saldoAkhirMakan : 0;
+    const saldoAwalKasUmum = prevRoll ? prevRoll.saldoAkhirKasUmum : 0;
+    const saldoAwalTotal = saldoAwalMakan + saldoAwalKasUmum;
+
+    // 2. Iuran Santri yang terkumpul untuk periode ini
+    let iuranMakanMasuk = 0;
+    let iuranKasMasuk = 0;
+    let santriLunasCount = 0;
+
+    state.santri.forEach(s => {
+      const rec = getPaymentRecord(s.id, mKey);
+      const sum = calculateRecordSummary(rec, mKey, s);
+      iuranMakanMasuk += sum.paidMakan;
+      iuranKasMasuk += (sum.paidWifi + sum.paidListrik + sum.paidAir);
+      if (sum.isFullLunas) santriLunasCount++;
+    });
+
+    // Pemasukan Masak Lain (Donasi dll)
+    const pemasukanMasakLain = (state.masakLogs || [])
+      .filter(x => x.tipe === 'pemasukan' && x.tanggal && x.tanggal.startsWith(mKey))
+      .reduce((acc, x) => acc + Number(x.nominal || 0), 0);
+
+    const totalMasukMakan = iuranMakanMasuk + pemasukanMasakLain;
+
+    // Pengeluaran Belanja Masak
+    const pengeluaranMasak = (state.masakLogs || [])
+      .filter(x => x.tipe === 'pengeluaran' && x.tanggal && x.tanggal.startsWith(mKey))
+      .reduce((acc, x) => acc + Number(x.nominal || 0), 0);
+
+    // Pemasukan Kas Umum Lain
+    const pemasukanKasUmumLain = (state.kasUmumLogs || [])
+      .filter(x => x.tipe === 'pemasukan' && x.tanggal && x.tanggal.startsWith(mKey))
+      .reduce((acc, x) => acc + Number(x.nominal || 0), 0);
+
+    const totalMasukKasUmum = iuranKasMasuk + pemasukanKasUmumLain;
+
+    // Pengeluaran Kas Umum
+    const pengeluaranKasUmum = (state.kasUmumLogs || [])
+      .filter(x => x.tipe === 'pengeluaran' && x.tanggal && x.tanggal.startsWith(mKey))
+      .reduce((acc, x) => acc + Number(x.nominal || 0), 0);
+
+    // Setoran WiFi Induk
+    const wRec = (state.setoranWifiBendahara || {})[mKey];
+    const setoranWifiInduk = (wRec && wRec.status === 'paid')
+      ? Number(wRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT)
+      : 0;
+
+    // Dampak Utang Kas
+    const utangKasBaru = (state.utangKas || [])
+      .filter(u => u.tanggal && u.tanggal.startsWith(mKey))
+      .reduce((acc, u) => acc + Number(u.nominal || 0), 0);
+
+    const utangKasDilunasi = (state.utangKas || [])
+      .filter(u => u.status === 'lunas' && ((u.tglLunas && u.tglLunas.startsWith(mKey)) || (!u.tglLunas && u.tanggal && u.tanggal.startsWith(mKey))))
+      .reduce((acc, u) => acc + Number(u.nominal || 0), 0);
+
+    const dampakUtangKas = utangKasBaru - utangKasDilunasi;
+
+    // 3. Saldo Akhir (Kas Riil di Akhir Bulan)
+    const saldoAkhirMakan = saldoAwalMakan + totalMasukMakan - pengeluaranMasak;
+    const saldoAkhirKasUmum = saldoAwalKasUmum + totalMasukKasUmum - pengeluaranKasUmum - setoranWifiInduk - dampakUtangKas;
+    const saldoAkhirTotal = saldoAkhirMakan + saldoAkhirKasUmum;
+
+    const row = {
+      key: mKey,
+      label: m.label,
+      isCurrent: mKey === state.activeMonth,
+      saldoAwalMakan,
+      saldoAwalKasUmum,
+      saldoAwalTotal,
+      iuranMakanMasuk,
+      pemasukanMasakLain,
+      totalMasukMakan,
+      pengeluaranMasak,
+      saldoAkhirMakan,
+      iuranKasMasuk,
+      pemasukanKasUmumLain,
+      totalMasukKasUmum,
+      pengeluaranKasUmum,
+      setoranWifiInduk,
+      dampakUtangKas,
+      saldoAkhirKasUmum,
+      totalMasukBulanIni: totalMasukMakan + totalMasukKasUmum,
+      totalKeluarBulanIni: pengeluaranMasak + pengeluaranKasUmum + setoranWifiInduk + dampakUtangKas,
+      saldoAkhirTotal,
+      santriLunasCount
+    };
+
+    result.push(row);
+    prevRoll = row;
+  });
+
+  return result;
+}
+
+// =========================================================================
 // UI CONTROLS & ROUTING
 // =========================================================================
 
@@ -2084,29 +2191,36 @@ function renderAll() {
   };
 
   if (state.userRole === 'admin') {
-    setMetricLabels('Terkumpul', 'Tunggakan', 'Saldo Kas', 'Utang Kas');
+    const rolls = getMonthlyCashFlowRollForward();
+    const curRoll = rolls.find(r => r.key === state.activeMonth) || rolls[0];
+
+    setMetricLabels('Terkumpul', 'Tunggakan', 'Kas Tersedia', 'Sisa Dapur & Kas');
     const pctSent = fin.activeMonthTarget > 0 ? Math.round((fin.activeMonthTotalSent / fin.activeMonthTarget) * 100) : 0;
     const pctPending = fin.activeMonthTarget > 0 ? Math.round((fin.activeMonthTunggakan / fin.activeMonthTarget) * 100) : 0;
-    const activeLoanCount = state.utangKas.filter(u => u.status === 'belum_lunas').length;
+
+    const totalKasRiil = curRoll ? curRoll.saldoAkhirTotal : fin.saldoKasTersedia;
+    const saldoAwalText = curRoll && curRoll.saldoAwalTotal > 0
+      ? `Awal: ${formatRp(curRoll.saldoAwalTotal)}`
+      : 'Bulan Pertama';
 
     document.getElementById('mTotalSent').textContent = formatRp(fin.activeMonthTotalSent);
     document.getElementById('mTotalSentPct').innerHTML = `<i data-lucide="arrow-up" class="w-3 h-3"></i> ${pctSent}%`;
     document.getElementById('mPending').textContent = formatRp(fin.activeMonthTunggakan);
     document.getElementById('mPendingPct').innerHTML = `<i data-lucide="arrow-down" class="w-3 h-3"></i> ${pctPending}%`;
-    document.getElementById('mScheduled').textContent = formatRp(fin.saldoKasTersedia);
-    if (document.getElementById('mScheduledSub')) document.getElementById('mScheduledSub').textContent = 'Aktif';
-    document.getElementById('mFailed').textContent = formatRp(fin.totalUtangAktif);
-    document.getElementById('mFailedSub').textContent = `${activeLoanCount} Santri`;
+    document.getElementById('mScheduled').textContent = formatRp(totalKasRiil);
+    if (document.getElementById('mScheduledSub')) document.getElementById('mScheduledSub').textContent = saldoAwalText;
+    document.getElementById('mFailed').textContent = formatRp(curRoll ? curRoll.saldoAkhirMakan : fin.saldoMasakTersedia);
+    if (document.getElementById('mFailedSub')) document.getElementById('mFailedSub').textContent = `Kas: ${formatRp(curRoll ? curRoll.saldoAkhirKasUmum : fin.saldoKasTersedia)}`;
 
     if (document.getElementById('dashTotalSent')) {
       document.getElementById('dashTotalSent').textContent = formatRp(fin.activeMonthTotalSent);
       document.getElementById('dashTotalSentPct').textContent = `${pctSent}%`;
       document.getElementById('dashPending').textContent = formatRp(fin.activeMonthTunggakan);
       document.getElementById('dashPendingPct').textContent = `${pctPending}%`;
-      document.getElementById('dashScheduled').textContent = formatRp(fin.saldoKasTersedia);
-      if (document.getElementById('dashScheduledSub')) document.getElementById('dashScheduledSub').textContent = 'Aktif';
-      document.getElementById('dashFailed').textContent = formatRp(fin.totalUtangAktif);
-      document.getElementById('dashFailedSub').textContent = `${activeLoanCount} Santri`;
+      document.getElementById('dashScheduled').textContent = formatRp(totalKasRiil);
+      if (document.getElementById('dashScheduledSub')) document.getElementById('dashScheduledSub').textContent = saldoAwalText;
+      document.getElementById('dashFailed').textContent = formatRp(curRoll ? curRoll.saldoAkhirMakan : fin.saldoMasakTersedia);
+      if (document.getElementById('dashFailedSub')) document.getElementById('dashFailedSub').textContent = `Kas: ${formatRp(curRoll ? curRoll.saldoAkhirKasUmum : fin.saldoKasTersedia)}`;
     }
 
     if (document.getElementById('limitBar1Label')) document.getElementById('limitBar1Label').textContent = 'Iuran Terkumpul';
@@ -2827,6 +2941,9 @@ function renderDashboardTab(fin) {
     }).join('');
   }
 
+  // Render Tabel Arus Kas & Saldo Bergulir Antar-Bulan
+  renderCashFlowRecap();
+
   const matrixBody = document.getElementById('dashboardMatrixBody');
   if (!matrixBody) return;
 
@@ -2900,6 +3017,11 @@ function renderDashboardTab(fin) {
         <td class="py-3 px-3 text-right">
           <div class="flex items-center justify-end gap-1.5">
             ${state.isAdmin ? `
+              ${sum.totalPaid > 0 ? `
+                <button onclick="openMovePaymentModal('${s.id}', '${state.activeMonth}')" title="Pindahkan pembayaran santri ini ke bulan lain" class="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold cursor-pointer flex items-center gap-1">
+                  Pindah Bln
+                </button>
+              ` : ''}
               <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold cursor-pointer">
                 Nota
               </button>
@@ -4822,6 +4944,14 @@ function openUploadBuktiSantriModal(santriIdParam, monthKeyParam) {
   const subEl = document.getElementById('modalBuktiSantriSubtitle');
   if (subEl) subEl.textContent = `${s.nama} • Periode ${getMonthLabel(mKey)}`;
 
+  // Populate Pilihan Periode Yang Dibayar
+  const selPer = document.getElementById('buktiSantriPeriodeSelect');
+  if (selPer) {
+    selPer.innerHTML = AVAILABLE_MONTHS.map(m =>
+      `<option value="${m.key}" ${m.key === mKey ? 'selected' : ''}>${m.label}</option>`
+    ).join('');
+  }
+
   const danaEl = document.getElementById('modalBuktiNomorDanaText');
   if (danaEl) danaEl.textContent = state.nomorDanaBendahara || NOMOR_DANA_DEFAULT;
 
@@ -4877,6 +5007,11 @@ function openUploadBuktiSantriModal(santriIdParam, monthKeyParam) {
 function closeUploadBuktiSantriModal() {
   const modal = document.getElementById('modalUploadBuktiSantri');
   if (modal) modal.classList.add('hidden');
+}
+
+function handleBuktiSantriPeriodeChange(newMonthKey) {
+  if (!newMonthKey || !currentBuktiSantriCtx.santriId) return;
+  openUploadBuktiSantriModal(currentBuktiSantriCtx.santriId, newMonthKey);
 }
 
 function recalcBuktiSantriNominal() {
@@ -4947,7 +5082,7 @@ function handleBuktiSantriFilePreview(event) {
 async function handleSubmitBuktiTransferSantri(event) {
   event.preventDefault();
   const sId = currentBuktiSantriCtx.santriId;
-  const mKey = currentBuktiSantriCtx.monthKey || state.activeMonth;
+  const targetPeriode = document.getElementById('buktiSantriPeriodeSelect')?.value || currentBuktiSantriCtx.monthKey || state.activeMonth;
   const s = state.santri.find(x => x.id === sId);
   if (!s) return;
 
@@ -4973,7 +5108,8 @@ async function handleSubmitBuktiTransferSantri(event) {
   const newProof = {
     id: 'KB' + Date.now(),
     santriId: s.id,
-    monthKey: mKey,
+    monthKey: targetPeriode,
+    periode: targetPeriode,
     nominal,
     makan,
     wifi,
@@ -4981,13 +5117,14 @@ async function handleSubmitBuktiTransferSantri(event) {
     air,
     catatan,
     proofImg: currentBuktiSantriCtx.tempImgDataUrl,
+    buktiFoto: currentBuktiSantriCtx.tempImgDataUrl,
     status: 'pending',
     tanggal
   };
 
   if (!Array.isArray(state.konfirmasiBayar)) state.konfirmasiBayar = [];
   // Hapus bukti pending lama untuk santri & bulan yang sama agar tidak duplikat
-  state.konfirmasiBayar = state.konfirmasiBayar.filter(p => !(p.santriId === s.id && p.monthKey === mKey && p.status === 'pending'));
+  state.konfirmasiBayar = state.konfirmasiBayar.filter(p => !(p.santriId === s.id && (p.monthKey === targetPeriode || p.periode === targetPeriode) && p.status === 'pending'));
   state.konfirmasiBayar.unshift(newProof);
 
   if (window.location.protocol !== 'file:') {
@@ -5005,7 +5142,7 @@ async function handleSubmitBuktiTransferSantri(event) {
   saveState();
   closeUploadBuktiSantriModal();
   renderAll();
-  showToast('Bukti transfer terkirim', 'emerald');
+  showToast(`Bukti transfer periode ${getMonthLabel(targetPeriode)} berhasil dikirim!`, 'emerald');
 }
 
 function renderPendingProofsForAdmin() {
@@ -5470,6 +5607,191 @@ async function triggerInstallPwa() {
     deferredPwaPrompt = null;
   } else {
     showToast('Untuk install di HP: Buka menu browser (⋮ atau Share) lalu pilih "Tambahkan ke Layar Utama / Install Aplikasi"', 'emerald');
+  }
+}
+
+// =========================================================================
+// FITUR: PINDAH PERIODE PEMBAYARAN SANTRI (KOREKSI / ADVANCE PAYMENT)
+// =========================================================================
+
+let currentMovePaymentCtx = {
+  santriId: null,
+  fromMonthKey: null
+};
+
+function openMovePaymentModal(santriId, fromMonthKey) {
+  if (!state.isAdmin) {
+    showToast('Hanya Bendahara yang dapat memindahkan periode pembayaran', 'amber');
+    return;
+  }
+  const s = state.santri.find(x => x.id === santriId);
+  if (!s) return;
+  const fromKey = fromMonthKey || state.activeMonth;
+  const rec = getPaymentRecord(s.id, fromKey);
+  const sum = calculateRecordSummary(rec, fromKey, s);
+
+  if (sum.totalPaid <= 0) {
+    showToast('Santri ini belum memiliki pembayaran tercatat di periode ini', 'amber');
+    return;
+  }
+
+  currentMovePaymentCtx = {
+    santriId: s.id,
+    fromMonthKey: fromKey
+  };
+
+  const nameEl = document.getElementById('modalMoveSantriName');
+  if (nameEl) nameEl.textContent = s.nama;
+  const fromEl = document.getElementById('modalMoveFromLabel');
+  if (fromEl) fromEl.textContent = getMonthLabel(fromKey);
+
+  const compList = [];
+  if (rec.makan) compList.push('Makan');
+  if (rec.wifi) compList.push('WiFi');
+  if (rec.listrik) compList.push('Listrik');
+  if (rec.air) compList.push('Air');
+  const detEl = document.getElementById('modalMoveDetails');
+  if (detEl) detEl.textContent = `Dibayar: ${compList.join(', ')} (${formatRp(sum.totalPaid)})`;
+
+  const sel = document.getElementById('modalMoveTargetSelect');
+  if (sel) {
+    sel.innerHTML = AVAILABLE_MONTHS
+      .filter(m => m.key !== fromKey)
+      .map(m => `<option value="${m.key}">${m.label}</option>`)
+      .join('');
+    // Default ke bulan berikutnya jika tersedia
+    const nextMonthIdx = AVAILABLE_MONTHS.findIndex(m => m.key === fromKey) + 1;
+    if (nextMonthIdx < AVAILABLE_MONTHS.length) {
+      sel.value = AVAILABLE_MONTHS[nextMonthIdx].key;
+    }
+  }
+
+  const modal = document.getElementById('modalMovePaymentPeriod');
+  if (modal) modal.classList.remove('hidden');
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function closeMovePaymentModal() {
+  const modal = document.getElementById('modalMovePaymentPeriod');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function handleExecuteMovePayment(e) {
+  if (e) e.preventDefault();
+  const { santriId, fromMonthKey } = currentMovePaymentCtx;
+  if (!santriId || !fromMonthKey) return;
+
+  const targetSelect = document.getElementById('modalMoveTargetSelect');
+  const toMonthKey = targetSelect ? targetSelect.value : null;
+  if (!toMonthKey || toMonthKey === fromMonthKey) {
+    showToast('Pilih bulan tujuan yang berbeda', 'amber');
+    return;
+  }
+
+  const s = state.santri.find(x => x.id === santriId);
+  const sName = s ? s.nama : 'Santri';
+  const fromRecord = getPaymentRecord(santriId, fromMonthKey);
+  const targetRecord = getPaymentRecord(santriId, toMonthKey);
+
+  // Pindahkan status bayar
+  targetRecord.makan = fromRecord.makan;
+  targetRecord.wifi = fromRecord.wifi;
+  targetRecord.listrik = fromRecord.listrik;
+  targetRecord.air = fromRecord.air;
+  targetRecord.updatedAt = new Date().toISOString().slice(0, 10);
+
+  // Kosongkan di periode asal
+  fromRecord.makan = false;
+  fromRecord.wifi = false;
+  fromRecord.listrik = false;
+  fromRecord.air = false;
+  fromRecord.updatedAt = '-';
+
+  // Simpan ke state
+  state.pembayaran[`${santriId}_${toMonthKey}`] = { ...targetRecord };
+  state.pembayaran[`${santriId}_${fromMonthKey}`] = { ...fromRecord };
+
+  // Perbarui bukti transfer jika ada
+  (state.konfirmasiBayar || []).forEach(kb => {
+    if (kb.santriId === santriId && (kb.monthKey === fromMonthKey || kb.periode === fromMonthKey)) {
+      kb.monthKey = toMonthKey;
+      kb.periode = toMonthKey;
+    }
+  });
+
+  saveState();
+
+  // Panggil endpoint backend API
+  try {
+    if (window.location.protocol !== 'file:' && state.isAdmin) {
+      await fetch('api.php?action=move_payment_period', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: getAdminHeaders(),
+        body: JSON.stringify({
+          santri_id: santriId,
+          from_periode: fromMonthKey,
+          to_periode: toMonthKey
+        })
+      });
+    }
+  } catch (err) {
+    console.warn('Gagal memindahkan via API:', err);
+  }
+
+  closeMovePaymentModal();
+  renderAll();
+  showToast(`✓ Pembayaran ${sName} berhasil dipindahkan ke ${getMonthLabel(toMonthKey)}!`, 'emerald');
+}
+
+// =========================================================================
+// FITUR: TAMPILAN ARUS KAS & SALDO BERGULIR
+// =========================================================================
+
+function renderCashFlowRecap() {
+  const cashFlowBody = document.getElementById('dashboardCashFlowRecapBody');
+  if (!cashFlowBody) return;
+
+  const rolls = getMonthlyCashFlowRollForward();
+  cashFlowBody.innerHTML = rolls.map(r => {
+    const isCur = r.key === state.activeMonth;
+    return `
+      <tr class="${isCur ? 'bg-emerald-50/70 font-semibold' : 'hover:bg-slate-50'} transition">
+        <td class="py-2.5 px-3 cursor-pointer" onclick="selectDashboardMonth('${r.key}')">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-slate-900">${r.label}</span>
+            ${isCur ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#064e3b] text-white uppercase">Aktif</span>` : ''}
+          </div>
+        </td>
+        <td class="py-2.5 px-3 text-right font-mono text-slate-600">${formatRp(r.saldoAwalTotal)}</td>
+        <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-800">${formatRp(r.totalMasukMakan)}</td>
+        <td class="py-2.5 px-3 text-right font-mono font-bold text-rose-600">${formatRp(r.pengeluaranMasak)}</td>
+        <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-800">${formatRp(r.totalMasukKasUmum)}</td>
+        <td class="py-2.5 px-3 text-right font-mono font-bold text-rose-600">${formatRp(r.pengeluaranKasUmum + r.setoranWifiInduk)}</td>
+        <td class="py-2.5 px-3 text-right font-mono font-bold text-amber-800">${formatRp(r.saldoAkhirMakan)}</td>
+        <td class="py-2.5 px-3 text-right font-mono font-bold text-teal-800">${formatRp(r.saldoAkhirKasUmum)}</td>
+        <td class="py-2.5 px-3 text-right font-mono font-black text-emerald-950 bg-emerald-50/50">${formatRp(r.saldoAkhirTotal)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function switchRecapTab(tab) {
+  const btnIuran = document.getElementById('btnTabRecapIuran');
+  const btnCashFlow = document.getElementById('btnTabRecapCashFlow');
+  const wrapIuran = document.getElementById('wrapTableIuranRecap');
+  const wrapCashFlow = document.getElementById('wrapTableCashFlowRecap');
+
+  if (tab === 'cashflow') {
+    if (btnIuran) btnIuran.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer text-slate-600 hover:text-slate-900';
+    if (btnCashFlow) btnCashFlow.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer bg-white text-slate-900 shadow-2xs';
+    if (wrapIuran) wrapIuran.classList.add('hidden');
+    if (wrapCashFlow) wrapCashFlow.classList.remove('hidden');
+  } else {
+    if (btnIuran) btnIuran.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer bg-white text-slate-900 shadow-2xs';
+    if (btnCashFlow) btnCashFlow.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer text-slate-600 hover:text-slate-900';
+    if (wrapIuran) wrapIuran.classList.remove('hidden');
+    if (wrapCashFlow) wrapCashFlow.classList.add('hidden');
   }
 }
 

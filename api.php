@@ -931,6 +931,96 @@ if ($action === 'save_payment') {
 }
 
 // -------------------------------------------------------------------------
+// 2b. Pindahkan Pembayaran Santri ke Periode Lain (POST ?action=move_payment_period)
+// -------------------------------------------------------------------------
+if ($action === 'move_payment_period') {
+    check_admin_auth();
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid JSON']);
+        exit;
+    }
+
+    $santri_id = isset($input['santri_id']) ? trim($input['santri_id']) : '';
+    $from_periode = isset($input['from_periode']) ? trim($input['from_periode']) : '';
+    $to_periode = isset($input['to_periode']) ? trim($input['to_periode']) : '';
+
+    if (!$santri_id || !$from_periode || !$to_periode) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Data santri atau periode belum lengkap.']);
+        exit;
+    }
+
+    if ($from_periode === $to_periode) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Periode asal dan periode tujuan sama.']);
+        exit;
+    }
+
+    try {
+        $pdo->beginTransaction();
+
+        // 1. Ambil data pembayaran di periode asal
+        $stmtOld = $pdo->prepare("SELECT * FROM pembayaran_santri WHERE santri_id = :sid AND periode = :from_per");
+        $stmtOld->execute([':sid' => $santri_id, ':from_per' => $from_periode]);
+        $oldRec = $stmtOld->fetch();
+
+        if (!$oldRec) {
+            $pdo->rollBack();
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'Data pembayaran di periode asal tidak ditemukan.']);
+            exit;
+        }
+
+        // 2. Insert atau Update ke periode tujuan
+        $catatanPindah = ($oldRec['catatan'] ?: 'Pembayaran Santri') . " [Dipindahkan dari $from_periode]";
+        $stmtNew = $pdo->prepare("INSERT INTO pembayaran_santri 
+            (santri_id, periode, bayar_makan, bayar_wifi, bayar_listrik, bayar_air, tgl_bayar, catatan)
+            VALUES (:sid, :to_per, :makan, :wifi, :listrik, :air, :tgl, :catatan)
+            ON DUPLICATE KEY UPDATE
+            bayar_makan = VALUES(bayar_makan),
+            bayar_wifi = VALUES(bayar_wifi),
+            bayar_listrik = VALUES(bayar_listrik),
+            bayar_air = VALUES(bayar_air),
+            tgl_bayar = VALUES(tgl_bayar),
+            catatan = VALUES(catatan)");
+
+        $stmtNew->execute([
+            ':sid' => $santri_id,
+            ':to_per' => $to_periode,
+            ':makan' => (int)$oldRec['bayar_makan'],
+            ':wifi' => (int)$oldRec['bayar_wifi'],
+            ':listrik' => (int)$oldRec['bayar_listrik'],
+            ':air' => (int)$oldRec['bayar_air'],
+            ':tgl' => $oldRec['tgl_bayar'] ?: date('Y-m-d'),
+            ':catatan' => $catatanPindah
+        ]);
+
+        // 3. Hapus data pembayaran di periode asal
+        $stmtDel = $pdo->prepare("DELETE FROM pembayaran_santri WHERE santri_id = :sid AND periode = :from_per");
+        $stmtDel->execute([':sid' => $santri_id, ':from_per' => $from_periode]);
+
+        // 4. Update bukti konfirmasi_bayar terkait jika ada
+        $stmtProof = $pdo->prepare("UPDATE konfirmasi_bayar SET periode = :to_per WHERE santri_id = :sid AND periode = :from_per");
+        $stmtProof->execute([':to_per' => $to_periode, ':sid' => $santri_id, ':from_per' => $from_periode]);
+
+        $pdo->commit();
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => "Pembayaran berhasil dipindahkan ke periode $to_periode."
+        ]);
+        exit;
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// -------------------------------------------------------------------------
 // 3. Simpan Catatan Jurnal Masak (POST ?action=save_masak)
 // -------------------------------------------------------------------------
 if ($action === 'save_masak') {

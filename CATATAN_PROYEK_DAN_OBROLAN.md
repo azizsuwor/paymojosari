@@ -247,4 +247,38 @@ Sesuai instruksi lanjutan untuk mengimplementasikan seluruh 5 saran pengembangan
 - **Error Domain `paymojosari.my.id`:**
   - Domain belum aktif online karena langkah **Addon Domains** di cPanel belum diselesaikan atau propagasi nameserver dari `indo.domains` masih menunggu verifikasi di hosting.
 
+---
+
+## 11. Solusi Arus Kas Bergulir & Koreksi Periode Pembayaran (Update 3 November 2026)
+
+Menjawab permasalahan riil di lapangan:
+1. **Uang sisa bulan sebelumnya tidak boleh hilang / hangus saat masuk bulan baru.**
+2. **Kasus santri bayar untuk jatah November tetapi terinput di bulan Oktober atau bayar di muka (*advance payment*).**
+3. **Penyediaan tampilan total kas berjalan antar-bulan.**
+
+### A. Mekanisme Saldo Bergulir Antar-Bulan (*Roll-forward Cash Flow*)
+- Mengimplementasikan fungsi `getMonthlyCashFlowRollForward()` di `app.js`.
+- **Kas Dapur (Uang Makan):** Sisa uang belanja dapur per akhir Oktober otomatis menjadi **Saldo Awal Kas Dapur** bulan November.
+- **Kas Operasional Komplek:** Sisa uang kas fasilitas per akhir Oktober otomatis menjadi **Saldo Awal Kas Operasional** bulan November.
+- **Kartu Metrik Dasbor:**
+  - Menampilkan **Total Kas di Tangan** (realistis sesuai amplop fisik + akun DANA).
+  - Dilengkapi subtext informasi **Saldo Awal Bawaan Bulan Lalu**.
+  - Menampilkan sisa kas dapur dan sisa kas umum secara terpisah.
+
+### B. Tampilan Tab "Arus Kas & Saldo Bergulir" (Buku Kas Antar-Bulan)
+- Pada bagian **Rekapitulasi Bulanan** di tab Dashboard, ditambahkan segmented tab:
+  - **Status Iuran Santri:** Menampilkan target, lunas, tunggakan, dan setoran WiFi 17 santri.
+  - **Arus Kas & Saldo Bergulir:** Menampilkan tabel riil arus kas per bulan (Periode, Saldo Awal, Masuk Dapur, Belanja Dapur, Masuk Kas, Keluar Kas/WiFi, Sisa Dapur, Sisa Kas, dan Total Kas di Tangan).
+
+### C. Fitur Tombol "Pindah Periode" (1-Klik) untuk Bendahara
+- Disediakan tombol **Pindah Bln** pada tabel pembayaran santri (`renderPaymentMatrix`).
+- Jika bendahara salah memilih bulan saat menginput atau santri membayar untuk jatah bulan berikutnya, bendahara cukup klik **Pindah Bln**, pilih bulan tujuan (misal November 2026), lalu klik **Pindahkan Sekarang**.
+- Sistem memindahkan centang bayar ke bulan tujuan dan mengosongkan bulan asal secara aman melalui endpoint `api.php?action=move_payment_period` (dilengkapi database transaction PDO).
+
+### D. Pilihan Bulan Tagihan pada Form Upload Bukti Transfer Santri
+- Pada modal **Upload Bukti Transfer** (`modalUploadBuktiSantri`), ditambahkan dropdown pilihan periode tagihan.
+- Santri dapat secara mandiri memilih apakah transfer DANA tersebut diperuntukkan bagi jatah bulan berjalan atau bulan berikutnya (*bayar di muka*).
+- Saat bendahara memverifikasi bukti, pembayaran otomatis tercatat pada periode bulan yang dipilih oleh santri.
+
+
 

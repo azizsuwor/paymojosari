@@ -761,7 +761,18 @@
               </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <!-- Tab Switcher Rekapitulasi Bulanan -->
+            <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
+              <button type="button" id="btnTabRecapIuran" onclick="switchRecapTab('iuran')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer bg-white text-slate-900 shadow-2xs">
+                Status Iuran Santri
+              </button>
+              <button type="button" id="btnTabRecapCashFlow" onclick="switchRecapTab('cashflow')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer text-slate-600 hover:text-slate-900">
+                Arus Kas &amp; Saldo Bergulir
+              </button>
+            </div>
+
+            <!-- TABEL 1: Status Iuran Santri -->
+            <div id="wrapTableIuranRecap" class="overflow-x-auto">
               <table class="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
@@ -776,6 +787,27 @@
                   </tr>
                 </thead>
                 <tbody id="dashboardMonthlyRecapBody" class="divide-y divide-slate-100">
+                </tbody>
+              </table>
+            </div>
+
+            <!-- TABEL 2: Arus Kas & Saldo Bergulir Antar-Bulan -->
+            <div id="wrapTableCashFlowRecap" class="overflow-x-auto hidden">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                    <th class="py-2.5 px-3">Periode</th>
+                    <th class="py-2.5 px-3 text-right text-slate-600">Saldo Awal</th>
+                    <th class="py-2.5 px-3 text-right text-emerald-800">Masuk Dapur</th>
+                    <th class="py-2.5 px-3 text-right text-rose-600">Belanja Dapur</th>
+                    <th class="py-2.5 px-3 text-right text-emerald-800">Masuk Kas</th>
+                    <th class="py-2.5 px-3 text-right text-rose-600">Keluar Kas/WiFi</th>
+                    <th class="py-2.5 px-3 text-right font-semibold text-amber-800">Sisa Dapur</th>
+                    <th class="py-2.5 px-3 text-right font-semibold text-teal-800">Sisa Kas</th>
+                    <th class="py-2.5 px-3 text-right font-black text-emerald-950 bg-emerald-50/50">Total Kas di Tangan</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardCashFlowRecapBody" class="divide-y divide-slate-100 font-mono">
                 </tbody>
               </table>
             </div>
@@ -1715,6 +1747,14 @@
           </button>
         </div>
 
+        <!-- Periode yang Dibayar -->
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Periode Tagihan Yang Dibayar *</label>
+          <select id="buktiSantriPeriodeSelect" onchange="handleBuktiSantriPeriodeChange(this.value)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs font-semibold text-slate-800 focus:outline-none focus:bg-white focus:border-[#064e3b]">
+          </select>
+          <p class="text-[10px] text-slate-400">Pilih bulan iuran yang Anda bayar (misal: bayar untuk bulan ini atau bulan depan).</p>
+        </div>
+
         <!-- Komponen yang Dibayar -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
@@ -1789,6 +1829,53 @@
         <img id="previewBuktiBayarImg" src="" alt="Bukti Transfer" class="max-h-[55vh] mx-auto rounded-xl object-contain" />
       </div>
       <div id="previewBuktiBayarAdminActions" class="flex items-center gap-2 pt-1"></div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PINDAH PERIODE PEMBAYARAN ================= -->
+  <div id="modalMovePaymentPeriod" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 no-print select-none">
+    <div class="bg-white rounded-2xl max-w-md w-full border border-slate-200/80 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-5 sm:px-6 py-4 bg-white border-b border-slate-200/80 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0">
+            <i data-lucide="arrow-right-left" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900">Pindahkan Periode Pembayaran</h3>
+            <p id="modalMoveSubtitle" class="text-[11px] text-slate-500">Koreksi Periode Pembayaran Santri</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeMovePaymentModal()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form onsubmit="handleExecuteMovePayment(event)" class="p-5 sm:p-6 space-y-4 text-xs">
+        <!-- Info Santri & Bulan Asal -->
+        <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1.5">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-amber-800">Pembayaran Terinput Saat Ini:</div>
+          <div id="modalMoveSantriName" class="text-sm font-bold text-slate-900">Santri</div>
+          <div class="text-xs text-slate-600">Periode Asal: <span id="modalMoveFromLabel" class="font-bold text-amber-900 font-mono">Oktober 2026</span></div>
+          <div id="modalMoveDetails" class="text-[11px] text-slate-600 font-mono">Makan: Lunas | Kas: Lunas</div>
+        </div>
+
+        <!-- Pilihan Bulan Tujuan -->
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Pindahkan ke Periode Tujuan *</label>
+          <select id="modalMoveTargetSelect" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs font-semibold text-slate-800 focus:outline-none focus:bg-white focus:border-[#064e3b]">
+          </select>
+          <p class="text-[10px] text-slate-400">Status pembayaran santri ini akan dipindahkan ke periode tujuan dan periode asal akan dikosongkan.</p>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeMovePaymentModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer">
+            Batal
+          </button>
+          <button type="submit" id="btnSubmitMovePayment" class="px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white font-bold cursor-pointer flex items-center gap-1.5 shadow-xs">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Pindahkan Sekarang</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
