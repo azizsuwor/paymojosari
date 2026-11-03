@@ -707,6 +707,28 @@ if ($action === 'review_utang') {
     }
 }
 
+// 0j. Hapus Riwayat Pinjaman Kas (POST ?action=delete_utang)
+if ($action === 'delete_utang') {
+    check_admin_auth();
+    $input = json_decode(file_get_contents('php://input'), true);
+    $id = isset($input['id']) ? trim($input['id']) : '';
+    if (!$id) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'ID utang tidak valid.']);
+        exit;
+    }
+    try {
+        $stmt = $pdo->prepare("DELETE FROM utang_kas WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        echo json_encode(['status' => 'success', 'message' => 'Riwayat pinjaman kas berhasil dihapus.']);
+        exit;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
 // -------------------------------------------------------------------------
 // 1. Ambil Semua Data State Lengkap dari Database (GET ?action=get_all)
 // -------------------------------------------------------------------------

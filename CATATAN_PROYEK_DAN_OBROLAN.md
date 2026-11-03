@@ -357,6 +357,14 @@ Menjawab permasalahan riil di lapangan:
   - Secara pembukuan internal sistem, Kas Umum Rp 50.000 mencakup: **Listrik Rp 20.000**, **WiFi Rp 20.000**, dan **Air Rp 10.000**.
   - Keterangan rincian 20k listrik, 20k wifi, dan 10k air tersebut **disembunyikan sepenuhnya dari antarmuka pengguna, nota santri, maupun pesan WhatsApp**, sehingga santri hanya melihat label bersih **`Kas Umum (Rp 50.000)`**.
 
+### K. Perbaikan Arus Kas Utang: Pengajuan Pinjaman Ditolak / Menunggu Tidak Memotong Saldo Kas
+- **Akar Masalah Saldo Minus (-9.900.000):** Sebelumnya, kalkulasi roll-forward arus kas (`getMonthlyCashFlowRollForward`) mengambil seluruh entri pinjaman di `state.utangKas` tanpa memfilter status. Akibatnya, pengajuan pinjaman santri (seperti tes pinjaman Aziz Rp 10.000.000) yang berstatus **`ditolak`** atau **`menunggu_persetujuan`** ikut memotong saldo kas fisik.
+- **Solusi yang Diterapkan:**
+  1. Rumus arus kas diperbaiki secara ketat: **HANYA pinjaman yang berstatus `belum_lunas` atau `lunas` (yang benar-benar telah disetujui & dicairkan uang fisiknya oleh Bendahara)** yang memotong saldo kas.
+  2. Pengajuan yang berstatus **`ditolak`** atau **`menunggu_persetujuan`** tidak akan pernah mengurangi uang kas fisik. Saldo kas kembali normal seketika saat pengajuan ditolak.
+  3. Disediakan tombol **Hapus** (ikon sampah) pada tabel Utang Kas khusus Bendahara untuk menghapus riwayat pengajuan pinjaman yang sudah ditolak atau selesai (`api.php?action=delete_utang`).
+
+
 
 
 

@@ -1900,9 +1900,10 @@ function getMonthlyCashFlowRollForward() {
       ? Number(wRec.nominalBayar || TAGIHAN_WIFI_INDUK_DEFAULT)
       : 0;
 
-    // Dampak Utang Kas
+    // Dampak Utang Kas: HANYA pinjaman yang SUDAH DISETUJUI / DICAIRKAN ('belum_lunas' atau 'lunas') yang memotong kas!
+    // Pinjaman yang statusnya 'menunggu_persetujuan' (belum dicairkan) atau 'ditolak' TIDAK BOLEH memotong uang kas!
     const utangKasBaru = (state.utangKas || [])
-      .filter(u => u.tanggal && u.tanggal.startsWith(mKey))
+      .filter(u => (u.status === 'belum_lunas' || u.status === 'lunas') && u.tanggal && u.tanggal.startsWith(mKey))
       .reduce((acc, u) => acc + Number(u.nominal || 0), 0);
 
     const utangKasDilunasi = (state.utangKas || [])
@@ -3674,6 +3675,35 @@ async function markUtangLunas(id) {
   showToast('Utang santri lunas & kas telah kembali');
 }
 
+async function deleteUtangKas(id) {
+  if (!state.isAdmin) {
+    openAdminLoginModal();
+    return;
+  }
+  const idx = state.utangKas.findIndex(u => u.id === id);
+  if (idx === -1) return;
+  if (!confirm('Hapus riwayat pengajuan pinjaman kas ini?')) return;
+
+  state.utangKas.splice(idx, 1);
+  saveState();
+
+  if (window.location.protocol !== 'file:') {
+    try {
+      await fetch('api.php?action=delete_utang', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: getAdminHeaders(),
+        body: JSON.stringify({ id })
+      });
+    } catch (e) {
+      console.warn('Gagal hapus utang di server:', e);
+    }
+  }
+
+  renderAll();
+  showToast('✓ Riwayat pinjaman berhasil dihapus.');
+}
+
 function renderUtangTab(finData) {
   const fin = finData || calculateGlobalFinancials();
   const badge = document.getElementById('rekapUtangAktifBadge');
@@ -3775,9 +3805,23 @@ function renderUtangTab(finData) {
           </button>
         `;
       } else if (u.status === 'lunas') {
-        actionButtons = `<span class="text-[10px] text-emerald-700 font-semibold">Tuntas</span>`;
+        actionButtons = `
+          <div class="flex items-center justify-end gap-1.5">
+            <span class="text-[10px] text-emerald-700 font-semibold">Tuntas</span>
+            <button onclick="deleteUtangKas('${u.id}')" title="Hapus riwayat pinjaman" class="p-1 rounded-lg text-slate-300 hover:text-rose-600 transition cursor-pointer">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
       } else if (u.status === 'ditolak') {
-        actionButtons = `<span class="text-[10px] text-slate-400 font-semibold">Ditolak</span>`;
+        actionButtons = `
+          <div class="flex items-center justify-end gap-1.5">
+            <span class="text-[10px] text-slate-400 font-semibold">Ditolak</span>
+            <button onclick="deleteUtangKas('${u.id}')" title="Hapus riwayat pengajuan ditolak" class="p-1 rounded-lg text-slate-300 hover:text-rose-600 transition cursor-pointer">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
       }
     } else if (state.userRole === 'santri') {
       if (u.status === 'menunggu_persetujuan') {
