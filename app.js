@@ -1167,16 +1167,17 @@ function updateRoleUI() {
            </div>`
         : '';
 
-      qNotice.className = 'p-5 rounded-xl bg-[#f8fafc] border border-slate-200/80 text-slate-900 space-y-4';
+      qNotice.className = 'p-5 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-slate-900 space-y-4';
+      const isKasUmumLunas = Boolean(rec.wifi && rec.listrik && rec.air);
       qNotice.innerHTML = `
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/70">
           <div class="flex items-center gap-3">
-            <img src="${getSantriAvatar(loggedSantri, loggedIdx)}" class="w-12 h-12 rounded-full object-cover ring-2 ring-[#064e3b] ring-offset-2 bg-white" />
+            <img src="${getSantriAvatar(loggedSantri, loggedIdx, true)}" class="w-12 h-14 rounded-xl object-cover ring-2 ring-[#064e3b] bg-white shadow-2xs" />
             <div>
               <div class="flex items-center gap-2 flex-wrap">
                 <h4 class="text-sm font-extrabold text-slate-900 font-display">${loggedSantri.nama}</h4>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${sum.isFullLunas ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}">
-                  ${sum.isFullLunas ? '✓ Lunas' : `Kurang ${formatRp(sum.totalUnpaid)}`}
+                <span class="text-xs font-semibold ${sum.isFullLunas ? 'text-emerald-700' : 'text-rose-600'}">
+                  ${sum.isFullLunas ? '✓ Lunas Bulan Ini' : `Kurang ${formatRp(sum.totalUnpaid)}`}
                 </span>
               </div>
               <p class="text-[11px] text-slate-400 font-mono mt-0.5">${nis} • ${loggedSantri.prodi}</p>
@@ -1187,61 +1188,50 @@ function updateRoleUI() {
             <span class="text-lg font-extrabold font-display text-[#064e3b]">${formatRp(sum.totalPaid)} <span class="text-xs font-normal text-slate-400">/ ${formatRp(sum.targetSantri)}</span></span>
           </div>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-          <div class="p-2.5 rounded-xl bg-white border border-slate-200/70 flex items-center justify-between">
-            <span class="text-slate-500 font-medium">Makan</span>
-            <span class="font-bold ${sum.tanpaMakan ? 'text-slate-400' : (rec.makan ? 'text-emerald-700' : 'text-rose-600')}">${sum.tanpaMakan ? 'Bebas' : (rec.makan ? '✓ Lunas' : 'Belum')}</span>
-          </div>
-          <div class="p-2.5 rounded-xl bg-white border border-slate-200/70 flex items-center justify-between">
-            <span class="text-slate-500 font-medium">WiFi</span>
-            <span class="font-bold ${rec.wifi ? 'text-emerald-700' : 'text-rose-600'}">${rec.wifi ? '✓ Lunas' : 'Belum'}</span>
-          </div>
-          <div class="p-2.5 rounded-xl bg-white border border-slate-200/70 flex items-center justify-between">
-            <span class="text-slate-500 font-medium">Listrik</span>
-            <span class="font-bold ${rec.listrik ? 'text-emerald-700' : 'text-rose-600'}">${rec.listrik ? '✓ Lunas' : 'Belum'}</span>
-          </div>
-          <div class="p-2.5 rounded-xl bg-white border border-slate-200/70 flex items-center justify-between">
-            <span class="text-slate-500 font-medium">Air</span>
-            <span class="font-bold ${rec.air ? 'text-emerald-700' : 'text-rose-600'}">${rec.air ? '✓ Lunas' : 'Belum'}</span>
-          </div>
-        </div>
 
-        <!-- Info Pembayaran Transfer DANA -->
-        <div class="p-3 rounded-xl bg-white border border-emerald-200/80 flex items-center justify-between gap-2 flex-wrap">
-          <div class="flex items-center gap-2.5">
-            <span class="px-2 py-1 rounded-lg bg-[#008CEB] text-white text-[10px] font-extrabold tracking-wide">DANA</span>
+        <!-- 2 Komponen Bersih: Uang Makan & Kas Umum -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
             <div>
-              <span class="text-xs font-extrabold font-mono text-slate-900">${danaNum}</span>
-              <span class="text-[10px] text-slate-400 block">Transfer Syahriyah & Kas (Bendahara Komplek)</span>
+              <span class="font-bold text-slate-800 block text-xs">Uang Makan</span>
+              <span class="text-[11px] text-slate-400 font-mono">Rp 50.000 / bln</span>
             </div>
+            <span class="font-bold text-xs ${sum.tanpaMakan ? 'text-slate-400' : (rec.makan ? 'text-emerald-700' : 'text-rose-600')}">
+              ${sum.tanpaMakan ? 'Bebas (Tanpa Makan)' : (rec.makan ? '✓ Lunas' : 'Belum Lunas')}
+            </span>
           </div>
-          <button type="button" onclick="copyDanaNumber()" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#064e3b] text-[11px] font-bold transition cursor-pointer flex items-center gap-1">
-            <i data-lucide="copy" class="w-3 h-3"></i>
-            <span>Salin Nomor</span>
-          </button>
+          <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
+            <div>
+              <span class="font-bold text-slate-800 block text-xs">Kas Umum</span>
+              <span class="text-[11px] text-slate-400 font-mono">Rp 50.000 / bln</span>
+            </div>
+            <span class="font-bold text-xs ${isKasUmumLunas ? 'text-emerald-700' : 'text-rose-600'}">
+              ${isKasUmumLunas ? '✓ Lunas' : 'Belum Lunas'}
+            </span>
+          </div>
         </div>
 
         ${myProofBanner}
 
-        <div class="flex items-center justify-end gap-2 flex-wrap pt-1">
-          <button type="button" onclick="openUploadBuktiSantriModal('${loggedSantri.id}', '${state.activeMonth}')" class="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-2xs">
-            <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
-            <span>Upload Bukti Transfer</span>
+        <!-- Tombol Aksi Bersih: Bayar Sekarang, WA, KTA -->
+        <div class="flex items-center justify-between gap-2 flex-wrap pt-1">
+          <button type="button" onclick="openUploadBuktiSantriModal('${loggedSantri.id}', '${state.activeMonth}')" class="px-5 py-2.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer flex items-center gap-2 shadow-xs">
+            <i data-lucide="wallet" class="w-4 h-4 text-emerald-200"></i>
+            <span>Bayar Sekarang</span>
           </button>
-          <button type="button" onclick="openWaKonfirmasiKeBendahara('${loggedSantri.id}', '${state.activeMonth}')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
-            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-[#064e3b]"></i>
-            <span>Konfirmasi WA</span>
-          </button>
-          <button type="button" onclick="openKartuSantriModal('${loggedSantri.id}')" class="px-3.5 py-2 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
-            <i data-lucide="id-card" class="w-3.5 h-3.5"></i>
-            <span>Kartu KTA</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="openWaKonfirmasiKeBendahara('${loggedSantri.id}', '${state.activeMonth}')" title="Hubungi WA Bendahara" class="p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition cursor-pointer flex items-center justify-center">
+              <i data-lucide="message-circle" class="w-4 h-4"></i>
+            </button>
+            <button type="button" onclick="openKartuSantriModal('${loggedSantri.id}')" title="Lihat Kartu KTA" class="p-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 transition cursor-pointer flex items-center justify-center">
+              <i data-lucide="id-card" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
       `;
     }
     if (qBadge) {
-      qBadge.textContent = 'Santri';
-      qBadge.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200';
+      qBadge.classList.add('hidden');
     }
     if (qHint) qHint.textContent = loggedSantri.nama;
   } else {
@@ -1345,9 +1335,8 @@ function updateRoleUI() {
       });
 
       if (santriNotice) {
-        santriNotice.classList.remove('hidden');
-        santriNotice.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs leading-relaxed';
-        santriNotice.innerHTML = '<strong>📸 Ganti Pas Foto Profil:</strong> Anda dapat mengunggah atau mengganti pas foto (3:4) profil akun Anda sendiri di bawah. Data Nama, Alamat, dan Program Studi santri hanya dapat diubah oleh Bendahara Komplek.';
+        santriNotice.classList.add('hidden');
+        santriNotice.innerHTML = '';
       }
       if (titleSantri) titleSantri.textContent = 'Ganti Foto Profil — ' + loggedSantri.nama;
       if (btnSaveText) btnSaveText.textContent = 'Simpan Foto Profil';
@@ -1364,9 +1353,8 @@ function updateRoleUI() {
         inp.disabled = true;
       });
       if (santriNotice) {
-        santriNotice.classList.remove('hidden');
-        santriNotice.className = 'p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs leading-relaxed';
-        santriNotice.innerHTML = '🔒 <strong>Akses Khusus Bendahara:</strong> Data profil dan Program Studi santri hanya dapat diubah oleh Bendahara Komplek.';
+        santriNotice.classList.add('hidden');
+        santriNotice.innerHTML = '';
       }
       if (titleSantri) titleSantri.textContent = 'Data Profil Santri';
       if (btnSaveText) btnSaveText.textContent = 'Khusus Bendahara';
@@ -1443,6 +1431,16 @@ function updateRoleUI() {
       el.classList.add('hidden');
     }
   });
+
+  // Panel Setoran WiFi Induk ke Vendor hanya ditampilkan untuk Bendahara (disembunyikan untuk Santri)
+  const wifiIndukWrap = document.getElementById('dashWifiIndukCardWrap');
+  if (wifiIndukWrap) {
+    if (state.isAdmin) {
+      wifiIndukWrap.classList.remove('hidden');
+    } else {
+      wifiIndukWrap.classList.add('hidden');
+    }
+  }
 
   if (window.lucide) window.lucide.createIcons();
 }
@@ -2027,31 +2025,43 @@ function switchTab(tabName) {
 
   // Reset desktop sidebar nav buttons
   document.querySelectorAll('aside nav button').forEach(btn => {
-    btn.className = 'w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer font-medium text-[13px]';
+    btn.className = 'w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-700 hover:text-emerald-950 hover:bg-emerald-50/70 cursor-pointer font-medium text-[13px]';
+    const icon = btn.querySelector('i');
+    if (icon) icon.className = 'w-4 h-4 text-emerald-800 shrink-0';
   });
   const activeBtn = document.getElementById(`nav-${tabName}`);
   if (activeBtn) {
     activeBtn.className = 'w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all bg-[#064e3b] text-white font-semibold shadow-xs cursor-pointer text-[13px]';
+    const activeIcon = activeBtn.querySelector('i');
+    if (activeIcon) activeIcon.className = 'w-4 h-4 text-emerald-200 shrink-0';
   }
 
   // Reset & update mobile drawer nav buttons
   document.querySelectorAll('#mobileDrawer nav button').forEach(btn => {
-    btn.className = 'w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-600 hover:bg-slate-50 cursor-pointer font-medium text-[13px]';
+    btn.className = 'w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all text-slate-700 hover:bg-emerald-50/70 cursor-pointer font-medium text-[13px]';
+    const icon = btn.querySelector('i');
+    if (icon) icon.className = 'w-4 h-4 text-emerald-800 shrink-0';
   });
   const activeDrawerBtn = document.getElementById(`drawer-${tabName}`);
   if (activeDrawerBtn) {
     activeDrawerBtn.className = 'w-full flex items-center gap-3.5 px-4 py-2.5 rounded-full transition-all bg-[#064e3b] text-white font-semibold shadow-xs cursor-pointer text-[13px]';
+    const activeDrawerIcon = activeDrawerBtn.querySelector('i');
+    if (activeDrawerIcon) activeDrawerIcon.className = 'w-4 h-4 text-emerald-200 shrink-0';
   }
 
-  // Reset & update mobile bottom navigation bar
+  // Reset & update mobile bottom navigation bar (ikon menyala & aktif hijau pekat)
   const bnavItems = ['pembayaran', 'dashboard', 'tunggakan', 'masak', 'santri'];
   bnavItems.forEach(item => {
     const bBtn = document.getElementById(`bnav-${item}`);
     if (bBtn) {
       if (item === tabName) {
-        bBtn.className = 'flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-emerald-800 font-bold cursor-pointer';
+        bBtn.className = 'flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-[#064e3b] font-bold cursor-pointer';
+        const icon = bBtn.querySelector('i');
+        if (icon) icon.className = 'w-5 h-5 text-[#064e3b]';
       } else {
-        bBtn.className = 'flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-slate-400 hover:text-slate-700 font-medium cursor-pointer';
+        bBtn.className = 'flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition text-slate-600 hover:text-emerald-900 font-medium cursor-pointer';
+        const icon = bBtn.querySelector('i');
+        if (icon) icon.className = 'w-5 h-5 text-emerald-800';
       }
     }
   });
@@ -2142,11 +2152,11 @@ function setQuickMode(mode) {
   }
 
   // Update tabs appearance
-  ['full', 'makan', 'wifi'].forEach(m => {
+  ['full', 'makan', 'kas', 'wifi'].forEach(m => {
     const btn = document.getElementById(`qtab-${m}`);
     if (!btn) return;
-    if (m === mode) {
-      btn.className = 'py-2 rounded-lg bg-white text-slate-900 shadow-xs cursor-pointer transition';
+    if (m === mode || ((mode === 'kas' || mode === 'wifi') && (m === 'kas' || m === 'wifi'))) {
+      btn.className = 'py-2 rounded-lg bg-white text-slate-900 shadow-xs cursor-pointer transition font-bold';
     } else {
       btn.className = 'py-2 rounded-lg hover:text-slate-900 cursor-pointer transition';
     }
@@ -2157,8 +2167,8 @@ function setQuickMode(mode) {
     amtInput.value = formatRp(tanpaMakan ? curTarif.totalKas : curTarif.totalBulanan);
   } else if (mode === 'makan') {
     amtInput.value = tanpaMakan ? 'Rp 0 (Tanpa Makan)' : formatRp(curTarif.makan);
-  } else if (mode === 'wifi') {
-    amtInput.value = formatRp(curTarif.wifi);
+  } else if (mode === 'kas' || mode === 'wifi') {
+    amtInput.value = formatRp(curTarif.totalKas);
   }
 }
 
@@ -2219,10 +2229,12 @@ function handleQuickSubmitPayment() {
     rec.makan = true;
     amt = curTarif.makan;
     desc = 'Pembayaran Uang Makan';
-  } else if (state.quickMode === 'wifi') {
+  } else if (state.quickMode === 'kas' || state.quickMode === 'wifi') {
     rec.wifi = true;
-    amt = curTarif.wifi;
-    desc = 'Kas WiFi';
+    rec.listrik = true;
+    rec.air = true;
+    amt = curTarif.totalKas;
+    desc = 'Pembayaran Kas Umum (Fasilitas)';
   }
 
   const metode = currentQuickPaymentMethod || 'cash';
@@ -2667,7 +2679,7 @@ function renderScheduledPayments(searchFilter = '') {
             <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
           </div>
           <div class="min-w-0">
-            <h4 class="text-xs font-bold text-slate-900 truncate">${s.nama} (${s.prodi.split(' ')[0]}) ${sum.tanpaMakan ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Makan</span>` : ''} ${state.userRole === 'santri' ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold">Data Saya</span>` : ''} ${pendingProof ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 text-[9px] font-bold">Menunggu Verifikasi</span>` : ''}</h4>
+            <h4 class="text-xs font-bold text-slate-900 truncate">${s.nama} (${s.prodi.split(' ')[0]}) ${sum.tanpaMakan ? `<span class="text-slate-400 text-[10px] font-normal">(Tanpa Makan)</span>` : ''}</h4>
             <p class="text-[11px] text-slate-400 truncate">${sum.tanpaMakan ? 'Iuran Kas Komplek (Tanpa Uang Makan)' : 'Iuran Syahriyah'} • ${getMonthLabel(state.activeMonth)}</p>
           </div>
         </div>
@@ -2678,26 +2690,24 @@ function renderScheduledPayments(searchFilter = '') {
             ${sum.totalUnpaid > 0 ? `<div class="text-[10px] text-rose-500 font-semibold">Kurang ${formatRp(sum.totalUnpaid)}</div>` : ''}
           </div>
 
-          <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${sum.isFullLunas ? 'bg-[#DDF1E5] text-[#005B52]' : 'bg-[#FEF3C7] text-[#92400E]'}">
-            ${sum.isFullLunas ? 'Active' : 'Pending'}
+          <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${sum.isFullLunas ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}">
+            ${sum.isFullLunas ? 'Lunas' : 'Belum'}
           </span>
 
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1.5">
             ${state.isAdmin ? `
-              <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" title="Terbitkan Nota Pembayaran (Bendahara)" class="p-1.5 rounded-lg text-slate-400 hover:text-[#005B52] hover:bg-slate-100 cursor-pointer">
+              <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" title="Terbitkan Nota Pembayaran (Bendahara)" class="p-1.5 rounded-lg text-slate-400 hover:text-[#064e3b] hover:bg-slate-100 cursor-pointer">
                 <i data-lucide="receipt" class="w-4 h-4"></i>
               </button>
-              <button onclick="openNotaTunggakanSantriModal('${s.id}')" title="Kirim Tagihan WA ke Santri" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 cursor-pointer">
-                <i data-lucide="send" class="w-4 h-4"></i>
+              <button onclick="openNotaTunggakanSantriModal('${s.id}')" title="Kirim Tagihan via WhatsApp" class="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 cursor-pointer flex items-center justify-center">
+                <i data-lucide="message-circle" class="w-4 h-4"></i>
               </button>
             ` : `
-              <button onclick="openUploadBuktiSantriModal('${s.id}', '${state.activeMonth}')" title="Upload Bukti Transfer DANA" class="px-2.5 py-1 rounded-lg bg-[#005B52] hover:bg-[#004740] text-white text-[10px] font-bold cursor-pointer flex items-center gap-1 shadow-2xs">
-                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-                <span>Upload Bukti</span>
+              <button onclick="openUploadBuktiSantriModal('${s.id}', '${state.activeMonth}')" class="px-3 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[10px] font-bold cursor-pointer">
+                Bayar
               </button>
-              <button onclick="openWaKonfirmasiKeBendahara('${s.id}', '${state.activeMonth}')" title="Konfirmasi Pembayaran ke WA Bendahara" class="px-2.5 py-1 rounded-lg bg-[#DDF1E5] hover:bg-[#c9ead6] text-[#005B52] text-[10px] font-bold cursor-pointer flex items-center gap-1">
+              <button onclick="openWaKonfirmasiKeBendahara('${s.id}', '${state.activeMonth}')" title="Konfirmasi via WhatsApp ke Bendahara" class="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-pointer flex items-center justify-center">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-                <span>WA</span>
               </button>
             `}
           </div>
@@ -2754,11 +2764,22 @@ function toggleComponentPayment(santriId, monthKey, field) {
     openAdminLoginModal();
     return;
   }
+  const rec = getPaymentRecord(santriId, monthKey);
+  if (field === 'kas_umum' || field === 'kas') {
+    const isLunas = Boolean(rec.wifi && rec.listrik && rec.air);
+    rec.wifi = !isLunas;
+    rec.listrik = !isLunas;
+    rec.air = !isLunas;
+    rec.updatedAt = new Date().toISOString().slice(0, 10);
+    saveState();
+    renderAll();
+    showToast(isLunas ? 'Kas Umum diubah menjadi Belum Lunas' : '✓ Kas Umum (WiFi, Listrik, Air) LUNAS!', isLunas ? 'amber' : 'emerald');
+    return;
+  }
   if (field === 'makan' && isSantriTanpaMakan(santriId)) {
     showToast('Santri ini Tanpa Uang Makan', 'amber');
     return;
   }
-  const rec = getPaymentRecord(santriId, monthKey);
   rec[field] = !rec[field];
   rec.updatedAt = new Date().toISOString().slice(0, 10);
   saveState();
@@ -2933,10 +2954,10 @@ function renderDashboardTab(fin) {
             <td class="py-2.5 px-3 text-right">
               <div class="flex items-center justify-end gap-1.5">
                 <button onclick="openUploadBuktiSantriModal('${mySantri.id}', '${m.key}')" class="px-2 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[10px] font-bold cursor-pointer">
-                  Upload Bukti
+                  Bayar
                 </button>
-                <button onclick="openWaKonfirmasiKeBendahara('${mySantri.id}', '${m.key}')" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer">
-                  WA
+                <button onclick="openWaKonfirmasiKeBendahara('${mySantri.id}', '${m.key}')" title="Hubungi WA Bendahara" class="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition cursor-pointer flex items-center justify-center">
+                  <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
             </td>
@@ -3014,8 +3035,8 @@ function renderDashboardTab(fin) {
               <button onclick="openNotaWifiIndukModal('${m.key}')" title="Laporan Pembayaran WiFi Induk" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold cursor-pointer">
                 Nota WiFi
               </button>
-              <button onclick="openRekapGrupForMonth('${m.key}')" class="px-2 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[10px] font-bold cursor-pointer">
-                Kirim WA
+              <button onclick="openRekapGrupForMonth('${m.key}')" title="Kirim Rekap WA Grup" class="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition cursor-pointer flex items-center justify-center">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="resetBulanIni('${m.key}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10px] font-bold cursor-pointer">
                 Reset
@@ -3059,7 +3080,7 @@ function renderDashboardTab(fin) {
   }
 
   if (state.santri.length === 0) {
-    matrixBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400 text-xs">Belum ada data santri.</td></tr>`;
+    matrixBody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs">Belum ada data santri.</td></tr>`;
     return;
   }
 
@@ -3083,19 +3104,29 @@ function renderDashboardTab(fin) {
     };
 
     const makanBadge = sum.tanpaMakan
-      ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">Tanpa Makan</span>`
+      ? `<span class="text-[10px] text-slate-400 font-medium">Bebas</span>`
       : badge(rec.makan, 'makan');
+
+    const isKasUmumLunas = Boolean(rec.wifi && rec.listrik && rec.air);
+    const kasUmumBadge = () => {
+      if (!state.isAdmin) {
+        return isKasUmumLunas
+          ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 select-none">✓ Lunas</span>`
+          : `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 border border-rose-200 select-none">Belum</span>`;
+      }
+      return isKasUmumLunas
+        ? `<button onclick="toggleComponentPayment('${s.id}', '${state.activeMonth}', 'kas_umum')" title="Klik untuk ubah status Kas Umum (WiFi, Listrik, Air)" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 cursor-pointer">✓ Lunas</button>`
+        : `<button onclick="toggleComponentPayment('${s.id}', '${state.activeMonth}', 'kas_umum')" title="Klik untuk ubah status Kas Umum (WiFi, Listrik, Air)" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 cursor-pointer">Belum</button>`;
+    };
 
     return `
       <tr class="hover:bg-slate-50/70 transition">
         <td class="py-3 px-3">
-          <div class="font-bold text-slate-900">${s.nama} ${sum.tanpaMakan ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Makan</span>` : ''}</div>
+          <div class="font-bold text-slate-900">${s.nama} ${sum.tanpaMakan ? `<span class="text-slate-400 text-[10px] font-normal">(Tanpa Makan)</span>` : ''}</div>
           <div class="text-[10px] text-slate-400">${s.prodi} • ${s.alamat}</div>
         </td>
         <td class="py-3 px-3 text-center">${makanBadge}</td>
-        <td class="py-3 px-3 text-center">${badge(rec.wifi, 'wifi')}</td>
-        <td class="py-3 px-3 text-center">${badge(rec.listrik, 'listrik')}</td>
-        <td class="py-3 px-3 text-center">${badge(rec.air, 'air')}</td>
+        <td class="py-3 px-3 text-center">${kasUmumBadge()}</td>
         <td class="py-3 px-3 text-right font-mono">
           <span class="font-bold ${sum.isFullLunas ? 'text-emerald-800' : 'text-slate-900'}">${formatRp(sum.totalPaid)}</span>
           ${sum.totalUnpaid > 0 ? `<div class="text-[10px] text-rose-500 font-semibold">Kurang ${formatRp(sum.totalUnpaid)}</div>` : ''}
@@ -3104,22 +3135,22 @@ function renderDashboardTab(fin) {
           <div class="flex items-center justify-end gap-1.5">
             ${state.isAdmin ? `
               ${sum.totalPaid > 0 ? `
-                <button onclick="openMovePaymentModal('${s.id}', '${state.activeMonth}')" title="Pindahkan pembayaran santri ini ke bulan lain" class="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold cursor-pointer flex items-center gap-1">
-                  Pindah Bln
+                <button onclick="openMovePaymentModal('${s.id}', '${state.activeMonth}')" title="Pindahkan pembayaran santri ini ke bulan lain" class="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-[10px] font-bold cursor-pointer">
+                  Pindah
                 </button>
               ` : ''}
-              <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold cursor-pointer">
-                Nota
+              <button onclick="openNotaPembayaranModal('${s.id}', '${state.activeMonth}')" title="Cetak Kuitansi / Nota" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer">
+                <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
               </button>
-              <button onclick="openNotaTunggakanSantriModal('${s.id}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-semibold cursor-pointer">
-                Tagih WA
+              <button onclick="openNotaTunggakanSantriModal('${s.id}')" title="Kirim Tagihan via WhatsApp" class="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-pointer flex items-center justify-center">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
               </button>
             ` : `
-              <button onclick="openUploadBuktiSantriModal('${s.id}', '${state.activeMonth}')" class="px-2.5 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold cursor-pointer">
-                Upload Bukti
+              <button onclick="openUploadBuktiSantriModal('${s.id}', '${state.activeMonth}')" class="px-3 py-1 rounded-lg bg-[#064e3b] hover:bg-[#065f46] text-white text-[10px] font-bold cursor-pointer">
+                Bayar
               </button>
-              <button onclick="openWaKonfirmasiKeBendahara('${s.id}', '${state.activeMonth}')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold cursor-pointer">
-                WA
+              <button onclick="openWaKonfirmasiKeBendahara('${s.id}', '${state.activeMonth}')" title="Konfirmasi via WhatsApp ke Bendahara" class="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-pointer flex items-center justify-center">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
               </button>
             `}
           </div>
@@ -3187,7 +3218,7 @@ function renderTunggakanTab(finData) {
     <div class="p-4 rounded-2xl border ${r.grandTotal === 0 ? 'border-emerald-100 bg-emerald-50/20' : 'border-slate-100 bg-white'} shadow-xs space-y-3">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h4 class="text-xs font-bold text-slate-900">${r.santri.nama} ${isSantriTanpaMakan(r.santri) ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold">Tanpa Uang Makan</span>` : ''} ${state.userRole === 'santri' ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold">Tunggakan Saya</span>` : ''} • <span class="text-slate-400 font-normal">${r.santri.prodi}</span></h4>
+          <h4 class="text-xs font-bold text-slate-900">${r.santri.nama} ${isSantriTanpaMakan(r.santri) ? `<span class="text-slate-400 text-[10px] font-normal">(Tanpa Makan)</span>` : ''} • <span class="text-slate-400 font-normal">${r.santri.prodi}</span></h4>
           <p class="text-[11px] text-slate-500">WA: <span class="font-mono">${r.santri.wa}</span></p>
         </div>
         <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
@@ -3195,35 +3226,38 @@ function renderTunggakanTab(finData) {
             ${r.grandTotal === 0 ? 'LUNAS SEMUA BULAN' : `Total: ${formatRp(r.grandTotal)}`}
           </span>
           ${state.isAdmin ? `
-            <button onclick="openNotaTunggakanSantriModal('${r.santri.id}')" class="px-3 py-1.5 rounded-xl bg-[#064e3b] text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0">
-              <i data-lucide="send" class="w-3.5 h-3.5"></i>
-              <span>Kirim Tagihan WA</span>
+            <button onclick="openNotaTunggakanSantriModal('${r.santri.id}')" title="Kirim Tagihan via WhatsApp" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-pointer shrink-0 flex items-center justify-center">
+              <i data-lucide="message-circle" class="w-4 h-4"></i>
             </button>
           ` : `
-            <button onclick="openUploadBuktiSantriModal('${r.santri.id}', '${state.activeMonth}')" class="px-3 py-1.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0 shadow-xs">
-              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-              <span>Upload Bukti</span>
+            <button onclick="openUploadBuktiSantriModal('${r.santri.id}', '${state.activeMonth}')" class="px-3.5 py-1.5 rounded-xl bg-[#064e3b] hover:bg-[#065f46] text-white text-[11px] font-bold flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs">
+              <i data-lucide="wallet" class="w-3.5 h-3.5 text-emerald-200"></i>
+              <span>Bayar</span>
             </button>
-            <button onclick="openWaKonfirmasiKeBendahara('${r.santri.id}', '${state.activeMonth}')" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0">
-              <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-              <span>WA Bendahara</span>
+            <button onclick="openWaKonfirmasiKeBendahara('${r.santri.id}', '${state.activeMonth}')" title="Hubungi WA Bendahara" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-pointer shrink-0 flex items-center justify-center">
+              <i data-lucide="message-circle" class="w-4 h-4"></i>
             </button>
           `}
         </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        ${r.monthDetails.map(md => `
-          <div class="p-2.5 rounded-xl border border-slate-100 bg-slate-50/60 text-[11px]">
-            <div class="flex justify-between font-bold text-slate-800 mb-1">
-              <span>${md.monthLabel}</span>
-              <span class="${md.sum.isFullLunas ? 'text-emerald-800' : 'text-rose-600'} font-mono">${md.sum.isFullLunas ? 'Lunas' : `Kurang ${formatRp(md.sum.totalUnpaid)}`}</span>
+        ${r.monthDetails.map(md => {
+          const isKasLunas = Boolean(md.rec.wifi && md.rec.listrik && md.rec.air);
+          const makanText = md.sum.tanpaMakan ? 'Bebas' : (md.rec.makan ? '✓ Lunas' : 'Belum');
+          const kasText = isKasLunas ? '✓ Lunas' : 'Belum';
+          return `
+            <div class="p-2.5 rounded-xl border border-slate-100 bg-slate-50/60 text-[11px]">
+              <div class="flex justify-between font-bold text-slate-800 mb-1">
+                <span>${md.monthLabel}</span>
+                <span class="${md.sum.isFullLunas ? 'text-emerald-800' : 'text-rose-600'} font-mono">${md.sum.isFullLunas ? 'Lunas' : `Kurang ${formatRp(md.sum.totalUnpaid)}`}</span>
+              </div>
+              <div class="text-[10px] text-slate-500">
+                Makan: ${makanText} • Kas Umum: ${kasText}
+              </div>
             </div>
-            <div class="text-[10px] text-slate-500">
-              Makan: ${md.sum.tanpaMakan ? 'Tanpa Makan' : (md.rec.makan ? '✓' : '✗')} • WiFi: ${md.rec.wifi ? '✓' : '✗'} • Listrik: ${md.rec.listrik ? '✓' : '✗'} • Air: ${md.rec.air ? '✓' : '✗'}
-            </div>
-          </div>
-        `).join('')}
+          `;
+        }).join('')}
       </div>
     </div>
   `).join('');
@@ -5049,29 +5083,37 @@ function openUploadBuktiSantriModal(santriIdParam, monthKeyParam) {
   if (danaEl) danaEl.textContent = state.nomorDanaBendahara || NOMOR_DANA_DEFAULT;
 
   const chkMakan = document.getElementById('chkBuktiMakan');
+  const chkKasUmum = document.getElementById('chkBuktiKasUmum');
   const chkWifi = document.getElementById('chkBuktiWifi');
   const chkListrik = document.getElementById('chkBuktiListrik');
   const chkAir = document.getElementById('chkBuktiAir');
-  const lblMakan = document.getElementById('lblBuktiMakanBox');
+  const lblMakan = document.getElementById('lblBuktiMakan');
+
+  const kasLunas = Boolean(rec.wifi && rec.listrik && rec.air);
 
   if (chkMakan) {
     if (tanpaMakan) {
       chkMakan.checked = false;
       chkMakan.disabled = true;
-      if (lblMakan) lblMakan.classList.add('opacity-50');
+      if (lblMakan) lblMakan.classList.add('opacity-40');
     } else {
       chkMakan.disabled = false;
       chkMakan.checked = !rec.makan;
-      if (lblMakan) lblMakan.classList.remove('opacity-50');
+      if (lblMakan) lblMakan.classList.remove('opacity-40');
     }
   }
-  if (chkWifi) chkWifi.checked = !rec.wifi;
-  if (chkListrik) chkListrik.checked = !rec.listrik;
-  if (chkAir) chkAir.checked = !rec.air;
 
-  // Jika semua sudah lunas tapi ingin upload bukti, centang semua komponen aktif
-  if ((tanpaMakan || rec.makan) && rec.wifi && rec.listrik && rec.air) {
+  if (chkKasUmum) {
+    chkKasUmum.checked = !kasLunas;
+  }
+  if (chkWifi) chkWifi.checked = !kasLunas;
+  if (chkListrik) chkListrik.checked = !kasLunas;
+  if (chkAir) chkAir.checked = !kasLunas;
+
+  // Jika semua sudah lunas tapi ingin bayar untuk periode ini, aktifkan keduanya
+  if ((tanpaMakan || rec.makan) && kasLunas) {
     if (chkMakan && !tanpaMakan) chkMakan.checked = true;
+    if (chkKasUmum) chkKasUmum.checked = true;
     if (chkWifi) chkWifi.checked = true;
     if (chkListrik) chkListrik.checked = true;
     if (chkAir) chkAir.checked = true;
@@ -5127,7 +5169,7 @@ function setBuktiPaymentMethod(method) {
       btnDana.className = 'p-2.5 rounded-xl border border-slate-200 bg-[#f8fafc] text-slate-600 font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer hover:bg-slate-100';
     }
     if (btnCash) {
-      btnCash.className = 'p-2.5 rounded-xl border-2 border-amber-600 bg-amber-50 text-amber-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs';
+      btnCash.className = 'p-2.5 rounded-xl border-2 border-[#064e3b] bg-emerald-50 text-[#064e3b] font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs';
     }
     if (cardDana) cardDana.classList.add('hidden');
     if (cardCash) cardCash.classList.remove('hidden');
@@ -5174,15 +5216,21 @@ function recalcBuktiSantriNominal() {
   const mKey = currentBuktiSantriCtx.monthKey || state.activeMonth;
   const curTarif = getTarif(mKey);
   const chkMakan = document.getElementById('chkBuktiMakan');
+  const chkKasUmum = document.getElementById('chkBuktiKasUmum');
   const chkWifi = document.getElementById('chkBuktiWifi');
   const chkListrik = document.getElementById('chkBuktiListrik');
   const chkAir = document.getElementById('chkBuktiAir');
 
+  const makanChecked = Boolean(chkMakan && chkMakan.checked && !chkMakan.disabled);
+  const kasChecked = Boolean(chkKasUmum ? chkKasUmum.checked : (chkWifi && chkWifi.checked));
+
+  if (chkWifi) chkWifi.checked = kasChecked;
+  if (chkListrik) chkListrik.checked = kasChecked;
+  if (chkAir) chkAir.checked = kasChecked;
+
   let total = 0;
-  if (chkMakan && chkMakan.checked && !chkMakan.disabled) total += curTarif.makan;
-  if (chkWifi && chkWifi.checked) total += curTarif.wifi;
-  if (chkListrik && chkListrik.checked) total += curTarif.listrik;
-  if (chkAir && chkAir.checked) total += curTarif.air;
+  if (makanChecked) total += curTarif.makan;
+  if (kasChecked) total += curTarif.totalKas;
 
   const lbl = document.getElementById('buktiSantriNominalLabel');
   if (lbl) lbl.textContent = formatRp(total);
@@ -5255,12 +5303,14 @@ async function handleSubmitBuktiTransferSantri(event) {
   const nominal = Number(document.getElementById('buktiSantriNominalInput')?.value || 0);
   const metode = currentBuktiSantriCtx.method || 'dana';
 
+  const chkKasUmum = document.getElementById('chkBuktiKasUmum');
+  const kasUmum = chkKasUmum ? chkKasUmum.checked : Boolean(document.getElementById('chkBuktiWifi')?.checked);
   const makan = Boolean(document.getElementById('chkBuktiMakan')?.checked && !document.getElementById('chkBuktiMakan')?.disabled);
-  const wifi = Boolean(document.getElementById('chkBuktiWifi')?.checked);
-  const listrik = Boolean(document.getElementById('chkBuktiListrik')?.checked);
-  const air = Boolean(document.getElementById('chkBuktiAir')?.checked);
+  const wifi = kasUmum;
+  const listrik = kasUmum;
+  const air = kasUmum;
 
-  if (!makan && !wifi && !listrik && !air) {
+  if (!makan && !kasUmum) {
     showToast('Pilih minimal 1 komponen iuran yang dibayar!', 'amber');
     return;
   }

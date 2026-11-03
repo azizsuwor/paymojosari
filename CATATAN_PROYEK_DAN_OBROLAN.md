@@ -306,6 +306,49 @@ Menjawab permasalahan riil di lapangan:
 3. **Sinkronisasi Tanggal Input Hari Ini (`getTodayDateString`):**
    - Tanggal default pada form pencatatan Belanja Dapur (*Jurnal Masak*), Pengeluaran Kas Umum, Peminjaman Utang Kas, dan Bukti Setoran WiFi Induk secara otomatis terisi tanggal hari ini (`YYYY-MM-DD`).
 
+---
+
+## 13. Penyederhanaan Iuran (Makan 50k & Kas Umum 50k), Modal Bayar Bersih (Cash / TF), dan Pembersihan UI/UX (Update 4 November 2026)
+
+### A. Penyederhanaan Komponen Iuran Santri: Makan 50k & Kas Umum 50k
+- Tampilan rincian tagihan santri disederhanakan menjadi 2 komponen utama yang bersih dan mudah dipahami:
+  1. **Uang Makan:** Rp 50.000 / bulan (bebas bagi santri tanpa jatah makan seperti Aziz & Umam).
+  2. **Kas Umum:** Rp 50.000 / bulan (merangkum akumulasi WiFi Rp 20.000, Listrik Rp 15.000, dan Air Rp 15.000).
+- Kolom tabel Status Syahriyah di dasbor dan modal bayar santri kini hanya menampilkan 2 kolom tersebut tanpa memecah rincian teknis yang membingungkan santri. Di backend data tetap sinkron secara otomatis.
+
+### B. Modal Bayar Bersih: Pilihan Tunai / Cash & Transfer (TF)
+- Tombol **Bayar** langsung membuka modal pembayaran yang elegan dengan pilihan metode:
+  - 💵 **Tunai / Cash:** Bayar langsung ke Bendahara Komplek, seketika tercatat **LUNAS** tanpa perlu upload foto bukti.
+  - 📱 **Transfer (TF):** Transfer via DANA ke rekening Bendahara Komplek dengan form upload screenshot bukti transfer.
+- **Penghapusan Banner Statis DANA di Dasbor Santri:** Banner DANA statis (`085335219903`) di bagian atas dasbor santri telah dihapus agar tidak terkesan bahwa PayMojosari mewajibkan atau hanya menerima DANA semata. Nomor rekening DANA kini hanya muncul secara kontekstual ketika metode transfer dipilih di dalam modal bayar.
+
+### C. Pembukuan Kas Realtime & Fleksibel
+- Seluruh arus kas masuk dari pembayaran santri (baik Tunai maupun Transfer yang disetujui) dan kas keluar (belanja bahan dapur / pengeluaran operasional) terakumulasi secara **realtime** ke dalam kartu ringkasan saldo, mutasi transaksi, dan tabel arus kas bergulir tanpa perlu input manual berulang kali.
+- Form pencatatan manual tetap tersedia sebagai opsi cadangan (*fallback*) jika ada transaksi insidental di luar sistem.
+
+### D. Pembersihan Teks Panjang & Banner Pengumuman Tidak Perlu
+- Menghapus teks instruksi panjang dan bertele-tele (seperti pengumuman ganti pas foto profil santri, notice hak akses bendahara, serta kotak himbauan teks tebal) agar antarmuka tampak lebih profesional, ringkas, dan fokus pada fungsi utama.
+
+### E. Ikon Navigasi Hijau Menyala & Aksen Hijau Pekat (#064e3b)
+- Ikon navigasi menu samping (sidebar desktop & bottom bar mobile) telah diperbarui:
+  - Ikon tidak lagi terlihat abu-abu mati; ikon kini menyala dengan warna hijau emerald elegan (`text-emerald-800`).
+  - Menu aktif menggunakan latar dan aksen hijau pekat (`#064e3b` / `bg-[#064e3b] text-white`).
+
+### F. Eliminasi Badge Mirip Tombol yang Berlebihan
+- Menghapus elemen pill badge yang menyerupai tombol klik ganda:
+  - Badge `[Santri]` di samping judul "Catat Pembayaran" dihilangkan.
+  - Badge berulang `[Tunggakan Saya]` pada kartu dan tabel tunggakan santri dihilangkan karena konteksnya sudah jelas di menu daftar tunggakan.
+
+### G. Penyembunyian Panel Setoran WiFi Induk pada Akun Santri
+- Panel "Setoran WiFi Induk ke Vendor" disembunyikan sepenuhnya dari tampilan santri dan hanya dapat diakses oleh akun **Bendahara (Admin)**. Hal ini menegaskan bahwa santri hanya menyetorkan iuran Kas ke bendahara, sedangkan pembayaran vendor adalah wewenang bendahara.
+
+### H. Penataan Ulang Urutan Dasbor
+- Posisi panel **Rekapitulasi Bulanan** dipindahkan tepat di bawah tabel **Status Syahriyah**, sehingga alur pemantauan dari status bulanan langsung berlanjut ke rekap data antar-periode tanpa terputus.
+
+### I. Standardisasi Tombol WhatsApp dengan Ikon
+- Semua tombol aksi pengiriman pesan / konfirmasi WhatsApp diubah dari tombol teks panjang menjadi tombol ikon WhatsApp (`<i data-lucide="message-circle"></i>`) yang seragam, rapi, dan modern.
+
+
 
 
 
